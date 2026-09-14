@@ -77,8 +77,11 @@ def get_latest_per_device():
     conn.close()
     devices = [json.loads(r[0]) for r in rows]
     for d in devices:
-        info = device_status.get(d["device_id"], {})
-        d["status"] = info.get("status", "online")
+        # If we have no in-memory status yet for this device (e.g. right after a
+        # server restart, before it has reported back in), assume offline rather
+        # than online — we haven't actually heard from it since starting up.
+        info = device_status.get(d["device_id"])
+        d["status"] = info["status"] if info else "offline"
         d["missing_components"] = compute_missing(d["device_id"], d.get("internal", []))
     return devices
 

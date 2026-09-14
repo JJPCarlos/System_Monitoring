@@ -45,158 +45,158 @@
   .missing-item { font-size: 13px; color: #ffb3b3; padding: 3px 0; }
 </style>
 </head>
-  <body>
-    <h1>🖥️ Device Tracker — Live Dashboard</h1>
-      <div class="grid" id="grid"></div>
+<body>
+  <h1>🖥️ Device Tracker — Live Dashboard</h1>
+  <div class="grid" id="grid"></div>
 
-      <div class="overlay" id="overlay">
-        <div class="modal" id="modal"></div>
-      </div>
+  <div class="overlay" id="overlay">
+    <div class="modal" id="modal"></div>
+  </div>
 
-    <script>
-    const grid = document.getElementById("grid");
-    const overlay = document.getElementById("overlay");
-    const modal = document.getElementById("modal");
-    const cards = {};       // device_id -> card element
-    const lastPayload = {}; // device_id -> last full payload
-    let openDeviceId = null; // which device's modal is currently open, if any
+<script>
+const grid = document.getElementById("grid");
+const overlay = document.getElementById("overlay");
+const modal = document.getElementById("modal");
+const cards = {};       // device_id -> card element
+const lastPayload = {}; // device_id -> last full payload
+let openDeviceId = null; // which device's modal is currently open, if any
 
-    const STATUS_TEXT = {
-      online: "Online",
-      offline: "Shut Down",
-      crashed: "Crashed / Unresponsive",
-    };
+const STATUS_TEXT = {
+  online: "Online",
+  offline: "Offline",
+  crashed: "Crashed / Unresponsive",
+};
 
-    function renderCard(payload) {
-      const id = payload.device_id;
-      lastPayload[id] = payload;
+function renderCard(payload) {
+  const id = payload.device_id;
+  lastPayload[id] = payload;
 
-      if (!cards[id]) {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.addEventListener("click", () => openModal(id));
-        grid.appendChild(card);
-        cards[id] = card;
-      }
+  if (!cards[id]) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.addEventListener("click", () => openModal(id));
+    grid.appendChild(card);
+    cards[id] = card;
+  }
 
-      const status = payload.status || "online";
-      const hw = payload.hardware || {};
-      const missing = payload.missing_components || [];
+  const status = payload.status || "online";
+  const hw = payload.hardware || {};
+  const missing = payload.missing_components || [];
 
-      cards[id].className = `card status-${status}${missing.length ? " has-missing" : ""}`;
-      cards[id].innerHTML = `
-        <div class="header-row">
-          <h2><span class="status-dot status-${status}"></span>${payload.hostname}</h2>
-          <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
-        </div>
-        <div style="font-size:12px;color:#9aa1ac;">${payload.os || ""}</div>
+  cards[id].className = `card status-${status}${missing.length ? " has-missing" : ""}`;
+  cards[id].innerHTML = `
+    <div class="header-row">
+      <h2><span class="status-dot status-${status}"></span>${payload.hostname}</h2>
+      <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
+    </div>
+    <div style="font-size:12px;color:#9aa1ac;">${payload.os || ""}</div>
 
-        <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
+    <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
 
-        <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB</span></div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
+    <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
 
-        <div class="stat"><span>Disk</span><span>${hw.disk_percent ?? "-"}% used</span></div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
+    <div class="stat"><span>Disk</span><span>${hw.disk_percent ?? "-"}% used</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
 
-        ${missing.length ? `<div class="missing-pill">⚠️ ${missing.length} component${missing.length > 1 ? "s" : ""} missing</div>` : ""}
-        <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleTimeString()} — click for full details</div>
-      `;
+    ${missing.length ? `<div class="missing-pill">⚠️ ${missing.length} component${missing.length > 1 ? "s" : ""} missing</div>` : ""}
+    <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleTimeString()} — click for full details</div>
+  `;
 
-      // If this device's modal is currently open, refresh its contents live too
-      if (openDeviceId === id) renderModalContent(payload);
+  // If this device's modal is currently open, refresh its contents live too
+  if (openDeviceId === id) renderModalContent(payload);
+}
+
+function renderModalContent(payload) {
+  const status = payload.status || "online";
+  const hw = payload.hardware || {};
+  const missing = payload.missing_components || [];
+  const devices = payload.devices || [];
+  const internal = payload.internal || [];
+
+  const missingHtml = missing.length ? `
+    <div class="missing-box">
+      <b>⚠️ MISSING COMPONENTS (${missing.length})</b>
+      ${missing.map(m => `<div class="missing-item">⚠️ ${m.type}: ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}</div>`).join("")}
+    </div>
+  ` : "";
+
+  modal.innerHTML = `
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="header-row">
+      <h2><span class="status-dot status-${status}"></span>${payload.hostname}</h2>
+      <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
+    </div>
+    <div style="font-size:13px;color:#9aa1ac;">${payload.os || ""} — ${payload.device_id}</div>
+
+    <div class="section-title">Hardware</div>
+    <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
+    <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB (${hw.ram_percent ?? "-"}%)</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
+    <div class="stat"><span>Disk</span><span>${hw.disk_free_gb ?? "-"} GB free (${hw.disk_percent ?? "-"}% used)</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
+    ${hw.battery_percent != null ? `<div class="stat"><span>Battery</span><span>${hw.battery_percent}%</span></div>` : ""}
+
+    ${missingHtml}
+
+    <div class="section-title">Internal Components (${internal.length})</div>
+    <div class="device-list">${internal.map(d => `<div>[${d.type}] ${d.name}${d.slot ? ` — slot ${d.slot}` : ""}${d.size_gb ? ` — ${d.size_gb} GB` : ""}</div>`).join("") || "—"}</div>
+
+    <div class="section-title">Peripherals (${devices.length})</div>
+    <div class="device-list">${devices.map(d => `<div>[${d.type}] ${d.name}</div>`).join("") || "—"}</div>
+
+    <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleString()}</div>
+  `;
+  document.getElementById("modalClose").addEventListener("click", closeModal);
+}
+
+function openModal(deviceId) {
+  openDeviceId = deviceId;
+  renderModalContent(lastPayload[deviceId]);
+  overlay.classList.add("open");
+}
+
+function closeModal() {
+  openDeviceId = null;
+  overlay.classList.remove("open");
+}
+
+overlay.addEventListener("click", (e) => {
+  if (e.target === overlay) closeModal(); // click outside modal closes it
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeModal();
+});
+
+function applyStatusUpdate(deviceId, status) {
+  const prev = lastPayload[deviceId];
+  if (prev) {
+    prev.status = status;
+    renderCard(prev);
+  }
+}
+
+function connect() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(`${proto}://${location.host}/ws`);
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.type === "snapshot") {
+      msg.data.forEach(renderCard);
+    } else if (msg.type === "update") {
+      renderCard(msg.data);
+    } else if (msg.type === "status") {
+      applyStatusUpdate(msg.data.device_id, msg.data.status);
     }
+  };
 
-    function renderModalContent(payload) {
-      const status = payload.status || "online";
-      const hw = payload.hardware || {};
-      const missing = payload.missing_components || [];
-      const devices = payload.devices || [];
-      const internal = payload.internal || [];
+  ws.onclose = () => setTimeout(connect, 2000);
+}
 
-      const missingHtml = missing.length ? `
-        <div class="missing-box">
-          <b>⚠️ MISSING COMPONENTS (${missing.length})</b>
-          ${missing.map(m => `<div class="missing-item">⚠️ ${m.type}: ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}</div>`).join("")}
-        </div>
-      ` : "";
-
-      modal.innerHTML = `
-        <button class="modal-close" id="modalClose">✕</button>
-        <div class="header-row">
-          <h2><span class="status-dot status-${status}"></span>${payload.hostname}</h2>
-          <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
-        </div>
-        <div style="font-size:13px;color:#9aa1ac;">${payload.os || ""} — ${payload.device_id}</div>
-
-        <div class="section-title">Hardware</div>
-        <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
-        <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB (${hw.ram_percent ?? "-"}%)</span></div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
-        <div class="stat"><span>Disk</span><span>${hw.disk_free_gb ?? "-"} GB free (${hw.disk_percent ?? "-"}% used)</span></div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
-        ${hw.battery_percent != null ? `<div class="stat"><span>Battery</span><span>${hw.battery_percent}%</span></div>` : ""}
-
-        ${missingHtml}
-
-        <div class="section-title">Internal Components (${internal.length})</div>
-        <div class="device-list">${internal.map(d => `<div>[${d.type}] ${d.name}${d.slot ? ` — slot ${d.slot}` : ""}${d.size_gb ? ` — ${d.size_gb} GB` : ""}</div>`).join("") || "—"}</div>
-
-        <div class="section-title">Peripherals (${devices.length})</div>
-        <div class="device-list">${devices.map(d => `<div>[${d.type}] ${d.name}</div>`).join("") || "—"}</div>
-
-        <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleString()}</div>
-      `;
-      document.getElementById("modalClose").addEventListener("click", closeModal);
-    }
-
-    function openModal(deviceId) {
-      openDeviceId = deviceId;
-      renderModalContent(lastPayload[deviceId]);
-      overlay.classList.add("open");
-    }
-
-    function closeModal() {
-      openDeviceId = null;
-      overlay.classList.remove("open");
-    }
-
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) closeModal(); // click outside modal closes it
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
-    });
-
-    function applyStatusUpdate(deviceId, status) {
-      const prev = lastPayload[deviceId];
-      if (prev) {
-        prev.status = status;
-        renderCard(prev);
-      }
-    }
-
-    function connect() {
-      const proto = location.protocol === "https:" ? "wss" : "ws";
-      const ws = new WebSocket(`${proto}://${location.host}/ws`);
-
-      ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "snapshot") {
-          msg.data.forEach(renderCard);
-        } else if (msg.type === "update") {
-          renderCard(msg.data);
-        } else if (msg.type === "status") {
-          applyStatusUpdate(msg.data.device_id, msg.data.status);
-        }
-      };
-
-      ws.onclose = () => setTimeout(connect, 2000);
-    }
-
-    connect();
-    </script>
-  </body>
+connect();
+</script>
+</body>
 </html>
