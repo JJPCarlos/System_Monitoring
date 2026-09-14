@@ -1,0 +1,5 @@
+SERVER_URL = "http://localhost:8000/api/report"          # change to your server's address
+SHUTDOWN_URL = "http://localhost:8000/api/shutdown"      # same host as SERVER_URL
+API_KEY = "changeme-shared-secret"                       # must match server's API_KEY
+REPORT_INTERVAL = 5                                      # seconds between reports
+DISPLAY_NAME = "System Unit 1"

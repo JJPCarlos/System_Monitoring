@@ -19,6 +19,7 @@ import socket
 import time
 import uuid
 import json
+import tomllib
 
 import psutil
 import requests
@@ -26,13 +27,13 @@ import wmi
 import win32api
 import win32con
 
-# ----------------- CONFIG -----------------
-SERVER_URL = "http://localhost:8000/api/report"          # <-- change to your server's address
-SHUTDOWN_URL = "http://localhost:8000/api/shutdown"       # <-- same host as SERVER_URL
-API_KEY = "changeme-shared-secret"                        # <-- must match server's API_KEY
-REPORT_INTERVAL = 5                                       # seconds between reports
-DISPLAY_NAME = "System Unit 1"                            # <-- shown on the dashboard
-# -------------------------------------------
+with open("config.toml", "rb") as f:
+    config = tomllib.load(f)
+
+SERVER_URL = config["SERVER_URL"]
+SHUTDOWN_URL = config["SHUTDOWN_URL"]
+API_KEY = config["API_KEY"]
+DISPLAY_NAME = config["DISPLAY_NAME"]
 
 # A stable ID for this machine (based on MAC address, stays the same across reboots)
 DEVICE_ID = f"{socket.gethostname()}-{uuid.getnode():x}"
