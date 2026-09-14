@@ -19,7 +19,7 @@ import socket
 import time
 import uuid
 import json
-import tomllib
+import tomli as tomllib
 
 import psutil
 import requests
@@ -34,6 +34,7 @@ SERVER_URL = config["SERVER_URL"]
 SHUTDOWN_URL = config["SHUTDOWN_URL"]
 API_KEY = config["API_KEY"]
 DISPLAY_NAME = config["DISPLAY_NAME"]
+REPORT_INTERVAL = config["REPORT_INTERVAL"]
 
 # A stable ID for this machine (based on MAC address, stays the same across reboots)
 DEVICE_ID = f"{socket.gethostname()}-{uuid.getnode():x}"
