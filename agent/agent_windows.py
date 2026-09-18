@@ -30,8 +30,8 @@ import win32con
 with open("config.toml", "rb") as f:
     config = tomllib.load(f)
 
-SERVER_URL = config["SERVER_URL"]
-SHUTDOWN_URL = config["SHUTDOWN_URL"]
+SERVER_URL = f'http://{config["SERVER_ADDRESS"]}:{config["PORT"]}/api/report'
+SHUTDOWN_URL = f'http://{config["SERVER_ADDRESS"]}:{config["PORT"]}/api/shutdown'
 API_KEY = config["API_KEY"]
 DISPLAY_NAME = config["DISPLAY_NAME"]
 REPORT_INTERVAL = config["REPORT_INTERVAL"]
