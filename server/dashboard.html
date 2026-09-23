@@ -6,6 +6,8 @@
 <style>
   body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e6e6; margin: 0; padding: 24px; }
   h1 { font-weight: 600; }
+  .section-header { font-size: 15px; font-weight: 600; color: #cfd3da; margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
+  .section-count { font-weight: 400; color: #6b7280; font-size: 13px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
 
   .card { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
@@ -31,6 +33,10 @@
   .timestamp { font-size: 11px; color: #6b7280; margin-top: 8px; }
   .header-row { display: flex; justify-content: space-between; align-items: center; }
   .missing-pill { margin-top: 10px; font-size: 12px; color: #ff5c5c; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); border-radius: 6px; padding: 6px 10px; }
+  .peripheral-row { display: flex; gap: 8px; margin-top: 10px; }
+  .peripheral-chip { font-size: 12px; padding: 3px 9px; border-radius: 12px; display: flex; align-items: center; gap: 4px; }
+  .peripheral-chip.present { background: rgba(61,220,132,0.12); color: #3ddc84; }
+  .peripheral-chip.absent { background: rgba(255,92,92,0.12); color: #ff5c5c; }
 
   /* ---- Modal ---- */
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
@@ -45,161 +51,456 @@
   .missing-box { margin-top: 10px; padding: 10px 12px; border-radius: 6px; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); }
   .missing-box b { color: #ff5c5c; font-size: 13px; }
   .missing-item { font-size: 13px; color: #ffb3b3; padding: 3px 0; }
+
+  /* ---- Issue cards (used inside the bell dropdown) ---- */
+  .issue-card { background: #22252c; border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .issue-tags { display: flex; gap: 6px; margin-bottom: 6px; }
+  .issue-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: #4f8cff; padding: 2px 8px; border-radius: 4px; }
+  .issue-desc { font-size: 13px; color: #e6e6e6; }
+  .issue-meta { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .resolve-btn { background: #2a2e37; border: 1px solid #3a3f4a; color: #cfd3da; border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; margin-top: 6px; }
+  .resolve-btn:hover { background: #3ddc84; color: #0f1115; border-color: #3ddc84; }
+  .no-issues { color: #6b7280; font-size: 13px; padding: 8px 0; }
+
+  /* ---- Notification bell ---- */
+  .bell-wrap { position: fixed; top: 20px; right: 20px; z-index: 200; }
+  .bell-btn { background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; }
+  .bell-btn:hover { border-color: #4f8cff; }
+  .bell-btn.has-notifications { color: #ff5c5c; border-color: rgba(255,92,92,0.4); }
+  .bell-badge { position: absolute; top: -4px; right: -4px; background: #ff5c5c; color: white; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+  .bell-dropdown { display: none; position: absolute; top: 48px; right: 0; width: 320px; max-height: 420px; overflow-y: auto; background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .bell-dropdown.open { display: block; }
+  .bell-dropdown-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+
+  /* ---- Toast notifications ---- */
+  .toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: #1a1d24; border-left: 4px solid #ff5c5c; border-radius: 6px; padding: 10px 14px; width: 300px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); animation: slideIn 0.2s ease-out; font-size: 13px; }
+  .toast.connected { border-left-color: #3ddc84; }
+  .toast-title { font-weight: 600; margin-bottom: 2px; }
+  .toast-body { color: #9aa1ac; font-size: 12px; }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* ---- History ---- */
+  .history-btn { background: #2a2e37; border: 1px solid #3a3f4a; color: #cfd3da; border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; margin-top: 10px; }
+  .history-btn:hover { background: #4f8cff; color: white; border-color: #4f8cff; }
+  .history-list { font-size: 12px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
+  .history-item { padding: 5px 0; border-bottom: 1px solid #22252c; display: flex; justify-content: space-between; }
+  .history-item.connected { color: #3ddc84; }
+  .history-item.disconnected { color: #ff5c5c; }
+  .history-time { color: #6b7280; }
+
+  /* ---- Sound toggle ---- */
+  .sound-toggle { position: fixed; top: 20px; left: 24px; background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 6px 14px; font-size: 12px; cursor: pointer; z-index: 150; }
+  .sound-toggle.muted { color: #6b7280; }
 </style>
 </head>
-  <body>
-    <h1>🖥️ Device Tracker — Live Dashboard</h1>
-    <div class="grid" id="grid"></div>
+<body>
+  <button class="sound-toggle" id="soundToggle">🔔 Sound On</button>
 
-    <div class="overlay" id="overlay">
-      <div class="modal" id="modal"></div>
+  <div class="bell-wrap" id="bellWrap">
+    <button class="bell-btn" id="bellBtn">
+      <svg id="bellIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+      <span class="bell-badge" id="bellBadge" style="display:none;">0</span>
+    </button>
+    <div class="bell-dropdown" id="bellDropdown">
+      <div class="bell-dropdown-title">Reported Problems</div>
+      <div id="issuesList"><div class="no-issues">No open problems.</div></div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <h1>🖥️ Device Tracker — Live Dashboard</h1>
+
+  <div class="section-header">🟢 Online <span class="section-count" id="onlineCount">(0)</span></div>
+  <div class="grid" id="onlineGrid"></div>
+
+  <div class="section-header" style="margin-top:28px;">⚫ Offline / Unresponsive / Crashed <span class="section-count" id="offlineCount">(0)</span></div>
+  <div class="grid" id="offlineGrid"></div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal" id="modal"></div>
+  </div>
+
+<script>
+const onlineGrid = document.getElementById("onlineGrid");
+const offlineGrid = document.getElementById("offlineGrid");
+const onlineCountEl = document.getElementById("onlineCount");
+const offlineCountEl = document.getElementById("offlineCount");
+const overlay = document.getElementById("overlay");
+const modal = document.getElementById("modal");
+const toastContainer = document.getElementById("toastContainer");
+const soundToggle = document.getElementById("soundToggle");
+const bellBtn = document.getElementById("bellBtn");
+const bellIcon = document.getElementById("bellIcon");
+const bellBadge = document.getElementById("bellBadge");
+const bellDropdown = document.getElementById("bellDropdown");
+const issuesListEl = document.getElementById("issuesList");
+const cards = {};       // device_id -> card element
+const lastPayload = {}; // device_id -> last full payload
+const lastMissingCount = {}; // device_id -> number of missing components on the previous update
+let openDeviceId = null; // which device's modal is currently open, if any
+let soundEnabled = true;
+let openIssues = []; // current open (unresolved) problem reports
+
+// Must match API_KEY in server.py — needed so the "Resolve" button can call
+// the server. Fine for a trusted LAN dashboard; don't expose this page to
+// the public internet as-is.
+const API_KEY = "changeme-shared-secret";
+
+const STATUS_TEXT = {
+  online: "Online",
+  offline: "Offline",
+  unresponsive: "Unresponsive",
+  crashed: "Crashed",
+};
+
+// ----------------- Notification bell -----------------
+bellBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  bellDropdown.classList.toggle("open");
+});
+document.addEventListener("click", (e) => {
+  if (!bellDropdown.contains(e.target) && e.target !== bellBtn) {
+    bellDropdown.classList.remove("open");
+  }
+});
+
+function renderIssues() {
+  const hasOpen = openIssues.length > 0;
+  bellBadge.style.display = hasOpen ? "flex" : "none";
+  bellBadge.textContent = openIssues.length;
+  bellIcon.setAttribute("fill", hasOpen ? "currentColor" : "none");
+  bellBtn.classList.toggle("has-notifications", hasOpen);
+
+  if (!openIssues.length) {
+    issuesListEl.innerHTML = `<div class="no-issues">No open problems.</div>`;
+    return;
+  }
+  issuesListEl.innerHTML = openIssues.map(issue => `
+    <div class="issue-card">
+      <div class="issue-tags">
+        <span class="issue-tag">${issue.room}</span>
+        <span class="issue-tag">${issue.system_unit}</span>
+      </div>
+      <div class="issue-desc">${issue.description}</div>
+      <div class="issue-meta">Reported by ${issue.reported_by} — ${new Date(issue.timestamp*1000).toLocaleString()}</div>
+      <button class="resolve-btn" data-issue-id="${issue.id}">✓ Mark Resolved</button>
+    </div>
+  `).join("");
+
+  issuesListEl.querySelectorAll(".resolve-btn").forEach(btn => {
+    btn.addEventListener("click", () => resolveIssue(parseInt(btn.dataset.issueId, 10)));
+  });
+}
+
+async function resolveIssue(issueId) {
+  try {
+    await fetch(`/api/issues/${issueId}/resolve`, {
+      method: "POST",
+      headers: { "X-API-Key": API_KEY },
+    });
+    openIssues = openIssues.filter(i => i.id !== issueId);
+    renderIssues();
+  } catch (e) {
+    alert("Could not resolve — check server connection.");
+  }
+}
+
+// ----------------- Sound + toast notifications -----------------
+soundToggle.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  soundToggle.textContent = soundEnabled ? "🔔 Sound On" : "🔕 Sound Off";
+  soundToggle.classList.toggle("muted", !soundEnabled);
+});
+
+function playAlertSound() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.4);
+  } catch (e) { /* Audio may be blocked until the user interacts with the page once — that's fine */ }
+}
+
+function showToast(title, body, kind = "alert") {
+  const toast = document.createElement("div");
+  toast.className = `toast ${kind}`;
+  toast.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
+  toastContainer.appendChild(toast);
+  setTimeout(() => toast.remove(), 6000);
+}
+
+function notify(title, body, kind = "alert") {
+  showToast(title, body, kind);
+  if (kind === "alert") playAlertSound();
+}
+
+function naturalCompare(a, b) {
+  // "Unit 2" sorts before "Unit 10" — plain string sort would put "Unit 10" first
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
+
+function relayoutSection(container, countEl) {
+  const cardEls = Array.from(container.children);
+  cardEls.sort((a, b) => naturalCompare(a.dataset.hostname || "", b.dataset.hostname || ""));
+  cardEls.forEach(el => container.appendChild(el)); // re-appending in sorted order moves them into place
+  countEl.textContent = `(${cardEls.length})`;
+}
+
+function renderCard(payload) {
+  const id = payload.device_id;
+  lastPayload[id] = payload;
+  const status = payload.status || "online";
+  const targetGrid = status === "online" ? onlineGrid : offlineGrid;
+
+  if (!cards[id]) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.addEventListener("click", () => openModal(id));
+    targetGrid.appendChild(card);
+    cards[id] = card;
+  } else if (cards[id].parentElement !== targetGrid) {
+    targetGrid.appendChild(cards[id]); // moves it from the other section
+  }
+  cards[id].dataset.hostname = payload.hostname || "";
+  const hw = payload.hardware || {};
+  const missing = payload.missing_components || [];
+  const pf = payload.peripheral_flags || {};
+
+  // Notify if the number of missing components just went UP since the last update
+  // (covers RAM/CPU/GPU/drives — peripheral connect/disconnect gets its own
+  // dedicated event from the server, handled separately below)
+  const prevMissingCount = lastMissingCount[id] ?? 0;
+  if (missing.length > prevMissingCount) {
+    const newlyMissing = missing.slice(0, missing.length - prevMissingCount);
+    notify(
+      `⚠️ ${payload.hostname}`,
+      newlyMissing.map(m => `${m.type}: ${m.name}`).join(", "),
+      "alert"
+    );
+  }
+  lastMissingCount[id] = missing.length;
+
+  cards[id].className = `card status-${status}${missing.length ? " has-missing" : ""}`;
+  cards[id].innerHTML = `
+    <div class="header-row">
+      <h2><span class="status-dot status-${status}"></span>${payload.hostname}</h2>
+      <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
+    </div>
+    <div style="font-size:12px;color:#9aa1ac;">${payload.os || ""}</div>
+
+    <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
+
+    <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
+
+    <div class="stat"><span>Disk</span><span>${hw.disk_percent ?? "-"}% used</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
+
+    <div class="peripheral-row">
+      <span class="peripheral-chip ${pf.has_keyboard ? "present" : "absent"}">${pf.has_keyboard ? "✓" : "✕"} Keyboard</span>
+      <span class="peripheral-chip ${pf.has_mouse ? "present" : "absent"}">${pf.has_mouse ? "✓" : "✕"} Mouse</span>
     </div>
 
-  <script>
-    const grid = document.getElementById("grid");
-    const overlay = document.getElementById("overlay");
-    const modal = document.getElementById("modal");
-    const cards = {};       // device_id -> card element
-    const lastPayload = {}; // device_id -> last full payload
-    let openDeviceId = null; // which device's modal is currently open, if any
+    ${missing.length ? `<div class="missing-pill">⚠️ ${missing.length} component${missing.length > 1 ? "s" : ""} missing</div>` : ""}
+    <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleTimeString()} — click for full details</div>
+  `;
 
-    const STATUS_TEXT = {
-      online: "Online",
-      offline: "Offline",
-      unresponsive: "Unresponsive",
-      crashed: "Crashed",
-    };
+  relayoutSection(onlineGrid, onlineCountEl);
+  relayoutSection(offlineGrid, offlineCountEl);
 
-  function renderCard(payload) {
-    const id = payload.device_id;
-    lastPayload[id] = payload;
+  // If this device's modal is currently open, refresh its contents live too
+  if (openDeviceId === id) renderModalContent(payload);
+}
 
-    if (!cards[id]) {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.addEventListener("click", () => openModal(id));
-      grid.appendChild(card);
-      cards[id] = card;
+function renderModalContent(payload) {
+  const status = payload.status || "online";
+  const hw = payload.hardware || {};
+  const missing = payload.missing_components || [];
+  const devices = payload.devices || [];
+  const internal = payload.internal || [];
+
+  const missingHtml = missing.length ? `
+    <div class="missing-box">
+      <b>⚠️ MISSING COMPONENTS (${missing.length})</b>
+      ${missing.map(m => `<div class="missing-item">⚠️ ${m.type}: ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}</div>`).join("")}
+      <button class="resolve-btn" id="resetBaselineBtn" style="margin-top:8px;">🔄 This is expected now — Reset Baseline</button>
+    </div>
+  ` : "";
+
+  modal.innerHTML = `
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="header-row">
+      <h2><span class="status-dot status-${status}"></span>${payload.hostname}</h2>
+      <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
+    </div>
+    <div style="font-size:13px;color:#9aa1ac;">${payload.os || ""} — ${payload.device_id}</div>
+
+    <div class="section-title">Hardware</div>
+    <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
+    <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB (${hw.ram_percent ?? "-"}%)</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
+    <div class="stat"><span>Disk</span><span>${hw.disk_free_gb ?? "-"} GB free (${hw.disk_percent ?? "-"}% used)</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
+    ${hw.battery_percent != null ? `<div class="stat"><span>Battery</span><span>${hw.battery_percent}%</span></div>` : ""}
+
+    <div class="peripheral-row">
+      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_keyboard ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_keyboard ? "✓" : "✕"} Keyboard</span>
+      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_mouse ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_mouse ? "✓" : "✕"} Mouse</span>
+    </div>
+
+    ${missingHtml}
+
+    <div class="section-title">Internal Components (${internal.length})</div>
+    <div class="device-list">${internal.map(d => `<div>[${d.type}] ${d.name}${d.slot ? ` — slot ${d.slot}` : ""}${d.size_gb ? ` — ${d.size_gb} GB` : ""}</div>`).join("") || "—"}</div>
+
+    <div class="section-title">Peripherals (${devices.length})</div>
+    <div class="device-list">${devices.map(d => `<div>[${d.type}] ${d.name}</div>`).join("") || "—"}</div>
+
+    <button class="history-btn" id="historyBtn">📜 View Connection History</button>
+    <div class="history-list" id="historyList"></div>
+
+    <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleString()}</div>
+  `;
+  document.getElementById("modalClose").addEventListener("click", closeModal);
+  document.getElementById("historyBtn").addEventListener("click", () => loadHistory(payload.device_id));
+  const resetBtn = document.getElementById("resetBaselineBtn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => resetBaseline(payload.device_id));
+  }
+}
+
+async function resetBaseline(deviceId) {
+  if (!confirm("This marks the CURRENT hardware/peripherals as the new expected baseline. Only do this if the change was intentional. Continue?")) {
+    return;
+  }
+  try {
+    const resp = await fetch(`/api/baseline/${encodeURIComponent(deviceId)}/reset`, {
+      method: "POST",
+      headers: { "X-API-Key": API_KEY },
+    });
+    if (resp.ok) {
+      showToast("✅ Baseline Reset", "New configuration saved as expected.", "connected");
+    } else {
+      alert("Reset failed — check the server is running and API_KEY matches.");
     }
+  } catch (e) {
+    alert("Could not reach the server.");
+  }
+}
 
-    const status = payload.status || "online";
-    const hw = payload.hardware || {};
-    const missing = payload.missing_components || [];
-
-    cards[id].className = `card status-${status}${missing.length ? " has-missing" : ""}`;
-    cards[id].innerHTML = `
-      <div class="header-row">
-        <h2><span class="status-dot status-${status}"></span>${payload.hostname}</h2>
-        <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
+async function loadHistory(deviceId) {
+  const listEl = document.getElementById("historyList");
+  if (!listEl) return;
+  listEl.innerHTML = `<div style="color:#6b7280;">Loading…</div>`;
+  try {
+    const resp = await fetch(`/api/history/${encodeURIComponent(deviceId)}`);
+    const events = await resp.json();
+    if (!events.length) {
+      listEl.innerHTML = `<div style="color:#6b7280;">No connect/disconnect events recorded yet.</div>`;
+      return;
+    }
+    listEl.innerHTML = events.map(e => `
+      <div class="history-item ${e.event_type}">
+        <span>${e.event_type === "connected" ? "🔌+" : "🔌−"} ${e.component_type}: ${e.component_name}</span>
+        <span class="history-time">${new Date(e.timestamp*1000).toLocaleString()}</span>
       </div>
-      <div style="font-size:12px;color:#9aa1ac;">${payload.os || ""}</div>
-
-      <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
-
-      <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB</span></div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
-
-      <div class="stat"><span>Disk</span><span>${hw.disk_percent ?? "-"}% used</span></div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
-
-      ${missing.length ? `<div class="missing-pill">⚠️ ${missing.length} component${missing.length > 1 ? "s" : ""} missing</div>` : ""}
-      <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleTimeString()} — click for full details</div>
-    `;
-
-    // If this device's modal is currently open, refresh its contents live too
-    if (openDeviceId === id) renderModalContent(payload);
+    `).join("");
+  } catch (e) {
+    listEl.innerHTML = `<div style="color:#ff5c5c;">Could not load history.</div>`;
   }
+}
 
-  function renderModalContent(payload) {
-    const status = payload.status || "online";
-    const hw = payload.hardware || {};
-    const missing = payload.missing_components || [];
-    const devices = payload.devices || [];
-    const internal = payload.internal || [];
+function openModal(deviceId) {
+  openDeviceId = deviceId;
+  renderModalContent(lastPayload[deviceId]);
+  overlay.classList.add("open");
+}
 
-    const missingHtml = missing.length ? `
-      <div class="missing-box">
-        <b>⚠️ MISSING COMPONENTS (${missing.length})</b>
-        ${missing.map(m => `<div class="missing-item">⚠️ ${m.type}: ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}</div>`).join("")}
-      </div>
-    ` : "";
+function closeModal() {
+  openDeviceId = null;
+  overlay.classList.remove("open");
+}
 
-    modal.innerHTML = `
-      <button class="modal-close" id="modalClose">✕</button>
-      <div class="header-row">
-        <h2><span class="status-dot status-${status}"></span>${payload.hostname}</h2>
-        <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
-      </div>
-      <div style="font-size:13px;color:#9aa1ac;">${payload.os || ""} — ${payload.device_id}</div>
+overlay.addEventListener("click", (e) => {
+  if (e.target === overlay) closeModal(); // click outside modal closes it
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeModal();
+});
 
-      <div class="section-title">Hardware</div>
-      <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
-      <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB (${hw.ram_percent ?? "-"}%)</span></div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
-      <div class="stat"><span>Disk</span><span>${hw.disk_free_gb ?? "-"} GB free (${hw.disk_percent ?? "-"}% used)</span></div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
-      ${hw.battery_percent != null ? `<div class="stat"><span>Battery</span><span>${hw.battery_percent}%</span></div>` : ""}
-
-      ${missingHtml}
-
-      <div class="section-title">Internal Components (${internal.length})</div>
-      <div class="device-list">${internal.map(d => `<div>[${d.type}] ${d.name}${d.slot ? ` — slot ${d.slot}` : ""}${d.size_gb ? ` — ${d.size_gb} GB` : ""}</div>`).join("") || "—"}</div>
-
-      <div class="section-title">Peripherals (${devices.length})</div>
-      <div class="device-list">${devices.map(d => `<div>[${d.type}] ${d.name}</div>`).join("") || "—"}</div>
-
-      <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleString()}</div>
-    `;
-    document.getElementById("modalClose").addEventListener("click", closeModal);
-  }
-
-  function openModal(deviceId) {
-    openDeviceId = deviceId;
-    renderModalContent(lastPayload[deviceId]);
-    overlay.classList.add("open");
-  }
-
-  function closeModal() {
-    openDeviceId = null;
-    overlay.classList.remove("open");
-  }
-
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) closeModal(); // click outside modal closes it
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeModal();
-  });
-
-  function applyStatusUpdate(deviceId, status) {
-    const prev = lastPayload[deviceId];
-    if (prev) {
-      prev.status = status;
-      renderCard(prev);
+function applyStatusUpdate(deviceId, status) {
+  const prev = lastPayload[deviceId];
+  if (prev) {
+    const wasStatus = prev.status;
+    prev.status = status;
+    renderCard(prev);
+    if (status === "crashed" && wasStatus !== "crashed") {
+      notify(`🔴 ${prev.hostname}`, "No longer responding — likely crashed.", "alert");
     }
   }
+}
 
-  function connect() {
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${location.host}/ws`);
-
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "snapshot") {
-        msg.data.forEach(renderCard);
-      } else if (msg.type === "update") {
-        renderCard(msg.data);
-      } else if (msg.type === "status") {
-        applyStatusUpdate(msg.data.device_id, msg.data.status);
-      }
-    };
-
-    ws.onclose = () => setTimeout(connect, 2000);
+function handleDeviceEvent(evt) {
+  const isDisconnect = evt.event_type === "disconnected";
+  notify(
+    `${isDisconnect ? "🔌 Disconnected" : "🔌 Connected"} — ${evt.hostname}`,
+    `${evt.component_type}: ${evt.component_name}`,
+    isDisconnect ? "alert" : "connected"
+  );
+  // Refresh the history panel live if this device's modal happens to be open
+  if (openDeviceId === evt.device_id && document.getElementById("historyList")) {
+    loadHistory(evt.device_id);
   }
+}
 
-  connect();
-  </script>
-  </body>
+function connect() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(`${proto}://${location.host}/ws`);
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.type === "snapshot") {
+      msg.data.forEach(d => {
+        lastMissingCount[d.device_id] = (d.missing_components || []).length;
+        renderCard(d);
+      });
+    } else if (msg.type === "update") {
+      renderCard(msg.data);
+    } else if (msg.type === "status") {
+      applyStatusUpdate(msg.data.device_id, msg.data.status);
+    } else if (msg.type === "device_event") {
+      handleDeviceEvent(msg.data);
+    } else if (msg.type === "issues_snapshot") {
+      openIssues = msg.data.filter(i => !i.resolved);
+      renderIssues();
+    } else if (msg.type === "issue") {
+      openIssues.unshift(msg.data);
+      renderIssues();
+      notify(`🆘 New Problem Reported`, `${msg.data.room} / ${msg.data.system_unit}: ${msg.data.description}`, "alert");
+    } else if (msg.type === "issue_resolved") {
+      openIssues = openIssues.filter(i => i.id !== msg.data.id);
+      renderIssues();
+    }
+  };
+
+  ws.onclose = () => setTimeout(connect, 2000);
+}
+
+connect();
+</script>
+</body>
 </html>
