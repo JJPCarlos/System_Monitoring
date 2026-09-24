@@ -74,6 +74,12 @@ REPORT_INTERVAL = config.get("REPORT_INTERVAL", 5)
 DEVICE_WATCH_INTERVAL = config.get("DEVICE_WATCH_INTERVAL", 2)  # how often to check for plug/unplug, in seconds
 ROOM = config.get("ROOM", "Unassigned")
 SYSTEM_UNIT = config.get("SYSTEM_UNIT", "Unassigned")
+# Pin the Keyboard/Mouse presence check to ONE specific device's VID/PID
+# (e.g. "VID_0C45&PID_8006"), rather than "any device Windows classifies as
+# Keyboard/Mouse". Leave blank to fall back to the old any-device behavior.
+# Find your device's VID/PID by running diagnose_devices.py.
+KEYBOARD_ID = config.get("KEYBOARD_ID", "").upper()
+MOUSE_ID = config.get("MOUSE_ID", "").upper()
 # -------------------------------------------
 
 SERVER_URL = f"{SERVER_BASE}/api/report"
@@ -299,7 +305,7 @@ def get_connected_devices(wmi_conn=None):
                 if not device_id.startswith(("USB", "HID", "BTHENUM", "BTHLE")):
                     continue
 
-        devices.append({"type": class_labels[entry.PNPClass], "name": entry.Name})
+        devices.append({"type": class_labels[entry.PNPClass], "name": entry.Name, "device_id": device_id})
 
     return devices
 
@@ -333,7 +339,31 @@ def get_custom_data():
     return {"note": "replace get_custom_data() with your real app data"}
 
 
+def compute_peripheral_flags(devices: list) -> dict:
+    """Whether a keyboard/mouse is currently connected. If KEYBOARD_ID/MOUSE_ID
+    are configured, this checks for that SPECIFIC device's VID/PID rather than
+    any device Windows happens to classify as Keyboard/Mouse — sidesteps the
+    macro-key-interface and combo-dongle ambiguity entirely, since it's keyed
+    to one exact piece of hardware instead of a PnP class."""
+    if KEYBOARD_ID:
+        has_keyboard = any(
+            d["type"] == "Keyboard" and KEYBOARD_ID in d.get("device_id", "") for d in devices
+        )
+    else:
+        has_keyboard = any(d["type"] == "Keyboard" for d in devices)
+
+    if MOUSE_ID:
+        has_mouse = any(
+            d["type"] == "Mouse" and MOUSE_ID in d.get("device_id", "") for d in devices
+        )
+    else:
+        has_mouse = any(d["type"] == "Mouse" for d in devices)
+
+    return {"has_keyboard": has_keyboard, "has_mouse": has_mouse}
+
+
 def build_payload(wmi_conn=None):
+    devices = get_connected_devices(wmi_conn)
     return {
         "device_id": DEVICE_ID,
         "hostname": DISPLAY_NAME,
@@ -342,8 +372,9 @@ def build_payload(wmi_conn=None):
         "os": f"{platform.system()} {platform.release()}",
         "timestamp": time.time(),
         "hardware": get_hardware_stats(),
-        "devices": get_connected_devices(wmi_conn),
+        "devices": devices,
         "internal": get_internal_components(wmi_conn),
+        "peripheral_flags": compute_peripheral_flags(devices),
         "custom": get_custom_data(),
     }
 

@@ -106,7 +106,10 @@ def get_latest_per_device():
         info = device_status.get(d["device_id"])
         d["status"] = info["status"] if info else "offline"
         d["missing_components"] = compute_missing(d["device_id"], combined_components(d))
-        d["peripheral_flags"] = compute_peripheral_flags(d.get("devices", []))
+        # Prefer the agent's own computed flags (which may be pinned to a
+        # specific device's VID/PID) over recomputing generically here —
+        # only fall back for older reports that predate that feature.
+        d["peripheral_flags"] = d.get("peripheral_flags") or compute_peripheral_flags(d.get("devices", []))
     return devices
 
 # ----------------- BASELINE (expected internal + peripheral components) -----------------
@@ -325,7 +328,10 @@ async def receive_report(request: Request):
         save_baseline(device_id, combined)
 
     payload["missing_components"] = compute_missing(device_id, combined)
-    payload["peripheral_flags"] = compute_peripheral_flags(payload.get("devices", []))
+    # Prefer the agent's own computed flags (which may be pinned to a
+    # specific device's VID/PID) over recomputing generically here — only
+    # fall back for older agents that predate that feature.
+    payload["peripheral_flags"] = payload.get("peripheral_flags") or compute_peripheral_flags(payload.get("devices", []))
 
     # Log + broadcast any peripheral connect/disconnect since the last report
     if previous_devices is not None:
