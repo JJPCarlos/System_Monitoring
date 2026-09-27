@@ -74,12 +74,20 @@ REPORT_INTERVAL = config.get("REPORT_INTERVAL", 5)
 DEVICE_WATCH_INTERVAL = config.get("DEVICE_WATCH_INTERVAL", 2)  # how often to check for plug/unplug, in seconds
 ROOM = config.get("ROOM", "Unassigned")
 SYSTEM_UNIT = config.get("SYSTEM_UNIT", "Unassigned")
-# Pin the Keyboard/Mouse presence check to ONE specific device's VID/PID
-# (e.g. "VID_0C45&PID_8006"), rather than "any device Windows classifies as
-# Keyboard/Mouse". Leave blank to fall back to the old any-device behavior.
+# Pin the Keyboard/Mouse presence check to one or more specific devices'
+# VID/PID (e.g. "VID_0C45&PID_8006"), rather than "any device Windows
+# classifies as Keyboard/Mouse". Accepts EITHER a single comma-separated
+# string (e.g. "VID_1038&PID_182E, VID_1D57&PID_FA60") OR a TOML array
+# (e.g. ["VID_1038&PID_182E", "VID_1D57&PID_FA60"]) — both work the same way.
+# Leave blank/empty to fall back to the old any-device behavior.
 # Find your device's VID/PID by running diagnose_devices.py.
-KEYBOARD_ID = config.get("KEYBOARD_ID", "").upper()
-MOUSE_ID = config.get("MOUSE_ID", "").upper()
+def _parse_id_list(raw) -> list:
+    if isinstance(raw, list):
+        return [str(item).strip().upper() for item in raw if str(item).strip()]
+    return [part.strip().upper() for part in str(raw).split(",") if part.strip()]
+
+KEYBOARD_IDS = _parse_id_list(config.get("KEYBOARD_ID", ""))
+MOUSE_IDS = _parse_id_list(config.get("MOUSE_ID", ""))
 # -------------------------------------------
 
 SERVER_URL = f"{SERVER_BASE}/api/report"
@@ -340,21 +348,23 @@ def get_custom_data():
 
 
 def compute_peripheral_flags(devices: list) -> dict:
-    """Whether a keyboard/mouse is currently connected. If KEYBOARD_ID/MOUSE_ID
-    are configured, this checks for that SPECIFIC device's VID/PID rather than
-    any device Windows happens to classify as Keyboard/Mouse — sidesteps the
-    macro-key-interface and combo-dongle ambiguity entirely, since it's keyed
-    to one exact piece of hardware instead of a PnP class."""
-    if KEYBOARD_ID:
+    """Whether a keyboard/mouse is currently connected. If KEYBOARD_IDS/MOUSE_IDS
+    are configured, this checks for any of those SPECIFIC devices' VID/PID
+    rather than any device Windows happens to classify as Keyboard/Mouse —
+    sidesteps the macro-key-interface and combo-dongle ambiguity entirely,
+    since it's keyed to exact pieces of hardware instead of a PnP class."""
+    if KEYBOARD_IDS:
         has_keyboard = any(
-            d["type"] == "Keyboard" and KEYBOARD_ID in d.get("device_id", "") for d in devices
+            d["type"] == "Keyboard" and any(kid in d.get("device_id", "") for kid in KEYBOARD_IDS)
+            for d in devices
         )
     else:
         has_keyboard = any(d["type"] == "Keyboard" for d in devices)
 
-    if MOUSE_ID:
+    if MOUSE_IDS:
         has_mouse = any(
-            d["type"] == "Mouse" and MOUSE_ID in d.get("device_id", "") for d in devices
+            d["type"] == "Mouse" and any(mid in d.get("device_id", "") for mid in MOUSE_IDS)
+            for d in devices
         )
     else:
         has_mouse = any(d["type"] == "Mouse" for d in devices)

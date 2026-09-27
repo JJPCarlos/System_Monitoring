@@ -1,5 +1,17 @@
-SERVER_ADDRESS = "localhost"
-PORT = "8000"
-API_KEY = "changeme-shared-secret"                       # must match server's API_KEY
-REPORT_INTERVAL = 5                                      # seconds between reports
-DISPLAY_NAME = "System Unit 1"
+# Copy this file to config.toml (same folder) and edit the values below
+# for this specific PC. config.toml itself is NOT meant to be shared between
+# machines — every PC needs its own DISPLAY_NAME / ROOM / SYSTEM_UNIT.
+
+SERVER_ADDRESS = "localhost"     # your server's IP, e.g. "192.168.1.50" (use "localhost" only if agent and server are the same PC)
+PORT = 8000
+API_KEY = "changeme-shared-secret"  # must match API_KEY in server.py
+
+DISPLAY_NAME = "Jhon's Desktop"     # shown on the dashboard
+ROOM = "Room 204"                   # this PC's room — prefills the "Report a Problem" form
+SYSTEM_UNIT = "Unit 5"              # this PC's unit/asset label
+
+REPORT_INTERVAL = 5                 # seconds between full reports
+DEVICE_WATCH_INTERVAL = 2           # how often to check for keyboard/mouse/device plug-unplug (fast, lightweight)
+
+KEYBOARD_ID = "VID_0C45&PID_8006&MI_00"
+MOUSE_ID = ["VID_1D57&PID_FA60&MI_01", "VID_1D57&PID_FA60&MI_01"]
