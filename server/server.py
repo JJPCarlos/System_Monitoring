@@ -374,6 +374,36 @@ async def reset_baseline(device_id: str, request: Request):
     save_baseline(device_id, combined_components(match))
     return {"status": "ok", "baseline_size": len(combined_components(match))}
 
+@app.post("/api/repair-log/{device_id}")
+async def log_repair(device_id: str, request: Request):
+    """Technician-only: log that something was fixed/replaced on this device.
+    Protected the same way as the other admin actions (API key) — only
+    someone with the shared secret (i.e. a technician, not a random dashboard
+    viewer) can add an entry. Reuses the same device_events table/history as
+    connect/disconnect events, tagged with its own event_type so the
+    dashboard can style it distinctly."""
+    if request.headers.get("X-API-Key") != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    body = await request.json()
+    note = body.get("note", "").strip()
+    technician = body.get("technician", "").strip() or "Technician"
+    if not note:
+        raise HTTPException(status_code=400, detail="note is required")
+
+    devices = get_latest_per_device()
+    match = next((d for d in devices if d["device_id"] == device_id), None)
+    hostname = match["hostname"] if match else device_id
+    timestamp = time.time()
+
+    log_device_event(device_id, hostname, "repaired", {"type": technician, "name": note}, timestamp)
+    event = {
+        "device_id": device_id, "hostname": hostname, "event_type": "repaired",
+        "component_type": technician, "component_name": note, "timestamp": timestamp,
+    }
+    await manager.broadcast({"type": "device_event", "data": event})
+    return {"status": "ok"}
+
 @app.get("/api/devices")
 async def list_devices():
     return get_latest_per_device()

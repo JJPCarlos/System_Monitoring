@@ -40,12 +40,16 @@
 
   /* ---- Modal ---- */
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+  #repairOverlay { z-index: 300; } /* stacks above the device-detail modal so it can open on top of it */
   .overlay.open { display: flex; }
   .modal { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 12px; padding: 24px; width: min(560px, 90vw); max-height: 85vh; overflow-y: auto; position: relative; }
   .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: #9aa1ac; font-size: 20px; cursor: pointer; line-height: 1; }
   .modal-close:hover { color: #e6e6e6; }
   .modal h2 { margin: 0 0 4px 0; font-size: 20px; }
   .section-title { font-size: 13px; color: #9aa1ac; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px 0; }
+  .section-title.collapsible { cursor: pointer; user-select: none; }
+  .section-title.collapsible:hover { color: #e6e6e6; }
+  .collapse-arrow { display: inline-block; width: 14px; font-size: 10px; }
   .device-list { font-size: 13px; color: #cfd3da; }
   .device-list div { padding: 4px 0; border-bottom: 1px solid #22252c; }
   .missing-box { margin-top: 10px; padding: 10px 12px; border-radius: 6px; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); }
@@ -87,6 +91,7 @@
   .history-item { padding: 5px 0; border-bottom: 1px solid #22252c; display: flex; justify-content: space-between; }
   .history-item.connected { color: #3ddc84; }
   .history-item.disconnected { color: #ff5c5c; }
+  .history-item.repaired { color: #4f8cff; }
   .history-time { color: #6b7280; }
 
   /* ---- Sound toggle ---- */
@@ -108,6 +113,9 @@
     <div class="bell-dropdown" id="bellDropdown">
       <div class="bell-dropdown-title">Reported Problems</div>
       <div id="issuesList"><div class="no-issues">No open problems.</div></div>
+
+      <div class="bell-dropdown-title" style="margin-top:16px;">Recent Activity</div>
+      <div id="activityList"><div class="no-issues">Nothing yet.</div></div>
     </div>
   </div>
 
@@ -125,6 +133,25 @@
     <div class="modal" id="modal"></div>
   </div>
 
+  <div class="overlay" id="repairOverlay">
+    <div class="modal" style="width:min(380px, 90vw);">
+      <button class="modal-close" id="repairFormClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:18px;">🛠️ Log a Repair</h2>
+      <div style="font-size:12px;color:#9aa1ac;margin-bottom:18px;" id="repairFormDeviceLabel"></div>
+
+      <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">What was fixed or replaced?</label>
+      <textarea id="repairNoteInput" rows="3" placeholder="e.g. Replaced keyboard, Reseated RAM..." style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:16px;" required></textarea>
+
+      <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">Name</label>
+      <input type="text" id="repairTechInput" placeholder="Your name" required style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;margin-bottom:20px;"/>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="repairFormCancel">Cancel</button>
+        <button class="resolve-btn" id="repairFormSubmit" style="background:#4f8cff;color:white;border-color:#4f8cff;">Submit</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 const onlineGrid = document.getElementById("onlineGrid");
 const offlineGrid = document.getElementById("offlineGrid");
@@ -139,12 +166,40 @@ const bellIcon = document.getElementById("bellIcon");
 const bellBadge = document.getElementById("bellBadge");
 const bellDropdown = document.getElementById("bellDropdown");
 const issuesListEl = document.getElementById("issuesList");
+const activityListEl = document.getElementById("activityList");
 const cards = {};       // device_id -> card element
 const lastPayload = {}; // device_id -> last full payload
 const lastMissingCount = {}; // device_id -> number of missing components on the previous update
 let openDeviceId = null; // which device's modal is currently open, if any
 let soundEnabled = true;
 let openIssues = []; // current open (unresolved) problem reports
+let activityLog = []; // recent notifications (session-only — resets on page reload), newest first
+const MAX_ACTIVITY_LOG = 30;
+// Which collapsible sections in the device modal are currently expanded.
+// Kept outside the render function on purpose — the modal re-renders on every
+// live update, which would otherwise snap open sections shut again each time.
+const expandedSections = { internal: false, peripherals: false };
+// Same idea for the Connection History / Repair Log lists: remember whether
+// each was opened and what it showed, so a live re-render can restore it
+// instead of wiping it. Tied to one device at a time (reset when a different
+// device's modal is opened).
+const logState = {
+  deviceId: null,
+  history: { open: false, html: "" },
+  repair: { open: false, html: "" },
+};
+function resetLogState(deviceId) {
+  logState.deviceId = deviceId;
+  logState.history = { open: false, html: "" };
+  logState.repair = { open: false, html: "" };
+}
+// Put back whatever was showing in the log lists before the last re-render.
+function restoreLogs() {
+  const h = document.getElementById("historyList");
+  const r = document.getElementById("repairLogList");
+  if (h && logState.history.open) h.innerHTML = logState.history.html;
+  if (r && logState.repair.open) r.innerHTML = logState.repair.html;
+}
 
 // Must match API_KEY in server.py — needed so the "Resolve" button can call
 // the server. Fine for a trusted LAN dashboard; don't expose this page to
@@ -244,6 +299,27 @@ function showToast(title, body, kind = "alert") {
 function notify(title, body, kind = "alert") {
   showToast(title, body, kind);
   if (kind === "alert") playAlertSound();
+  logActivity(title, body, kind);
+}
+
+function logActivity(title, body, kind) {
+  activityLog.unshift({ title, body, kind, timestamp: Date.now() / 1000 });
+  if (activityLog.length > MAX_ACTIVITY_LOG) activityLog.length = MAX_ACTIVITY_LOG;
+  renderActivity();
+}
+
+function renderActivity() {
+  if (!activityLog.length) {
+    activityListEl.innerHTML = `<div class="no-issues">Nothing yet.</div>`;
+    return;
+  }
+  activityListEl.innerHTML = activityLog.map(a => `
+    <div class="issue-card" style="border-color: ${a.kind === 'alert' ? 'rgba(255,92,92,0.3)' : 'rgba(61,220,132,0.3)'};">
+      <div class="issue-desc">${a.title}</div>
+      <div class="issue-meta">${a.body}</div>
+      <div class="issue-meta">${new Date(a.timestamp*1000).toLocaleString()}</div>
+    </div>
+  `).join("");
 }
 
 function naturalCompare(a, b) {
@@ -364,22 +440,82 @@ function renderModalContent(payload) {
 
     ${missingHtml}
 
-    <div class="section-title">Internal Components (${internal.length})</div>
-    <div class="device-list">${internal.map(d => `<div>[${d.type}] ${d.name}${d.slot ? ` — slot ${d.slot}` : ""}${d.size_gb ? ` — ${d.size_gb} GB` : ""}</div>`).join("") || "—"}</div>
+    <div class="section-title collapsible" id="internalToggle">
+      <span class="collapse-arrow">${expandedSections.internal ? "▼" : "▶"}</span> Internal Components (${internal.length})
+    </div>
+    <div class="device-list" id="internalList" style="display:${expandedSections.internal ? "block" : "none"};">${internal.map(d => `<div>[${d.type}] ${d.name}${d.slot ? ` — slot ${d.slot}` : ""}${d.size_gb ? ` — ${d.size_gb} GB` : ""}</div>`).join("") || "—"}</div>
 
-    <div class="section-title">Peripherals (${devices.length})</div>
-    <div class="device-list">${devices.map(d => `<div>[${d.type}] ${d.name}</div>`).join("") || "—"}</div>
+    <div class="section-title collapsible" id="peripheralsToggle">
+      <span class="collapse-arrow">${expandedSections.peripherals ? "▼" : "▶"}</span> Peripherals / External Devices (${devices.length})
+    </div>
+    <div class="device-list" id="peripheralsList" style="display:${expandedSections.peripherals ? "block" : "none"};">${devices.map(d => `<div>[${d.type}] ${d.name}</div>`).join("") || "—"}</div>
 
     <button class="history-btn" id="historyBtn">📜 View Connection History</button>
     <div class="history-list" id="historyList"></div>
 
+    <div class="section-title" style="margin-top:18px;">🛠️ Repair Log</div>
+    <button class="history-btn" id="viewRepairLogBtn">📖 View Repair Log</button>
+    <button class="history-btn" id="logRepairBtn" style="margin-left:8px; border-color: rgba(79,140,255,0.4); color: #4f8cff;">+ Log a Repair</button>
+    <div class="history-list" id="repairLogList"></div>
+
     <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleString()}</div>
   `;
   document.getElementById("modalClose").addEventListener("click", closeModal);
+  document.getElementById("internalToggle").addEventListener("click", () => toggleSection("internal"));
+  document.getElementById("peripheralsToggle").addEventListener("click", () => toggleSection("peripherals"));
   document.getElementById("historyBtn").addEventListener("click", () => loadHistory(payload.device_id));
+  document.getElementById("viewRepairLogBtn").addEventListener("click", () => loadRepairLog(payload.device_id));
+  document.getElementById("logRepairBtn").addEventListener("click", () => openRepairForm(payload.device_id));
   const resetBtn = document.getElementById("resetBaselineBtn");
   if (resetBtn) {
     resetBtn.addEventListener("click", () => resetBaseline(payload.device_id));
+  }
+  restoreLogs(); // put back any log list the user had open before this re-render
+}
+
+// ----------------- Floating "Log a Repair" form -----------------
+let repairTargetDeviceId = null;
+
+function openRepairForm(deviceId) {
+  repairTargetDeviceId = deviceId;
+  document.getElementById("repairFormDeviceLabel").textContent = (lastPayload[deviceId] || {}).hostname || deviceId;
+  document.getElementById("repairNoteInput").value = "";
+  document.getElementById("repairTechInput").value = "";
+  document.getElementById("repairOverlay").classList.add("open");
+  document.getElementById("repairNoteInput").focus();
+}
+
+function closeRepairForm() {
+  document.getElementById("repairOverlay").classList.remove("open");
+  repairTargetDeviceId = null;
+}
+
+async function submitRepairForm() {
+  const note = document.getElementById("repairNoteInput").value.trim();
+  const technician = document.getElementById("repairTechInput").value.trim();
+  if (!note) {
+    alert("Please describe what was fixed or replaced.");
+    return;
+  }
+  const deviceId = repairTargetDeviceId;
+  closeRepairForm();
+
+  try {
+    const resp = await fetch(`/api/repair-log/${encodeURIComponent(deviceId)}`, {
+      method: "POST",
+      headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ note, technician }),
+    });
+    if (resp.ok) {
+      showToast("🛠️ Repair Logged", note, "connected");
+      if (openDeviceId === deviceId) loadRepairLog(deviceId);
+    } else if (resp.status === 401) {
+      alert("Failed — API_KEY in this dashboard doesn't match the server's. A technician needs to fix that first.");
+    } else {
+      alert("Could not log the repair — check the server connection.");
+    }
+  } catch (e) {
+    alert("Could not reach the server.");
   }
 }
 
@@ -402,36 +538,80 @@ async function resetBaseline(deviceId) {
   }
 }
 
+function toggleSection(name) {
+  expandedSections[name] = !expandedSections[name];
+  const listEl = document.getElementById(name === "internal" ? "internalList" : "peripheralsList");
+  const toggleEl = document.getElementById(name === "internal" ? "internalToggle" : "peripheralsToggle");
+  if (listEl) listEl.style.display = expandedSections[name] ? "block" : "none";
+  if (toggleEl) toggleEl.querySelector(".collapse-arrow").textContent = expandedSections[name] ? "▼" : "▶";
+}
+
 async function loadHistory(deviceId) {
-  const listEl = document.getElementById("historyList");
-  if (!listEl) return;
-  listEl.innerHTML = `<div style="color:#6b7280;">Loading…</div>`;
+  logState.history.open = true;
+  const setList = (html) => {
+    // Re-query every time: a live update may have re-rendered the modal
+    // (replacing this element) while the request was in flight.
+    logState.history.html = html;
+    const el = document.getElementById("historyList");
+    if (el && logState.deviceId === deviceId) el.innerHTML = html;
+  };
+  if (!logState.history.html) setList(`<div style="color:#6b7280;">Loading…</div>`);
   try {
     const resp = await fetch(`/api/history/${encodeURIComponent(deviceId)}`);
-    const events = await resp.json();
+    const allEvents = await resp.json();
+    const events = allEvents.filter(e => e.event_type !== "repaired"); // repairs live in their own section
     if (!events.length) {
-      listEl.innerHTML = `<div style="color:#6b7280;">No connect/disconnect events recorded yet.</div>`;
+      setList(`<div style="color:#6b7280;">No connect/disconnect events recorded yet.</div>`);
       return;
     }
-    listEl.innerHTML = events.map(e => `
+    setList(events.map(e => `
       <div class="history-item ${e.event_type}">
         <span>${e.event_type === "connected" ? "🔌+" : "🔌−"} ${e.component_type}: ${e.component_name}</span>
         <span class="history-time">${new Date(e.timestamp*1000).toLocaleString()}</span>
       </div>
-    `).join("");
+    `).join(""));
   } catch (e) {
-    listEl.innerHTML = `<div style="color:#ff5c5c;">Could not load history.</div>`;
+    setList(`<div style="color:#ff5c5c;">Could not load history.</div>`);
+  }
+}
+
+async function loadRepairLog(deviceId) {
+  logState.repair.open = true;
+  const setList = (html) => {
+    logState.repair.html = html;
+    const el = document.getElementById("repairLogList");
+    if (el && logState.deviceId === deviceId) el.innerHTML = html;
+  };
+  if (!logState.repair.html) setList(`<div style="color:#6b7280;">Loading…</div>`);
+  try {
+    const resp = await fetch(`/api/history/${encodeURIComponent(deviceId)}`);
+    const allEvents = await resp.json();
+    const events = allEvents.filter(e => e.event_type === "repaired");
+    if (!events.length) {
+      setList(`<div style="color:#6b7280;">No repairs logged yet.</div>`);
+      return;
+    }
+    setList(events.map(e => `
+      <div class="history-item repaired">
+        <span>🛠️ ${e.component_name} <span style="color:#6b7280;">— ${e.component_type}</span></span>
+        <span class="history-time">${new Date(e.timestamp*1000).toLocaleString()}</span>
+      </div>
+    `).join(""));
+  } catch (e) {
+    setList(`<div style="color:#ff5c5c;">Could not load repair log.</div>`);
   }
 }
 
 function openModal(deviceId) {
   openDeviceId = deviceId;
+  if (logState.deviceId !== deviceId) resetLogState(deviceId);
   renderModalContent(lastPayload[deviceId]);
   overlay.classList.add("open");
 }
 
 function closeModal() {
   openDeviceId = null;
+  resetLogState(null);
   overlay.classList.remove("open");
 }
 
@@ -439,7 +619,14 @@ overlay.addEventListener("click", (e) => {
   if (e.target === overlay) closeModal(); // click outside modal closes it
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeModal();
+  if (e.key === "Escape") { closeModal(); closeRepairForm(); }
+});
+
+document.getElementById("repairFormClose").addEventListener("click", closeRepairForm);
+document.getElementById("repairFormCancel").addEventListener("click", closeRepairForm);
+document.getElementById("repairFormSubmit").addEventListener("click", submitRepairForm);
+document.getElementById("repairOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "repairOverlay") closeRepairForm();
 });
 
 function applyStatusUpdate(deviceId, status) {
@@ -455,15 +642,21 @@ function applyStatusUpdate(deviceId, status) {
 }
 
 function handleDeviceEvent(evt) {
-  const isDisconnect = evt.event_type === "disconnected";
-  notify(
-    `${isDisconnect ? "🔌 Disconnected" : "🔌 Connected"} — ${evt.hostname}`,
-    `${evt.component_type}: ${evt.component_name}`,
-    isDisconnect ? "alert" : "connected"
-  );
-  // Refresh the history panel live if this device's modal happens to be open
-  if (openDeviceId === evt.device_id && document.getElementById("historyList")) {
-    loadHistory(evt.device_id);
+  if (evt.event_type === "repaired") {
+    notify(`🛠️ Repair Logged — ${evt.hostname}`, `${evt.component_name} (by ${evt.component_type})`, "connected");
+    if (openDeviceId === evt.device_id && logState.repair.open) {
+      loadRepairLog(evt.device_id);
+    }
+  } else {
+    const isDisconnect = evt.event_type === "disconnected";
+    notify(
+      `${isDisconnect ? "🔌 Disconnected" : "🔌 Connected"} — ${evt.hostname}`,
+      `${evt.component_type}: ${evt.component_name}`,
+      isDisconnect ? "alert" : "connected"
+    );
+    if (openDeviceId === evt.device_id && logState.history.open) {
+      loadHistory(evt.device_id);
+    }
   }
 }
 
