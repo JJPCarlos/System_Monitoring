@@ -387,21 +387,30 @@ async def log_repair(device_id: str, request: Request):
 
     body = await request.json()
     note = body.get("note", "").strip()
-    technician = body.get("technician", "").strip() or "Technician"
+    name = body.get("name", "").strip()
     if not note:
         raise HTTPException(status_code=400, detail="note is required")
+    if not name:
+        raise HTTPException(status_code=400, detail="name is required")
 
     devices = get_latest_per_device()
     match = next((d for d in devices if d["device_id"] == device_id), None)
     hostname = match["hostname"] if match else device_id
     timestamp = time.time()
 
-    log_device_event(device_id, hostname, "repaired", {"type": technician, "name": note}, timestamp)
+    log_device_event(device_id, hostname, "repaired", {"type": name, "name": note}, timestamp)
     event = {
         "device_id": device_id, "hostname": hostname, "event_type": "repaired",
-        "component_type": technician, "component_name": note, "timestamp": timestamp,
+        "component_type": name, "component_name": note, "timestamp": timestamp,
     }
     await manager.broadcast({"type": "device_event", "data": event})
+
+    # Optional: caller can ask to also save the CURRENT internal components as
+    # the new expected baseline in the same request — e.g. after installing a
+    # new RAM stick, this stops it from showing as "missing" forever.
+    if body.get("update_baseline") and match:
+        save_baseline(device_id, combined_components(match))
+
     return {"status": "ok"}
 
 @app.get("/api/devices")

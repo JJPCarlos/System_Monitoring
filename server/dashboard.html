@@ -140,10 +140,15 @@
       <div style="font-size:12px;color:#9aa1ac;margin-bottom:18px;" id="repairFormDeviceLabel"></div>
 
       <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">What was fixed or replaced?</label>
-      <textarea id="repairNoteInput" rows="3" placeholder="e.g. Replaced keyboard, Reseated RAM..." style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:16px;" required></textarea>
+      <textarea id="repairNoteInput" rows="3" placeholder="e.g. Replaced keyboard, Reseated RAM..." style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:16px;"></textarea>
 
-      <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">Name</label>
-      <input type="text" id="repairTechInput" placeholder="Your name" required style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;margin-bottom:20px;"/>
+      <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">Your Name <span style="color:#ff5c5c;">*</span></label>
+      <input type="text" id="repairTechInput" placeholder="Required" style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;margin-bottom:16px;" />
+
+      <label style="font-size:13px;color:#cfd3da;display:flex;align-items:flex-start;gap:8px;margin-bottom:20px;cursor:pointer;">
+        <input type="checkbox" id="repairUpdateBaseline" style="margin-top:3px;">
+        <span>Also save the current internal components as the new expected baseline (use this if you installed/swapped hardware)</span>
+      </label>
 
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="resolve-btn" id="repairFormCancel">Cancel</button>
@@ -481,6 +486,7 @@ function openRepairForm(deviceId) {
   document.getElementById("repairFormDeviceLabel").textContent = (lastPayload[deviceId] || {}).hostname || deviceId;
   document.getElementById("repairNoteInput").value = "";
   document.getElementById("repairTechInput").value = "";
+  document.getElementById("repairUpdateBaseline").checked = false;
   document.getElementById("repairOverlay").classList.add("open");
   document.getElementById("repairNoteInput").focus();
 }
@@ -492,9 +498,14 @@ function closeRepairForm() {
 
 async function submitRepairForm() {
   const note = document.getElementById("repairNoteInput").value.trim();
-  const technician = document.getElementById("repairTechInput").value.trim();
+  const name = document.getElementById("repairTechInput").value.trim();
+  const updateBaseline = document.getElementById("repairUpdateBaseline").checked;
   if (!note) {
     alert("Please describe what was fixed or replaced.");
+    return;
+  }
+  if (!name) {
+    alert("Please enter your name.");
     return;
   }
   const deviceId = repairTargetDeviceId;
@@ -504,13 +515,16 @@ async function submitRepairForm() {
     const resp = await fetch(`/api/repair-log/${encodeURIComponent(deviceId)}`, {
       method: "POST",
       headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ note, technician }),
+      body: JSON.stringify({ note, name, update_baseline: updateBaseline }),
     });
     if (resp.ok) {
-      showToast("🛠️ Repair Logged", note, "connected");
+      showToast("🛠️ Repair Logged", updateBaseline ? `${note} — baseline updated` : note, "connected");
       if (openDeviceId === deviceId) loadRepairLog(deviceId);
     } else if (resp.status === 401) {
       alert("Failed — API_KEY in this dashboard doesn't match the server's. A technician needs to fix that first.");
+    } else if (resp.status === 400) {
+      const body = await resp.json().catch(() => ({}));
+      alert(body.detail || "Missing required field.");
     } else {
       alert("Could not log the repair — check the server connection.");
     }
