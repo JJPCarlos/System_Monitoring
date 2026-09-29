@@ -4,8 +4,20 @@
 <meta charset="UTF-8">
 <title>Device Tracker — Live Dashboard</title>
 <style>
-  body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e6e6; margin: 0; padding: 24px; }
+  body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e6e6; margin: 0; padding: 24px; padding-right: 360px; }
   h1 { font-weight: 600; }
+  .notif-sidebar { position: fixed; top: 76px; right: 20px; width: 320px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 16px; z-index: 50; }
+  .notif-sidebar h2 { font-size: 15px; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .notif-sidebar-list { overflow-y: auto; flex: 1; }
+  .notif-alert-card { background: #22252c; border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+  .notif-alert-card:hover { border-color: #ff5c5c; }
+  .notif-alert-host { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: #4f8cff; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
+  .notif-alert-desc { font-size: 13px; color: #ffb3b3; }
+  .notif-alert-time { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .notif-alert-actions { margin-top: 8px; }
+  .notif-repair-btn { background: #2a2e37; border: 1px solid rgba(79,140,255,0.4); color: #4f8cff; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
+  .notif-repair-btn:hover { background: #4f8cff; color: white; }
+  .notif-section-title { font-size: 13px; font-weight: 600; color: #cfd3da; margin: 4px 0 10px 0; }
   .section-header { font-size: 15px; font-weight: 600; color: #cfd3da; margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
   .section-count { font-weight: 400; color: #6b7280; font-size: 13px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
@@ -66,16 +78,6 @@
   .resolve-btn:hover { background: #3ddc84; color: #0f1115; border-color: #3ddc84; }
   .no-issues { color: #6b7280; font-size: 13px; padding: 8px 0; }
 
-  /* ---- Notification bell ---- */
-  .bell-wrap { position: fixed; top: 20px; right: 20px; z-index: 200; }
-  .bell-btn { background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; }
-  .bell-btn:hover { border-color: #4f8cff; }
-  .bell-btn.has-notifications { color: #ff5c5c; border-color: rgba(255,92,92,0.4); }
-  .bell-badge { position: absolute; top: -4px; right: -4px; background: #ff5c5c; color: white; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
-  .bell-dropdown { display: none; position: absolute; top: 48px; right: 0; width: 320px; max-height: 420px; overflow-y: auto; background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-  .bell-dropdown.open { display: block; }
-  .bell-dropdown-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
-
   /* ---- Toast notifications ---- */
   .toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
   .toast { background: #1a1d24; border-left: 4px solid #ff5c5c; border-radius: 6px; padding: 10px 14px; width: 300px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); animation: slideIn 0.2s ease-out; font-size: 13px; }
@@ -102,26 +104,20 @@
 <body>
   <button class="sound-toggle" id="soundToggle">🔔 Sound On</button>
 
-  <div class="bell-wrap" id="bellWrap">
-    <button class="bell-btn" id="bellBtn">
-      <svg id="bellIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-      </svg>
-      <span class="bell-badge" id="bellBadge" style="display:none;">0</span>
-    </button>
-    <div class="bell-dropdown" id="bellDropdown">
-      <div class="bell-dropdown-title">Reported Problems</div>
-      <div id="issuesList"><div class="no-issues">No open problems.</div></div>
-
-      <div class="bell-dropdown-title" style="margin-top:16px;">Recent Activity</div>
-      <div id="activityList"><div class="no-issues">Nothing yet.</div></div>
-    </div>
-  </div>
-
   <div class="toast-container" id="toastContainer"></div>
 
   <h1>🖥️ Device Tracker — Live Dashboard</h1>
+
+  <div class="notif-sidebar">
+    <h2>⚠️ Notifications <span class="section-count" id="notifSidebarCount">(0)</span></h2>
+    <div class="notif-sidebar-list">
+      <div class="notif-section-title">Reported Problems</div>
+      <div id="issuesList"><div class="no-issues">No open problems.</div></div>
+
+      <div class="notif-section-title" style="margin-top:18px;">Alerts</div>
+      <div id="notifSidebarList"><div class="no-issues">No active alerts.</div></div>
+    </div>
+  </div>
 
   <div class="section-header">🟢 Online <span class="section-count" id="onlineCount">(0)</span></div>
   <div class="grid" id="onlineGrid"></div>
@@ -137,7 +133,9 @@
     <div class="modal" style="width:min(380px, 90vw);">
       <button class="modal-close" id="repairFormClose">✕</button>
       <h2 style="margin:0 0 4px 0; font-size:18px;">🛠️ Log a Repair</h2>
-      <div style="font-size:12px;color:#9aa1ac;margin-bottom:18px;" id="repairFormDeviceLabel"></div>
+      <div style="font-size:12px;color:#9aa1ac;margin-bottom:12px;" id="repairFormDeviceLabel"></div>
+
+      <div id="repairFormError" style="display:none;color:#ff5c5c;font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
       <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">What was fixed or replaced?</label>
       <textarea id="repairNoteInput" rows="3" placeholder="e.g. Replaced keyboard, Reseated RAM..." style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:16px;"></textarea>
@@ -166,20 +164,20 @@ const overlay = document.getElementById("overlay");
 const modal = document.getElementById("modal");
 const toastContainer = document.getElementById("toastContainer");
 const soundToggle = document.getElementById("soundToggle");
-const bellBtn = document.getElementById("bellBtn");
-const bellIcon = document.getElementById("bellIcon");
-const bellBadge = document.getElementById("bellBadge");
-const bellDropdown = document.getElementById("bellDropdown");
 const issuesListEl = document.getElementById("issuesList");
-const activityListEl = document.getElementById("activityList");
 const cards = {};       // device_id -> card element
 const lastPayload = {}; // device_id -> last full payload
 const lastMissingCount = {}; // device_id -> number of missing components on the previous update
 let openDeviceId = null; // which device's modal is currently open, if any
 let soundEnabled = true;
 let openIssues = []; // current open (unresolved) problem reports
-let activityLog = []; // recent notifications (session-only — resets on page reload), newest first
-const MAX_ACTIVITY_LOG = 30;
+// Right after a repair is logged for a device, suppress its sidebar alerts
+// for a grace period rather than requiring an immediate fresh report to
+// clear them. If the device still reports the same problem once the grace
+// period ends, the alert correctly reappears — this is a temporary "give it
+// a moment to confirm" state, not a permanent dismissal.
+const repairGraceUntil = {}; // device_id -> ms timestamp until which alerts are suppressed
+const REPAIR_GRACE_MS = 30000;
 // Which collapsible sections in the device modal are currently expanded.
 // Kept outside the render function on purpose — the modal re-renders on every
 // live update, which would otherwise snap open sections shut again each time.
@@ -218,24 +216,7 @@ const STATUS_TEXT = {
   crashed: "Crashed",
 };
 
-// ----------------- Notification bell -----------------
-bellBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  bellDropdown.classList.toggle("open");
-});
-document.addEventListener("click", (e) => {
-  if (!bellDropdown.contains(e.target) && e.target !== bellBtn) {
-    bellDropdown.classList.remove("open");
-  }
-});
-
 function renderIssues() {
-  const hasOpen = openIssues.length > 0;
-  bellBadge.style.display = hasOpen ? "flex" : "none";
-  bellBadge.textContent = openIssues.length;
-  bellIcon.setAttribute("fill", hasOpen ? "currentColor" : "none");
-  bellBtn.classList.toggle("has-notifications", hasOpen);
-
   if (!openIssues.length) {
     issuesListEl.innerHTML = `<div class="no-issues">No open problems.</div>`;
     return;
@@ -304,27 +285,6 @@ function showToast(title, body, kind = "alert") {
 function notify(title, body, kind = "alert") {
   showToast(title, body, kind);
   if (kind === "alert") playAlertSound();
-  logActivity(title, body, kind);
-}
-
-function logActivity(title, body, kind) {
-  activityLog.unshift({ title, body, kind, timestamp: Date.now() / 1000 });
-  if (activityLog.length > MAX_ACTIVITY_LOG) activityLog.length = MAX_ACTIVITY_LOG;
-  renderActivity();
-}
-
-function renderActivity() {
-  if (!activityLog.length) {
-    activityListEl.innerHTML = `<div class="no-issues">Nothing yet.</div>`;
-    return;
-  }
-  activityListEl.innerHTML = activityLog.map(a => `
-    <div class="issue-card" style="border-color: ${a.kind === 'alert' ? 'rgba(255,92,92,0.3)' : 'rgba(61,220,132,0.3)'};">
-      <div class="issue-desc">${a.title}</div>
-      <div class="issue-meta">${a.body}</div>
-      <div class="issue-meta">${new Date(a.timestamp*1000).toLocaleString()}</div>
-    </div>
-  `).join("");
 }
 
 function naturalCompare(a, b) {
@@ -401,9 +361,78 @@ function renderCard(payload) {
 
   relayoutSection(onlineGrid, onlineCountEl);
   relayoutSection(offlineGrid, offlineCountEl);
+  renderNotificationSidebar();
 
   // If this device's modal is currently open, refresh its contents live too
   if (openDeviceId === id) renderModalContent(payload);
+}
+
+// Persistent right-hand alerts panel — separate from the bell dropdown, this
+// stays on screen at all times rather than needing a click to reveal.
+// Rebuilt from lastPayload (every device's most recent report) each time any
+// device updates, so it's always showing current state, not a stale snapshot.
+function renderNotificationSidebar() {
+  const alerts = [];
+  const now = Date.now();
+
+  Object.values(lastPayload).forEach(p => {
+    if (repairGraceUntil[p.device_id] && now < repairGraceUntil[p.device_id]) return; // just logged a repair — give it a moment
+
+    const pf = p.peripheral_flags || {};
+    if (pf.has_keyboard === false) {
+      alerts.push({
+        device_id: p.device_id, hostname: p.hostname,
+        desc: "⌨️ No keyboard detected", timestamp: p.timestamp,
+      });
+    }
+    if (pf.has_mouse === false) {
+      alerts.push({
+        device_id: p.device_id, hostname: p.hostname,
+        desc: "🖱️ No mouse detected", timestamp: p.timestamp,
+      });
+    }
+    (p.missing_components || []).forEach(m => {
+      alerts.push({
+        device_id: p.device_id, hostname: p.hostname,
+        desc: `⚠️ Missing: ${m.type} — ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}`,
+        timestamp: p.timestamp,
+      });
+    });
+  });
+
+  alerts.sort((a, b) => b.timestamp - a.timestamp);
+
+  const listEl = document.getElementById("notifSidebarList");
+  const countEl = document.getElementById("notifSidebarCount");
+  countEl.textContent = `(${alerts.length})`;
+
+  if (!alerts.length) {
+    listEl.innerHTML = `<div class="no-issues">No active alerts.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = alerts.map(a => `
+    <div class="notif-alert-card" data-device-id="${a.device_id}">
+      <span class="notif-alert-host">${a.hostname}</span>
+      <div class="notif-alert-desc">${a.desc}</div>
+      <div class="notif-alert-time">${new Date(a.timestamp*1000).toLocaleString()}</div>
+      <div class="notif-alert-actions">
+        <button class="notif-repair-btn" data-device-id="${a.device_id}">🛠️ Log Repair</button>
+      </div>
+    </div>
+  `).join("");
+
+  listEl.querySelectorAll(".notif-alert-card").forEach(el => {
+    el.addEventListener("click", () => openModal(el.dataset.deviceId));
+  });
+  // Stop the repair button's click from also triggering the card's own
+  // click handler above (which would open the device modal at the same time).
+  listEl.querySelectorAll(".notif-repair-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openRepairForm(btn.dataset.deviceId);
+    });
+  });
 }
 
 function renderModalContent(payload) {
@@ -487,29 +516,60 @@ function openRepairForm(deviceId) {
   document.getElementById("repairNoteInput").value = "";
   document.getElementById("repairTechInput").value = "";
   document.getElementById("repairUpdateBaseline").checked = false;
+  hideRepairFormError();
   document.getElementById("repairOverlay").classList.add("open");
   document.getElementById("repairNoteInput").focus();
 }
 
 function closeRepairForm() {
   document.getElementById("repairOverlay").classList.remove("open");
+  hideRepairFormError();
   repairTargetDeviceId = null;
+}
+
+function showRepairFormError(message) {
+  const errEl = document.getElementById("repairFormError");
+  errEl.textContent = message;
+  errEl.style.display = "block";
+}
+
+function hideRepairFormError() {
+  const errEl = document.getElementById("repairFormError");
+  errEl.style.display = "none";
+  errEl.textContent = "";
+}
+
+function markRepairFieldInvalid(inputId, invalid) {
+  const el = document.getElementById(inputId);
+  el.style.borderColor = invalid ? "#ff5c5c" : "#2a2e37";
 }
 
 async function submitRepairForm() {
   const note = document.getElementById("repairNoteInput").value.trim();
   const name = document.getElementById("repairTechInput").value.trim();
   const updateBaseline = document.getElementById("repairUpdateBaseline").checked;
+
+  markRepairFieldInvalid("repairNoteInput", !note);
+  markRepairFieldInvalid("repairTechInput", !name);
+
+  if (!note && !name) {
+    showRepairFormError("Please describe what was fixed and enter your name.");
+    return;
+  }
   if (!note) {
-    alert("Please describe what was fixed or replaced.");
+    showRepairFormError("Please describe what was fixed or replaced.");
     return;
   }
   if (!name) {
-    alert("Please enter your name.");
+    showRepairFormError("Please enter your name.");
     return;
   }
+  hideRepairFormError();
+
   const deviceId = repairTargetDeviceId;
-  closeRepairForm();
+  const submitBtn = document.getElementById("repairFormSubmit");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting…";
 
   try {
     const resp = await fetch(`/api/repair-log/${encodeURIComponent(deviceId)}`, {
@@ -519,17 +579,23 @@ async function submitRepairForm() {
     });
     if (resp.ok) {
       showToast("🛠️ Repair Logged", updateBaseline ? `${note} — baseline updated` : note, "connected");
+      repairGraceUntil[deviceId] = Date.now() + REPAIR_GRACE_MS;
+      renderNotificationSidebar(); // drop this device's alerts from the sidebar right away
       if (openDeviceId === deviceId) loadRepairLog(deviceId);
+      closeRepairForm();
     } else if (resp.status === 401) {
-      alert("Failed — API_KEY in this dashboard doesn't match the server's. A technician needs to fix that first.");
+      showRepairFormError("API_KEY in this dashboard doesn't match the server's. A technician needs to fix that first.");
     } else if (resp.status === 400) {
       const body = await resp.json().catch(() => ({}));
-      alert(body.detail || "Missing required field.");
+      showRepairFormError(body.detail || "Missing required field.");
     } else {
-      alert("Could not log the repair — check the server connection.");
+      showRepairFormError("Could not log the repair — check the server connection.");
     }
   } catch (e) {
-    alert("Could not reach the server.");
+    showRepairFormError("Could not reach the server.");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit";
   }
 }
 
@@ -642,6 +708,8 @@ document.getElementById("repairFormSubmit").addEventListener("click", submitRepa
 document.getElementById("repairOverlay").addEventListener("click", (e) => {
   if (e.target.id === "repairOverlay") closeRepairForm();
 });
+document.getElementById("repairNoteInput").addEventListener("input", () => markRepairFieldInvalid("repairNoteInput", false));
+document.getElementById("repairTechInput").addEventListener("input", () => markRepairFieldInvalid("repairTechInput", false));
 
 function applyStatusUpdate(deviceId, status) {
   const prev = lastPayload[deviceId];
