@@ -19,6 +19,10 @@
   .notif-repair-btn:hover { background: #4f8cff; color: white; }
   .notif-section-title { font-size: 13px; font-weight: 600; color: #cfd3da; margin: 4px 0 10px 0; }
   .section-header { font-size: 15px; font-weight: 600; color: #cfd3da; margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
+  .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .filter-btn { background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+  .filter-btn:hover { border-color: #4f8cff; }
+  .filter-btn.active { background: #4f8cff; border-color: #4f8cff; color: white; }
   .section-count { font-weight: 400; color: #6b7280; font-size: 13px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
 
@@ -118,6 +122,8 @@
       <div id="notifSidebarList"><div class="no-issues">No active alerts.</div></div>
     </div>
   </div>
+
+  <div class="filter-bar" id="filterBar"></div>
 
   <div class="section-header">🟢 Online <span class="section-count" id="onlineCount">(0)</span></div>
   <div class="grid" id="onlineGrid"></div>
@@ -296,7 +302,50 @@ function relayoutSection(container, countEl) {
   const cardEls = Array.from(container.children);
   cardEls.sort((a, b) => naturalCompare(a.dataset.hostname || "", b.dataset.hostname || ""));
   cardEls.forEach(el => container.appendChild(el)); // re-appending in sorted order moves them into place
-  countEl.textContent = `(${cardEls.length})`;
+  countEl.textContent = `(${cardEls.length})`; // recomputed by applyFilter() below when a filter is active
+}
+
+// ----------------- Group filter buttons -----------------
+// Edit this list to add/rename groups — each becomes a button. "keyword" is
+// matched as a case-insensitive substring against each device's hostname
+// (e.g. "CC1" matches "CC1-PC-03", "cc1-front-desk", etc). A computer whose
+// name doesn't contain any listed keyword only shows up under "All".
+const FILTER_GROUPS = [
+  { label: "Computer Center 1", keyword: "CC1" },
+  { label: "Computer Center 2", keyword: "CC2" },
+];
+
+let activeFilter = ""; // "" = show everything ("All")
+
+function renderFilterBar() {
+  const bar = document.getElementById("filterBar");
+  const groups = [{ label: "All", keyword: "" }, ...FILTER_GROUPS];
+  bar.innerHTML = groups.map(g => `
+    <button class="filter-btn${g.keyword === activeFilter ? " active" : ""}" data-keyword="${g.keyword}">${g.label}</button>
+  `).join("");
+  bar.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeFilter = btn.dataset.keyword;
+      renderFilterBar();
+      applyFilter();
+    });
+  });
+}
+
+// Shows/hides cards per the active filter and updates the visible counts —
+// sorting itself is untouched, this only toggles visibility within the
+// already-sorted order from relayoutSection().
+function applyFilter() {
+  [onlineGrid, offlineGrid].forEach((grid, i) => {
+    const countEl = i === 0 ? onlineCountEl : offlineCountEl;
+    let visible = 0;
+    Array.from(grid.children).forEach(card => {
+      const matches = !activeFilter || (card.dataset.hostname || "").toUpperCase().includes(activeFilter.toUpperCase());
+      card.style.display = matches ? "" : "none";
+      if (matches) visible++;
+    });
+    countEl.textContent = `(${visible})`;
+  });
 }
 
 function renderCard(payload) {
@@ -361,6 +410,7 @@ function renderCard(payload) {
 
   relayoutSection(onlineGrid, onlineCountEl);
   relayoutSection(offlineGrid, offlineCountEl);
+  applyFilter();
   renderNotificationSidebar();
 
   // If this device's modal is currently open, refresh its contents live too
@@ -775,6 +825,7 @@ function connect() {
   ws.onclose = () => setTimeout(connect, 2000);
 }
 
+renderFilterBar();
 connect();
 </script>
 </body>
