@@ -4,11 +4,16 @@
 <meta charset="UTF-8">
 <title>Device Tracker — Live Dashboard</title>
 <style>
-  body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e6e6; margin: 0; padding: 24px; padding-right: 360px; }
+  body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e6e6; margin: 0; padding: 24px; }
   h1 { font-weight: 600; }
-  .notif-sidebar { position: fixed; top: 76px; right: 20px; width: 320px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 16px; z-index: 50; }
+  .notif-sidebar { position: fixed; top: 76px; right: 20px; width: 320px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 16px; z-index: 55; box-shadow: 0 8px 24px rgba(0,0,0,0.5); transform: translateX(380px); opacity: 0; pointer-events: none; transition: transform 0.25s ease, opacity 0.25s ease; }
+  .notif-sidebar.open { transform: translateX(0); opacity: 1; pointer-events: auto; }
   .notif-sidebar h2 { font-size: 15px; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .notif-sidebar-list { overflow-y: auto; flex: 1; }
+  .sidebar-toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 60; background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 8px 16px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .sidebar-toggle-btn:hover { border-color: #4f8cff; }
+  .sidebar-toggle-btn.has-alerts { border-color: rgba(255,92,92,0.4); color: #ff5c5c; }
+  .sidebar-toggle-badge { background: #ff5c5c; color: white; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
   .notif-alert-card { background: #22252c; border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
   .notif-alert-card:hover { border-color: #ff5c5c; }
   .notif-alert-host { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: #4f8cff; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
@@ -108,11 +113,15 @@
 <body>
   <button class="sound-toggle" id="soundToggle">🔔 Sound On</button>
 
+  <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+    ⚠️ Notifications <span class="sidebar-toggle-badge" id="sidebarToggleBadge" style="display:none;">0</span>
+  </button>
+
   <div class="toast-container" id="toastContainer"></div>
 
   <h1>🖥️ Device Tracker — Live Dashboard</h1>
 
-  <div class="notif-sidebar">
+  <div class="notif-sidebar" id="notifSidebar">
     <h2>⚠️ Notifications <span class="section-count" id="notifSidebarCount">(0)</span></h2>
     <div class="notif-sidebar-list">
       <div class="notif-section-title">Reported Problems</div>
@@ -222,9 +231,49 @@ const STATUS_TEXT = {
   crashed: "Crashed",
 };
 
+// ----------------- Notifications drawer: open/close -----------------
+const notifSidebarEl = document.getElementById("notifSidebar");
+const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+const sidebarToggleBadge = document.getElementById("sidebarToggleBadge");
+let sidebarOpen = false;
+let lastAlertTotal = 0;      // total (open issues + alerts) as of the last render
+let sidebarManualOverride = false; // true once the user has clicked the toggle, until the total changes again
+let currentAlertsCount = 0;  // kept in sync by renderNotificationSidebar()
+
+function setSidebarOpen(open) {
+  sidebarOpen = open;
+  notifSidebarEl.classList.toggle("open", sidebarOpen);
+}
+
+sidebarToggleBtn.addEventListener("click", () => {
+  sidebarManualOverride = true;
+  setSidebarOpen(!sidebarOpen);
+});
+
+// Called after every render of either list (issues or alerts). Auto-opens
+// the drawer the moment there's something new to show, and auto-closes it
+// once everything clears — unless the user just manually opened/closed it,
+// in which case we leave it alone until the total count actually changes
+// again (a fresh thing to notify about resets the override).
+function updateSidebarAutoState() {
+  const total = openIssues.length + currentAlertsCount;
+  sidebarToggleBadge.style.display = total > 0 ? "flex" : "none";
+  sidebarToggleBadge.textContent = total;
+  sidebarToggleBtn.classList.toggle("has-alerts", total > 0);
+
+  if (total !== lastAlertTotal) {
+    sidebarManualOverride = false; // the situation changed — resume automatic behavior
+  }
+  if (!sidebarManualOverride) {
+    setSidebarOpen(total > 0);
+  }
+  lastAlertTotal = total;
+}
+
 function renderIssues() {
   if (!openIssues.length) {
     issuesListEl.innerHTML = `<div class="no-issues">No open problems.</div>`;
+    updateSidebarAutoState();
     return;
   }
   issuesListEl.innerHTML = openIssues.map(issue => `
@@ -242,6 +291,7 @@ function renderIssues() {
   issuesListEl.querySelectorAll(".resolve-btn").forEach(btn => {
     btn.addEventListener("click", () => resolveIssue(parseInt(btn.dataset.issueId, 10)));
   });
+  updateSidebarAutoState();
 }
 
 async function resolveIssue(issueId) {
@@ -455,9 +505,11 @@ function renderNotificationSidebar() {
   const listEl = document.getElementById("notifSidebarList");
   const countEl = document.getElementById("notifSidebarCount");
   countEl.textContent = `(${alerts.length})`;
+  currentAlertsCount = alerts.length;
 
   if (!alerts.length) {
     listEl.innerHTML = `<div class="no-issues">No active alerts.</div>`;
+    updateSidebarAutoState();
     return;
   }
 
@@ -483,6 +535,7 @@ function renderNotificationSidebar() {
       openRepairForm(btn.dataset.deviceId);
     });
   });
+  updateSidebarAutoState();
 }
 
 function renderModalContent(payload) {
