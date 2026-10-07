@@ -77,10 +77,34 @@ def init_db():
             timestamp REAL
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS maintenance (
+            device_id TEXT PRIMARY KEY,
+            under_maintenance INTEGER,
+            set_by TEXT,
+            timestamp REAL
+        )
+    """)
     conn.commit()
     conn.close()
 
 init_db()
+
+# ----------------- MAINTENANCE FLAG (persisted so every dashboard viewer agrees) -----------------
+def get_maintenance(device_id: str) -> bool:
+    conn = sqlite3.connect(DB_PATH)
+    row = conn.execute("SELECT under_maintenance FROM maintenance WHERE device_id = ?", (device_id,)).fetchone()
+    conn.close()
+    return bool(row[0]) if row else False
+
+def set_maintenance(device_id: str, flag: bool, set_by: str, timestamp: float):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        "INSERT OR REPLACE INTO maintenance (device_id, under_maintenance, set_by, timestamp) VALUES (?, ?, ?, ?)",
+        (device_id, 1 if flag else 0, set_by, timestamp),
+    )
+    conn.commit()
+    conn.close()
 
 def save_report(payload: dict):
     conn = sqlite3.connect(DB_PATH)
@@ -110,6 +134,7 @@ def get_latest_per_device():
         # specific device's VID/PID) over recomputing generically here —
         # only fall back for older reports that predate that feature.
         d["peripheral_flags"] = d.get("peripheral_flags") or compute_peripheral_flags(d.get("devices", []))
+        d["under_maintenance"] = get_maintenance(d["device_id"])
     return devices
 
 # ----------------- BASELINE (expected internal + peripheral components) -----------------
@@ -332,6 +357,7 @@ async def receive_report(request: Request):
     # specific device's VID/PID) over recomputing generically here — only
     # fall back for older agents that predate that feature.
     payload["peripheral_flags"] = payload.get("peripheral_flags") or compute_peripheral_flags(payload.get("devices", []))
+    payload["under_maintenance"] = get_maintenance(device_id)
 
     # Log + broadcast any peripheral connect/disconnect since the last report
     if previous_devices is not None:
@@ -411,6 +437,33 @@ async def log_repair(device_id: str, request: Request):
     if body.get("update_baseline") and match:
         save_baseline(device_id, combined_components(match))
 
+    return {"status": "ok"}
+
+@app.post("/api/maintenance/{device_id}")
+async def set_maintenance_route(device_id: str, request: Request):
+    """Technician-only: mark a PC as under maintenance (or clear that flag).
+    Persisted server-side so every dashboard viewer sees the same state,
+    rather than each browser tracking it independently."""
+    if request.headers.get("X-API-Key") != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    body = await request.json()
+    flag = bool(body.get("under_maintenance"))
+    name = body.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name is required")
+
+    timestamp = time.time()
+    set_maintenance(device_id, flag, name, timestamp)
+
+    devices = get_latest_per_device()
+    match = next((d for d in devices if d["device_id"] == device_id), None)
+    hostname = match["hostname"] if match else device_id
+
+    await manager.broadcast({
+        "type": "maintenance",
+        "data": {"device_id": device_id, "hostname": hostname, "under_maintenance": flag, "set_by": name, "timestamp": timestamp},
+    })
     return {"status": "ok"}
 
 @app.get("/api/devices")
