@@ -1,1000 +1,1438 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-  <meta charset="UTF-8">
-  <title>Device Tracker — Live Dashboard</title>
-    <style>
-      body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e6e6; margin: 0; padding: 24px; }
-      h1 { font-weight: 600; }
-      .notif-sidebar { position: fixed; top: 76px; right: 20px; width: 320px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 16px; z-index: 55; box-shadow: 0 8px 24px rgba(0,0,0,0.5); transform: translateX(380px); opacity: 0; pointer-events: none; transition: transform 0.25s ease, opacity 0.25s ease; }
-      .notif-sidebar.open { transform: translateX(0); opacity: 1; pointer-events: auto; }
-      .notif-sidebar h2 { font-size: 15px; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-      .notif-sidebar-list { overflow-y: auto; flex: 1; }
-      .sidebar-toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 60; background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 8px 16px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-      .sidebar-toggle-btn:hover { border-color: #4f8cff; }
-      .sidebar-toggle-btn.has-alerts { border-color: rgba(255,92,92,0.4); color: #ff5c5c; }
-      .sidebar-toggle-badge { background: #ff5c5c; color: white; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
-      .notif-alert-card { background: #22252c; border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
-      .notif-alert-card:hover { border-color: #ff5c5c; }
-      .notif-alert-host { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: #4f8cff; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
-      .notif-alert-desc { font-size: 13px; color: #ffb3b3; }
-      .notif-alert-time { font-size: 11px; color: #6b7280; margin-top: 4px; }
-      .notif-alert-actions { margin-top: 8px; }
-      .notif-repair-btn { background: #2a2e37; border: 1px solid rgba(79,140,255,0.4); color: #4f8cff; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
-      .notif-repair-btn:hover { background: #4f8cff; color: white; }
-      .notif-section-title { font-size: 13px; font-weight: 600; color: #cfd3da; margin: 4px 0 10px 0; }
-      .section-header { font-size: 15px; font-weight: 600; color: #cfd3da; margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
-      .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-      .filter-btn { background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
-      .filter-btn:hover { border-color: #4f8cff; }
-      .filter-btn.active { background: #4f8cff; border-color: #4f8cff; color: white; }
-      .main-nav { display: flex; gap: 4px; border-bottom: 1px solid #2a2e37; margin-bottom: 20px; padding-bottom: 0; }
-      .nav-tab { background: none; border: none; color: #9aa1ac; font-size: 14px; font-weight: 500; padding: 12px 18px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-      .nav-tab:hover { color: #e6e6e6; }
-      .nav-tab.active { color: #4f8cff; border-bottom-color: #4f8cff; }
-      .search-input { display: block; width: 100%; max-width: 420px; margin-top: 18px; padding: 9px 14px; border-radius: 20px; background: #1a1d24; border: 1px solid #2a2e37; color: #e6e6e6; font-size: 13px; font-family: inherit; box-sizing: border-box; }
-      .search-input:focus { outline: none; border-color: #4f8cff; }
-      .maintenance-badge { display: inline-block; background: rgba(255,165,61,0.15); color: #ffa53d; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
-      .section-count { font-weight: 400; color: #6b7280; font-size: 13px; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+<head>
+<meta charset="UTF-8">
+<title>Device Tracker — Live Dashboard</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e6e6; margin: 0; padding: 24px; }
+  h1 { font-weight: 600; }
+  .notif-sidebar { position: fixed; top: 76px; right: 20px; width: 320px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 16px; z-index: 55; box-shadow: 0 8px 24px rgba(0,0,0,0.5); transform: translateX(380px); opacity: 0; pointer-events: none; transition: transform 0.25s ease, opacity 0.25s ease; }
+  .notif-sidebar.open { transform: translateX(0); opacity: 1; pointer-events: auto; }
+  .notif-sidebar h2 { font-size: 15px; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .notif-sidebar-list { overflow-y: auto; flex: 1; }
+  .sidebar-toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 60; background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 8px 16px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .sidebar-toggle-btn:hover { border-color: #4f8cff; }
+  .sidebar-toggle-btn.has-alerts { border-color: rgba(255,92,92,0.4); color: #ff5c5c; }
+  .sidebar-toggle-badge { background: #ff5c5c; color: white; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+  .notif-alert-card { background: #22252c; border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+  .notif-alert-card:hover { border-color: #ff5c5c; }
+  .notif-alert-host { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: #4f8cff; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
+  .notif-alert-desc { font-size: 13px; color: #ffb3b3; }
+  .notif-alert-time { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .notif-alert-actions { margin-top: 8px; }
+  .notif-repair-btn { background: #2a2e37; border: 1px solid rgba(79,140,255,0.4); color: #4f8cff; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
+  .notif-repair-btn:hover { background: #4f8cff; color: white; }
+  .notif-section-title { font-size: 13px; font-weight: 600; color: #cfd3da; margin: 4px 0 10px 0; }
+  .section-header { font-size: 15px; font-weight: 600; color: #cfd3da; margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
+  .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .filter-btn { background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+  .filter-btn:hover { border-color: #4f8cff; }
+  .filter-btn.active { background: #4f8cff; border-color: #4f8cff; color: white; }
+  .main-nav { display: flex; gap: 4px; border-bottom: 1px solid #2a2e37; margin-bottom: 20px; padding-bottom: 0; }
+  .nav-tab { background: none; border: none; color: #9aa1ac; font-size: 14px; font-weight: 500; padding: 12px 18px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .nav-tab:hover { color: #e6e6e6; }
+  .nav-tab.active { color: #4f8cff; border-bottom-color: #4f8cff; }
 
-      .card { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
-      .card:hover { border-color: #4f8cff; transform: translateY(-2px); }
-      .card h2 { margin: 0 0 8px 0; font-size: 16px; }
-      .stat { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; color: #cfd3da; }
-      .bar-bg { background: #2a2e37; border-radius: 6px; height: 8px; margin: 4px 0 10px 0; overflow: hidden; }
-      .bar-fill { height: 100%; background: #4f8cff; }
+  /* ---- Repair Tracking ---- */
+  .repair-controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 20px 0; align-items: center; }
+  .repair-select { background: #1a1d24; border: 1px solid #2a2e37; color: #e6e6e6; border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; }
+  .repair-tickets-list { display: flex; flex-direction: column; gap: 10px; }
+  .ticket-form-label { font-size: 12px; color: #9aa1ac; display: block; margin-bottom: 6px; }
+  .ticket-form-input { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: #22252c; border: 1px solid #2a2e37; color: #e6e6e6; font-family: inherit; font-size: 13px; }
+  #newTicketOverlay { z-index: 300; }
+  #maintOverlay { z-index: 300; }
 
-      .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
-      .status-dot.status-online { background: #3ddc84; box-shadow: 0 0 6px rgba(61,220,132,0.6); }
-      .status-dot.status-offline { background: #8a8f98; box-shadow: 0 0 6px rgba(138,143,152,0.5); }
-      .status-dot.status-unresponsive { background: #ffd23d; box-shadow: 0 0 6px rgba(255,210,61,0.6); }
-      .status-dot.status-crashed { background: #ff5c5c; box-shadow: 0 0 6px rgba(255,92,92,0.6); }
-      .status-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; }
-      .status-label.status-online { background: rgba(61,220,132,0.15); color: #3ddc84; }
-      .status-label.status-offline { background: rgba(138,143,152,0.15); color: #8a8f98; }
-      .status-label.status-unresponsive { background: rgba(255,210,61,0.15); color: #ffd23d; }
-      .status-label.status-crashed { background: rgba(255,92,92,0.15); color: #ff5c5c; }
-      .card.status-offline, .card.status-unresponsive, .card.status-crashed { opacity: 0.75; }
-      .card.has-missing { border-color: rgba(255,92,92,0.5); }
+  .ticket-card { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s; }
+  .ticket-card:hover { border-color: #4f8cff; }
+  .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+  .ticket-host { font-weight: 600; font-size: 14px; }
+  .ticket-date { font-size: 11px; color: #6b7280; }
+  .ticket-status { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; }
+  .ticket-status.pending { background: rgba(255,210,61,0.15); color: #ffd23d; }
+  .ticket-status.in-progress { background: rgba(79,140,255,0.15); color: #4f8cff; }
+  .ticket-status.completed { background: rgba(61,220,132,0.15); color: #3ddc84; }
+  .ticket-field { font-size: 13px; margin-bottom: 6px; }
+  .ticket-field b { color: #9aa1ac; font-weight: 500; }
+  .ticket-part-change { font-size: 13px; background: #22252c; border-radius: 6px; padding: 8px 10px; margin: 6px 0; }
+  .ticket-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: #6b7280; }
+  .ticket-mark-btn { background: #2a2e37; border: 1px solid rgba(79,140,255,0.4); color: #4f8cff; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
+  .ticket-mark-btn:hover { background: #4f8cff; color: white; }
+  .search-input { display: block; width: 100%; max-width: 420px; margin-top: 18px; padding: 9px 14px; border-radius: 20px; background: #1a1d24; border: 1px solid #2a2e37; color: #e6e6e6; font-size: 13px; font-family: inherit; box-sizing: border-box; }
+  .search-input:focus { outline: none; border-color: #4f8cff; }
+  .maintenance-badge { display: inline-block; background: rgba(255,165,61,0.15); color: #ffa53d; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+  .section-count { font-weight: 400; color: #6b7280; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
 
-      .timestamp { font-size: 11px; color: #6b7280; margin-top: 8px; }
-      .header-row { display: flex; justify-content: space-between; align-items: center; }
-      .missing-pill { margin-top: 10px; font-size: 12px; color: #ff5c5c; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); border-radius: 6px; padding: 6px 10px; }
-      .peripheral-row { display: flex; gap: 8px; margin-top: 10px; }
-      .peripheral-chip { font-size: 12px; padding: 3px 9px; border-radius: 12px; display: flex; align-items: center; gap: 4px; }
-      .peripheral-chip.present { background: rgba(61,220,132,0.12); color: #3ddc84; }
-      .peripheral-chip.absent { background: rgba(255,92,92,0.12); color: #ff5c5c; }
+  .card { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
+  .card:hover { border-color: #4f8cff; transform: translateY(-2px); }
+  .card h2 { margin: 0 0 8px 0; font-size: 16px; }
+  .stat { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; color: #cfd3da; }
+  .bar-bg { background: #2a2e37; border-radius: 6px; height: 8px; margin: 4px 0 10px 0; overflow: hidden; }
+  .bar-fill { height: 100%; background: #4f8cff; }
 
-      /* ---- Modal ---- */
-      .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
-      #repairOverlay { z-index: 300; } /* stacks above the device-detail modal so it can open on top of it */
-      .overlay.open { display: flex; }
-      .modal { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 12px; padding: 24px; width: min(560px, 90vw); max-height: 85vh; overflow-y: auto; position: relative; }
-      .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: #9aa1ac; font-size: 20px; cursor: pointer; line-height: 1; }
-      .modal-close:hover { color: #e6e6e6; }
-      .modal h2 { margin: 0 0 4px 0; font-size: 20px; }
-      .section-title { font-size: 13px; color: #9aa1ac; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px 0; }
-      .section-title.collapsible { cursor: pointer; user-select: none; }
-      .section-title.collapsible:hover { color: #e6e6e6; }
-      .collapse-arrow { display: inline-block; width: 14px; font-size: 10px; }
-      .device-list { font-size: 13px; color: #cfd3da; }
-      .device-list div { padding: 4px 0; border-bottom: 1px solid #22252c; }
-      .missing-box { margin-top: 10px; padding: 10px 12px; border-radius: 6px; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); }
-      .missing-box b { color: #ff5c5c; font-size: 13px; }
-      .missing-item { font-size: 13px; color: #ffb3b3; padding: 3px 0; }
+  .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
+  .status-dot.status-online { background: #3ddc84; box-shadow: 0 0 6px rgba(61,220,132,0.6); }
+  .status-dot.status-offline { background: #8a8f98; box-shadow: 0 0 6px rgba(138,143,152,0.5); }
+  .status-dot.status-unresponsive { background: #ffd23d; box-shadow: 0 0 6px rgba(255,210,61,0.6); }
+  .status-dot.status-crashed { background: #ff5c5c; box-shadow: 0 0 6px rgba(255,92,92,0.6); }
+  .status-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; }
+  .status-label.status-online { background: rgba(61,220,132,0.15); color: #3ddc84; }
+  .status-label.status-offline { background: rgba(138,143,152,0.15); color: #8a8f98; }
+  .status-label.status-unresponsive { background: rgba(255,210,61,0.15); color: #ffd23d; }
+  .status-label.status-crashed { background: rgba(255,92,92,0.15); color: #ff5c5c; }
+  .card.status-offline, .card.status-unresponsive, .card.status-crashed { opacity: 0.75; }
+  .card.has-missing { border-color: rgba(255,92,92,0.5); }
 
-      /* ---- Issue cards (used inside the bell dropdown) ---- */
-      .issue-card { background: #22252c; border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
-      .issue-tags { display: flex; gap: 6px; margin-bottom: 6px; }
-      .issue-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: #4f8cff; padding: 2px 8px; border-radius: 4px; }
-      .issue-desc { font-size: 13px; color: #e6e6e6; }
-      .issue-meta { font-size: 11px; color: #6b7280; margin-top: 4px; }
-      .resolve-btn { background: #2a2e37; border: 1px solid #3a3f4a; color: #cfd3da; border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; margin-top: 6px; }
-      .resolve-btn:hover { background: #3ddc84; color: #0f1115; border-color: #3ddc84; }
-      .no-issues { color: #6b7280; font-size: 13px; padding: 8px 0; }
+  .timestamp { font-size: 11px; color: #6b7280; margin-top: 8px; }
+  .header-row { display: flex; justify-content: space-between; align-items: center; }
+  .missing-pill { margin-top: 10px; font-size: 12px; color: #ff5c5c; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); border-radius: 6px; padding: 6px 10px; }
+  .peripheral-row { display: flex; gap: 8px; margin-top: 10px; }
+  .peripheral-chip { font-size: 12px; padding: 3px 9px; border-radius: 12px; display: flex; align-items: center; gap: 4px; }
+  .peripheral-chip.present { background: rgba(61,220,132,0.12); color: #3ddc84; }
+  .peripheral-chip.absent { background: rgba(255,92,92,0.12); color: #ff5c5c; }
 
-      /* ---- Toast notifications ---- */
-      .toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
-      .toast { background: #1a1d24; border-left: 4px solid #ff5c5c; border-radius: 6px; padding: 10px 14px; width: 300px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); animation: slideIn 0.2s ease-out; font-size: 13px; }
-      .toast.connected { border-left-color: #3ddc84; }
-      .toast-title { font-weight: 600; margin-bottom: 2px; }
-      .toast-body { color: #9aa1ac; font-size: 12px; }
-      @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  /* ---- Modal ---- */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+  #repairOverlay { z-index: 300; } /* stacks above the device-detail modal so it can open on top of it */
+  .overlay.open { display: flex; }
+  .modal { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 12px; padding: 24px; width: min(560px, 90vw); max-height: 85vh; overflow-y: auto; position: relative; }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: #9aa1ac; font-size: 20px; cursor: pointer; line-height: 1; }
+  .modal-close:hover { color: #e6e6e6; }
+  .modal h2 { margin: 0 0 4px 0; font-size: 20px; }
+  .section-title { font-size: 13px; color: #9aa1ac; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px 0; }
+  .section-title.collapsible { cursor: pointer; user-select: none; }
+  .section-title.collapsible:hover { color: #e6e6e6; }
+  .collapse-arrow { display: inline-block; width: 14px; font-size: 10px; }
+  .device-list { font-size: 13px; color: #cfd3da; }
+  .device-list div { padding: 4px 0; border-bottom: 1px solid #22252c; }
+  .missing-box { margin-top: 10px; padding: 10px 12px; border-radius: 6px; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); }
+  .missing-box b { color: #ff5c5c; font-size: 13px; }
+  .missing-item { font-size: 13px; color: #ffb3b3; padding: 3px 0; }
 
-      /* ---- History ---- */
-      .history-btn { background: #2a2e37; border: 1px solid #3a3f4a; color: #cfd3da; border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; margin-top: 10px; }
-      .history-btn:hover { background: #4f8cff; color: white; border-color: #4f8cff; }
-      .history-list { font-size: 12px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
-      .history-item { padding: 5px 0; border-bottom: 1px solid #22252c; display: flex; justify-content: space-between; }
-      .history-item.connected { color: #3ddc84; }
-      .history-item.disconnected { color: #ff5c5c; }
-      .history-item.repaired { color: #4f8cff; }
-      .history-time { color: #6b7280; }
+  /* ---- Issue cards (used inside the bell dropdown) ---- */
+  .issue-card { background: #22252c; border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .issue-tags { display: flex; gap: 6px; margin-bottom: 6px; }
+  .issue-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: #4f8cff; padding: 2px 8px; border-radius: 4px; }
+  .issue-desc { font-size: 13px; color: #e6e6e6; }
+  .issue-meta { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .resolve-btn { background: #2a2e37; border: 1px solid #3a3f4a; color: #cfd3da; border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; margin-top: 6px; }
+  .resolve-btn:hover { background: #3ddc84; color: #0f1115; border-color: #3ddc84; }
+  .no-issues { color: #6b7280; font-size: 13px; padding: 8px 0; }
 
-      /* ---- Sound toggle ---- */
-      .sound-toggle { position: fixed; top: 20px; left: 24px; background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 6px 14px; font-size: 12px; cursor: pointer; z-index: 150; }
-      .sound-toggle.muted { color: #6b7280; }
-    </style>
-  </head>
-  <body>
-    <button class="sound-toggle" id="soundToggle">🔔 Sound On</button>
+  /* ---- Toast notifications ---- */
+  .toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: #1a1d24; border-left: 4px solid #ff5c5c; border-radius: 6px; padding: 10px 14px; width: 300px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); animation: slideIn 0.2s ease-out; font-size: 13px; }
+  .toast.connected { border-left-color: #3ddc84; }
+  .toast-title { font-weight: 600; margin-bottom: 2px; }
+  .toast-body { color: #9aa1ac; font-size: 12px; }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-    <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
-      ⚠️ Notifications <span class="sidebar-toggle-badge" id="sidebarToggleBadge" style="display:none;">0</span>
-    </button>
+  /* ---- History ---- */
+  .history-btn { background: #2a2e37; border: 1px solid #3a3f4a; color: #cfd3da; border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; margin-top: 10px; }
+  .history-btn:hover { background: #4f8cff; color: white; border-color: #4f8cff; }
+  .history-list { font-size: 12px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
+  .history-item { padding: 5px 0; border-bottom: 1px solid #22252c; display: flex; justify-content: space-between; }
+  .history-item.connected { color: #3ddc84; }
+  .history-item.disconnected { color: #ff5c5c; }
+  .history-item.repaired { color: #4f8cff; }
+  .history-time { color: #6b7280; }
 
-    <div class="toast-container" id="toastContainer"></div>
+  /* ---- Sound toggle ---- */
+  .sound-toggle { position: fixed; top: 20px; left: 24px; background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 6px 14px; font-size: 12px; cursor: pointer; z-index: 150; }
+  .sound-toggle.muted { color: #6b7280; }
+</style>
+</head>
+<body>
+  <button class="sound-toggle" id="soundToggle">🔔 Sound On</button>
 
-    <div class="main-nav" id="mainNav">
-      <button class="nav-tab active" data-view="monitoring">🖥️ Monitoring System</button>
-      <button class="nav-tab" data-view="repair">🛠️ Repair Tracking</button>
+  <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+    ⚠️ Notifications <span class="sidebar-toggle-badge" id="sidebarToggleBadge" style="display:none;">0</span>
+  </button>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="main-nav" id="mainNav">
+    <button class="nav-tab active" data-view="monitoring">🖥️ Monitoring System</button>
+    <button class="nav-tab" data-view="repair">🛠️ Repair Tracking</button>
+  </div>
+
+  <div class="notif-sidebar" id="notifSidebar">
+    <h2>⚠️ Notifications <span class="section-count" id="notifSidebarCount">(0)</span></h2>
+    <div class="notif-sidebar-list">
+      <div class="notif-section-title">Reported Problems</div>
+      <div id="issuesList"><div class="no-issues">No open problems.</div></div>
+
+      <div class="notif-section-title" style="margin-top:18px;">Alerts</div>
+      <div id="notifSidebarList"><div class="no-issues">No active alerts.</div></div>
+    </div>
+  </div>
+
+  <div id="monitoringView" class="nav-view">
+    <h1>🖥️ Device Tracker — Live Dashboard</h1>
+
+    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search PCs by name…">
+
+    <div class="filter-bar" id="filterBar"></div>
+    <div class="filter-bar" id="statusFilterBar" style="margin-top:8px;"></div>
+
+    <div class="section-header">🟢 Online <span class="section-count" id="onlineCount">(0)</span></div>
+    <div class="grid" id="onlineGrid"></div>
+
+    <div class="section-header" style="margin-top:28px;">⚫ Offline / Unresponsive / Crashed <span class="section-count" id="offlineCount">(0)</span></div>
+    <div class="grid" id="offlineGrid"></div>
+  </div>
+
+  <div id="repairView" class="nav-view" style="display:none;">
+    <h1>🛠️ Repair Tracking</h1>
+
+    <input type="text" id="repairSearchInput" class="search-input" placeholder="🔍 Search by PC, problem, part, or technician…">
+
+    <div class="repair-controls">
+      <select id="repairDeviceFilter" class="repair-select"><option value="">All PCs</option></select>
+      <select id="repairStatusFilter" class="repair-select">
+        <option value="">All Statuses</option>
+        <option value="Pending">Pending</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+      </select>
+      <button class="history-btn" id="newTicketBtn">+ New Repair Ticket</button>
+      <button class="history-btn" id="generateReportBtn">📄 Generate Report (CSV)</button>
     </div>
 
-    <div class="notif-sidebar" id="notifSidebar">
-      <h2>⚠️ Notifications <span class="section-count" id="notifSidebarCount">(0)</span></h2>
-      <div class="notif-sidebar-list">
-        <div class="notif-section-title">Reported Problems</div>
-        <div id="issuesList"><div class="no-issues">No open problems.</div></div>
+    <div id="repairTicketsList" class="repair-tickets-list"><div class="no-issues">Loading…</div></div>
+  </div>
 
-        <div class="notif-section-title" style="margin-top:18px;">Alerts</div>
-        <div id="notifSidebarList"><div class="no-issues">No active alerts.</div></div>
+  <div class="overlay" id="overlay">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <div class="overlay" id="repairOverlay">
+    <div class="modal" style="width:min(380px, 90vw);">
+      <button class="modal-close" id="repairFormClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:18px;">🛠️ Log a Repair</h2>
+      <div style="font-size:12px;color:#9aa1ac;margin-bottom:12px;" id="repairFormDeviceLabel"></div>
+
+      <div id="repairFormError" style="display:none;color:#ff5c5c;font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+
+      <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">What was fixed or replaced?</label>
+      <textarea id="repairNoteInput" rows="3" placeholder="e.g. Replaced keyboard, Reseated RAM..." style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:16px;"></textarea>
+
+      <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">Your Name <span style="color:#ff5c5c;">*</span></label>
+      <input type="text" id="repairTechInput" placeholder="Required" style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;margin-bottom:16px;" />
+
+      <label style="font-size:13px;color:#cfd3da;display:flex;align-items:flex-start;gap:8px;margin-bottom:20px;cursor:pointer;">
+        <input type="checkbox" id="repairUpdateBaseline" style="margin-top:3px;">
+        <span>Also save the current internal components as the new expected baseline (use this if you installed/swapped hardware)</span>
+      </label>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="repairFormCancel">Cancel</button>
+        <button class="resolve-btn" id="repairFormSubmit" style="background:#4f8cff;color:white;border-color:#4f8cff;">Submit</button>
       </div>
     </div>
+  </div>
 
-    <div id="monitoringView" class="nav-view">
-      <h1>🖥️ Device Tracker — Live Dashboard</h1>
+  <div class="overlay" id="maintOverlay">
+    <div class="modal" style="width:min(400px, 90vw);">
+      <button class="modal-close" id="maintClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:18px;" id="maintTitle">🔧 Mark Under Maintenance</h2>
+      <div style="font-size:12px;color:#9aa1ac;margin-bottom:12px;" id="maintDeviceLabel"></div>
 
-      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search PCs by name…">
+      <div id="maintError" style="display:none;color:#ff5c5c;font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
-      <div class="filter-bar" id="filterBar"></div>
-      <div class="filter-bar" id="statusFilterBar" style="margin-top:8px;"></div>
+      <div id="maintOnFields">
+        <label class="ticket-form-label">Reason for maintenance <span style="color:#ff5c5c;">*</span></label>
+        <textarea id="maintReasonInput" rows="3" placeholder="e.g. Won't boot, keyboard not responding..." class="ticket-form-input" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div style="font-size:11px;color:#6f7683;margin-bottom:14px;">A Pending repair ticket is created automatically from this.</div>
+      </div>
 
-      <div class="section-header">🟢 Online <span class="section-count" id="onlineCount">(0)</span></div>
-      <div class="grid" id="onlineGrid"></div>
-
-      <div class="section-header" style="margin-top:28px;">⚫ Offline / Unresponsive / Crashed <span class="section-count" id="offlineCount">(0)</span></div>
-      <div class="grid" id="offlineGrid"></div>
-    </div>
-
-    <div id="repairView" class="nav-view" style="display:none;">
-      <h1>🛠️ Repair Tracking</h1>
-      <p style="color:#9aa1ac; font-size:14px;">Coming soon — this will be a fleet-wide view of every repair logged across all PCs.</p>
-    </div>
-
-    <div class="overlay" id="overlay">
-      <div class="modal" id="modal"></div>
-    </div>
-
-    <div class="overlay" id="repairOverlay">
-      <div class="modal" style="width:min(380px, 90vw);">
-        <button class="modal-close" id="repairFormClose">✕</button>
-        <h2 style="margin:0 0 4px 0; font-size:18px;">🛠️ Log a Repair</h2>
-        <div style="font-size:12px;color:#9aa1ac;margin-bottom:12px;" id="repairFormDeviceLabel"></div>
-
-        <div id="repairFormError" style="display:none;color:#ff5c5c;font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
-
-        <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">What was fixed or replaced?</label>
-        <textarea id="repairNoteInput" rows="3" placeholder="e.g. Replaced keyboard, Reseated RAM..." style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:16px;"></textarea>
-
-        <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">Your Name <span style="color:#ff5c5c;">*</span></label>
-        <input type="text" id="repairTechInput" placeholder="Required" style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;margin-bottom:16px;" />
-
-        <label style="font-size:13px;color:#cfd3da;display:flex;align-items:flex-start;gap:8px;margin-bottom:20px;cursor:pointer;">
-          <input type="checkbox" id="repairUpdateBaseline" style="margin-top:3px;">
-          <span>Also save the current internal components as the new expected baseline (use this if you installed/swapped hardware)</span>
+      <div id="maintOffFields" style="display:none;">
+        <label class="ticket-form-label">Final note (optional)</label>
+        <textarea id="maintNoteInput" rows="3" placeholder="e.g. Replaced PSU, tested OK..." class="ticket-form-input" style="margin-bottom:14px;resize:vertical;"></textarea>
+        <label style="font-size:13px;color:#cfd3da;display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
+          <input type="checkbox" id="maintCompleteTickets" checked style="margin-top:3px;">
+          <span>Mark this PC's open repair tickets as Completed</span>
         </label>
+      </div>
 
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button class="resolve-btn" id="repairFormCancel">Cancel</button>
-          <button class="resolve-btn" id="repairFormSubmit" style="background:#4f8cff;color:white;border-color:#4f8cff;">Submit</button>
+      <label class="ticket-form-label">Your Name <span style="color:#ff5c5c;">*</span></label>
+      <input type="text" id="maintNameInput" placeholder="Required" class="ticket-form-input" style="margin-bottom:20px;" />
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="maintCancel">Cancel</button>
+        <button class="resolve-btn" id="maintSubmit" style="background:#4f8cff;color:white;border-color:#4f8cff;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="newTicketOverlay">
+    <div class="modal" style="width:min(460px, 90vw); max-height:85vh; overflow-y:auto;">
+      <button class="modal-close" id="newTicketClose">✕</button>
+      <h2 style="margin:0 0 16px 0; font-size:18px;">🛠️ New Repair Ticket</h2>
+
+      <div id="newTicketError" style="display:none;color:#ff5c5c;font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+
+      <label class="ticket-form-label">PC <span style="color:#ff5c5c;">*</span></label>
+      <select id="ticketDeviceSelect" class="repair-select" style="width:100%;margin-bottom:14px;"></select>
+
+      <label class="ticket-form-label">Reported Problem <span style="color:#ff5c5c;">*</span></label>
+      <textarea id="ticketProblemInput" rows="2" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
+
+      <label class="ticket-form-label">Actions Taken</label>
+      <textarea id="ticketActionsInput" rows="2" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
+
+      <label class="ticket-form-label">Part Type</label>
+      <input type="text" id="ticketPartTypeInput" placeholder="e.g. RAM, Keyboard, GPU" class="ticket-form-input" style="margin-bottom:14px;">
+
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div style="flex:1;">
+          <label class="ticket-form-label">Model Before</label>
+          <input type="text" id="ticketModelBeforeInput" placeholder="Old part" class="ticket-form-input">
+        </div>
+        <div style="flex:1;">
+          <label class="ticket-form-label">Model After</label>
+          <input type="text" id="ticketModelAfterInput" placeholder="New part" class="ticket-form-input">
         </div>
       </div>
+
+      <label class="ticket-form-label">Repair Status</label>
+      <select id="ticketStatusSelect" class="repair-select" style="width:100%;margin-bottom:14px;">
+        <option value="Pending">Pending</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+      </select>
+
+      <label class="ticket-form-label">Your Name <span style="color:#ff5c5c;">*</span></label>
+      <input type="text" id="ticketTechInput" placeholder="Required" class="ticket-form-input" style="margin-bottom:20px;">
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="newTicketCancel">Cancel</button>
+        <button class="resolve-btn" id="newTicketSubmit" style="background:#4f8cff;color:white;border-color:#4f8cff;">Submit</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const onlineGrid = document.getElementById("onlineGrid");
+const offlineGrid = document.getElementById("offlineGrid");
+const onlineCountEl = document.getElementById("onlineCount");
+const offlineCountEl = document.getElementById("offlineCount");
+const overlay = document.getElementById("overlay");
+const modal = document.getElementById("modal");
+const toastContainer = document.getElementById("toastContainer");
+const soundToggle = document.getElementById("soundToggle");
+const issuesListEl = document.getElementById("issuesList");
+const cards = {};       // device_id -> card element
+const lastPayload = {}; // device_id -> last full payload
+const lastMissingCount = {}; // device_id -> number of missing components on the previous update
+let openDeviceId = null; // which device's modal is currently open, if any
+let soundEnabled = true;
+let openIssues = []; // current open (unresolved) problem reports
+// Right after a repair is logged for a device, suppress its sidebar alerts
+// for a grace period rather than requiring an immediate fresh report to
+// clear them. If the device still reports the same problem once the grace
+// period ends, the alert correctly reappears — this is a temporary "give it
+// a moment to confirm" state, not a permanent dismissal.
+const repairGraceUntil = {}; // device_id -> ms timestamp until which alerts are suppressed
+const REPAIR_GRACE_MS = 30000;
+// Which collapsible sections in the device modal are currently expanded.
+// Kept outside the render function on purpose — the modal re-renders on every
+// live update, which would otherwise snap open sections shut again each time.
+const expandedSections = { internal: false, peripherals: false };
+// Same idea for the Connection History / Repair Log lists: remember whether
+// each was opened and what it showed, so a live re-render can restore it
+// instead of wiping it. Tied to one device at a time (reset when a different
+// device's modal is opened).
+const logState = {
+  deviceId: null,
+  history: { open: false, html: "" },
+  repair: { open: false, html: "" },
+};
+function resetLogState(deviceId) {
+  logState.deviceId = deviceId;
+  logState.history = { open: false, html: "" };
+  logState.repair = { open: false, html: "" };
+}
+// Put back whatever was showing in the log lists before the last re-render.
+function restoreLogs() {
+  const h = document.getElementById("historyList");
+  const r = document.getElementById("repairLogList");
+  if (h && logState.history.open) h.innerHTML = logState.history.html;
+  if (r && logState.repair.open) r.innerHTML = logState.repair.html;
+}
+
+// Must match API_KEY in server.py — needed so the "Resolve" button can call
+// the server. Fine for a trusted LAN dashboard; don't expose this page to
+// the public internet as-is.
+const API_KEY = "changeme-shared-secret";
+
+const STATUS_TEXT = {
+  online: "Online",
+  offline: "Offline",
+  unresponsive: "Unresponsive",
+  crashed: "Crashed",
+};
+
+// ----------------- Notifications drawer: open/close -----------------
+const notifSidebarEl = document.getElementById("notifSidebar");
+const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+const sidebarToggleBadge = document.getElementById("sidebarToggleBadge");
+let sidebarOpen = false;
+let lastAlertTotal = 0;      // total (open issues + alerts) as of the last render
+let sidebarManualOverride = false; // true once the user has clicked the toggle, until the total changes again
+let currentAlertsCount = 0;  // kept in sync by renderNotificationSidebar()
+
+function setSidebarOpen(open) {
+  sidebarOpen = open;
+  notifSidebarEl.classList.toggle("open", sidebarOpen);
+}
+
+sidebarToggleBtn.addEventListener("click", () => {
+  sidebarManualOverride = true;
+  setSidebarOpen(!sidebarOpen);
+});
+
+// Called after every render of either list (issues or alerts). Auto-opens
+// the drawer the moment there's something new to show, and auto-closes it
+// once everything clears — unless the user just manually opened/closed it,
+// in which case we leave it alone until the total count actually changes
+// again (a fresh thing to notify about resets the override).
+function updateSidebarAutoState() {
+  const total = openIssues.length + currentAlertsCount;
+  sidebarToggleBadge.style.display = total > 0 ? "flex" : "none";
+  sidebarToggleBadge.textContent = total;
+  sidebarToggleBtn.classList.toggle("has-alerts", total > 0);
+
+  if (total !== lastAlertTotal) {
+    sidebarManualOverride = false; // the situation changed — resume automatic behavior
+  }
+  if (!sidebarManualOverride) {
+    setSidebarOpen(total > 0);
+  }
+  lastAlertTotal = total;
+}
+
+function renderIssues() {
+  if (!openIssues.length) {
+    issuesListEl.innerHTML = `<div class="no-issues">No open problems.</div>`;
+    updateSidebarAutoState();
+    return;
+  }
+  issuesListEl.innerHTML = openIssues.map(issue => `
+    <div class="issue-card">
+      <div class="issue-tags">
+        <span class="issue-tag">${issue.room}</span>
+        <span class="issue-tag">${issue.system_unit}</span>
+      </div>
+      <div class="issue-desc">${issue.description}</div>
+      <div class="issue-meta">Reported by ${issue.reported_by} — ${new Date(issue.timestamp*1000).toLocaleString()}</div>
+      <button class="resolve-btn" data-issue-id="${issue.id}">✓ Mark Resolved</button>
+    </div>
+  `).join("");
+
+  issuesListEl.querySelectorAll(".resolve-btn").forEach(btn => {
+    btn.addEventListener("click", () => resolveIssue(parseInt(btn.dataset.issueId, 10)));
+  });
+  updateSidebarAutoState();
+}
+
+async function resolveIssue(issueId) {
+  try {
+    await fetch(`/api/issues/${issueId}/resolve`, {
+      method: "POST",
+      headers: { "X-API-Key": API_KEY },
+    });
+    openIssues = openIssues.filter(i => i.id !== issueId);
+    renderIssues();
+  } catch (e) {
+    alert("Could not resolve — check server connection.");
+  }
+}
+
+// ----------------- Sound + toast notifications -----------------
+soundToggle.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  soundToggle.textContent = soundEnabled ? "🔔 Sound On" : "🔕 Sound Off";
+  soundToggle.classList.toggle("muted", !soundEnabled);
+});
+
+function playAlertSound() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.4);
+  } catch (e) { /* Audio may be blocked until the user interacts with the page once — that's fine */ }
+}
+
+function showToast(title, body, kind = "alert") {
+  const toast = document.createElement("div");
+  toast.className = `toast ${kind}`;
+  toast.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
+  toastContainer.appendChild(toast);
+  setTimeout(() => toast.remove(), 6000);
+}
+
+function notify(title, body, kind = "alert") {
+  showToast(title, body, kind);
+  if (kind === "alert") playAlertSound();
+}
+
+function naturalCompare(a, b) {
+  // "Unit 2" sorts before "Unit 10" — plain string sort would put "Unit 10" first
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
+
+function relayoutSection(container, countEl) {
+  const cardEls = Array.from(container.children);
+  cardEls.sort((a, b) => naturalCompare(a.dataset.hostname || "", b.dataset.hostname || ""));
+  cardEls.forEach(el => container.appendChild(el)); // re-appending in sorted order moves them into place
+  countEl.textContent = `(${cardEls.length})`; // recomputed by applyFilter() below when a filter is active
+}
+
+// ----------------- Group filter buttons -----------------
+// Edit this list to add/rename groups — each becomes a button. "keyword" is
+// matched as a case-insensitive substring against each device's hostname
+// (e.g. "CC1" matches "CC1-PC-03", "cc1-front-desk", etc). A computer whose
+// name doesn't contain any listed keyword only shows up under "All".
+// The special keyword "__MAINTENANCE__" is reserved — it filters by the
+// Under Maintenance flag instead of matching the hostname.
+const FILTER_GROUPS = [
+  { label: "Computer Center 1", keyword: "CC1" },
+  { label: "Computer Center 2", keyword: "CC2" },
+  { label: "🔧 Under Maintenance", keyword: "__MAINTENANCE__" },
+];
+
+const STATUS_FILTERS = [
+  { label: "All", value: "" },
+  { label: "Online", value: "online" },
+  { label: "Offline", value: "offline" },
+  { label: "Unresponsive", value: "unresponsive" },
+  { label: "Crashed", value: "crashed" },
+];
+
+let activeFilter = "";       // "" = all groups, a keyword string, or "__MAINTENANCE__"
+let activeStatusFilter = ""; // "" = all statuses, or one of STATUS_FILTERS' values
+let searchQuery = "";        // free-text hostname search — combines with both filters above
+
+function renderFilterBar() {
+  const bar = document.getElementById("filterBar");
+  const groups = [{ label: "All", keyword: "" }, ...FILTER_GROUPS];
+  bar.innerHTML = groups.map(g => `
+    <button class="filter-btn${g.keyword === activeFilter ? " active" : ""}" data-keyword="${g.keyword}">${g.label}</button>
+  `).join("");
+  bar.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeFilter = btn.dataset.keyword;
+      renderFilterBar();
+      applyFilter();
+    });
+  });
+}
+
+function renderStatusFilterBar() {
+  const bar = document.getElementById("statusFilterBar");
+  bar.innerHTML = STATUS_FILTERS.map(f => `
+    <button class="filter-btn${f.value === activeStatusFilter ? " active" : ""}" data-status="${f.value}">${f.label}</button>
+  `).join("");
+  bar.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeStatusFilter = btn.dataset.status;
+      renderStatusFilterBar();
+      applyFilter();
+    });
+  });
+}
+
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  searchQuery = e.target.value.trim();
+  applyFilter();
+});
+
+// Shows/hides cards per the combined group + status + search filters, and
+// updates the visible counts. All three conditions must pass (AND, not OR) —
+// sorting itself is untouched, this only toggles visibility within the
+// already-sorted order from relayoutSection().
+function applyFilter() {
+  [onlineGrid, offlineGrid].forEach((grid, i) => {
+    const countEl = i === 0 ? onlineCountEl : offlineCountEl;
+    let visible = 0;
+    Array.from(grid.children).forEach(card => {
+      const hostname = (card.dataset.hostname || "").toUpperCase();
+
+      let groupMatches;
+      if (activeFilter === "") groupMatches = true;
+      else if (activeFilter === "__MAINTENANCE__") groupMatches = card.dataset.maintenance === "true";
+      else groupMatches = hostname.includes(activeFilter.toUpperCase());
+
+      const statusMatches = !activeStatusFilter || card.dataset.status === activeStatusFilter;
+      const searchMatches = !searchQuery || hostname.includes(searchQuery.toUpperCase());
+
+      const matches = groupMatches && statusMatches && searchMatches;
+      card.style.display = matches ? "" : "none";
+      if (matches) visible++;
+    });
+    countEl.textContent = `(${visible})`;
+  });
+}
+
+function renderCard(payload) {
+  const id = payload.device_id;
+  lastPayload[id] = payload;
+  const status = payload.status || "online";
+  const targetGrid = status === "online" ? onlineGrid : offlineGrid;
+
+  if (!cards[id]) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.addEventListener("click", () => openModal(id));
+    targetGrid.appendChild(card);
+    cards[id] = card;
+  } else if (cards[id].parentElement !== targetGrid) {
+    targetGrid.appendChild(cards[id]); // moves it from the other section
+  }
+  cards[id].dataset.hostname = payload.hostname || "";
+  cards[id].dataset.status = status;
+  cards[id].dataset.maintenance = payload.under_maintenance ? "true" : "false";
+  const hw = payload.hardware || {};
+  const missing = payload.missing_components || [];
+  const pf = payload.peripheral_flags || {};
+
+  // Notify if the number of missing components just went UP since the last update
+  // (covers RAM/CPU/GPU/drives — peripheral connect/disconnect gets its own
+  // dedicated event from the server, handled separately below)
+  const prevMissingCount = lastMissingCount[id] ?? 0;
+  if (missing.length > prevMissingCount) {
+    const newlyMissing = missing.slice(0, missing.length - prevMissingCount);
+    notify(
+      `⚠️ ${payload.hostname}`,
+      newlyMissing.map(m => `${m.type}: ${m.name}`).join(", "),
+      "alert"
+    );
+  }
+  lastMissingCount[id] = missing.length;
+
+  cards[id].className = `card status-${status}${missing.length ? " has-missing" : ""}`;
+  cards[id].innerHTML = `
+    <div class="header-row">
+      <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance ? `<span class="maintenance-badge">🔧 Maintenance</span>` : ""}</h2>
+      <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
+    </div>
+    <div style="font-size:12px;color:#9aa1ac;">${payload.os || ""}</div>
+
+    <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
+
+    <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
+
+    <div class="stat"><span>Disk</span><span>${hw.disk_percent ?? "-"}% used</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
+
+    <div class="peripheral-row">
+      <span class="peripheral-chip ${pf.has_keyboard ? "present" : "absent"}">${pf.has_keyboard ? "✓" : "✕"} Keyboard</span>
+      <span class="peripheral-chip ${pf.has_mouse ? "present" : "absent"}">${pf.has_mouse ? "✓" : "✕"} Mouse</span>
     </div>
 
-    <script>
-      const onlineGrid = document.getElementById("onlineGrid");
-      const offlineGrid = document.getElementById("offlineGrid");
-      const onlineCountEl = document.getElementById("onlineCount");
-      const offlineCountEl = document.getElementById("offlineCount");
-      const overlay = document.getElementById("overlay");
-      const modal = document.getElementById("modal");
-      const toastContainer = document.getElementById("toastContainer");
-      const soundToggle = document.getElementById("soundToggle");
-      const issuesListEl = document.getElementById("issuesList");
-      const cards = {};       // device_id -> card element
-      const lastPayload = {}; // device_id -> last full payload
-      const lastMissingCount = {}; // device_id -> number of missing components on the previous update
-      let openDeviceId = null; // which device's modal is currently open, if any
-      let soundEnabled = true;
-      let openIssues = []; // current open (unresolved) problem reports
-      // Right after a repair is logged for a device, suppress its sidebar alerts
-      // for a grace period rather than requiring an immediate fresh report to
-      // clear them. If the device still reports the same problem once the grace
-      // period ends, the alert correctly reappears — this is a temporary "give it
-      // a moment to confirm" state, not a permanent dismissal.
-      const repairGraceUntil = {}; // device_id -> ms timestamp until which alerts are suppressed
-      const REPAIR_GRACE_MS = 30000;
-      // Which collapsible sections in the device modal are currently expanded.
-      // Kept outside the render function on purpose — the modal re-renders on every
-      // live update, which would otherwise snap open sections shut again each time.
-      const expandedSections = { internal: false, peripherals: false };
-      // Same idea for the Connection History / Repair Log lists: remember whether
-      // each was opened and what it showed, so a live re-render can restore it
-      // instead of wiping it. Tied to one device at a time (reset when a different
-      // device's modal is opened).
-      const logState = {
-        deviceId: null,
-        history: { open: false, html: "" },
-        repair: { open: false, html: "" },
-      };
-      function resetLogState(deviceId) {
-        logState.deviceId = deviceId;
-        logState.history = { open: false, html: "" };
-        logState.repair = { open: false, html: "" };
-      }
-      // Put back whatever was showing in the log lists before the last re-render.
-      function restoreLogs() {
-        const h = document.getElementById("historyList");
-        const r = document.getElementById("repairLogList");
-        if (h && logState.history.open) h.innerHTML = logState.history.html;
-        if (r && logState.repair.open) r.innerHTML = logState.repair.html;
-      }
+    ${missing.length ? `<div class="missing-pill">⚠️ ${missing.length} component${missing.length > 1 ? "s" : ""} missing</div>` : ""}
+    <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleTimeString()} — click for full details</div>
+  `;
 
-      // Must match API_KEY in server.py — needed so the "Resolve" button can call
-      // the server. Fine for a trusted LAN dashboard; don't expose this page to
-      // the public internet as-is.
-      const API_KEY = "changeme-shared-secret";
+  relayoutSection(onlineGrid, onlineCountEl);
+  relayoutSection(offlineGrid, offlineCountEl);
+  applyFilter();
+  renderNotificationSidebar();
 
-      const STATUS_TEXT = {
-        online: "Online",
-        offline: "Offline",
-        unresponsive: "Unresponsive",
-        crashed: "Crashed",
-      };
+  // If this device's modal is currently open, refresh its contents live too
+  if (openDeviceId === id) renderModalContent(payload);
+}
 
-      // ----------------- Notifications drawer: open/close -----------------
-      const notifSidebarEl = document.getElementById("notifSidebar");
-      const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
-      const sidebarToggleBadge = document.getElementById("sidebarToggleBadge");
-      let sidebarOpen = false;
-      let lastAlertTotal = 0;      // total (open issues + alerts) as of the last render
-      let sidebarManualOverride = false; // true once the user has clicked the toggle, until the total changes again
-      let currentAlertsCount = 0;  // kept in sync by renderNotificationSidebar()
+// Persistent right-hand alerts panel — separate from the bell dropdown, this
+// stays on screen at all times rather than needing a click to reveal.
+// Rebuilt from lastPayload (every device's most recent report) each time any
+// device updates, so it's always showing current state, not a stale snapshot.
+function renderNotificationSidebar() {
+  const alerts = [];
+  const now = Date.now();
 
-      function setSidebarOpen(open) {
-        sidebarOpen = open;
-        notifSidebarEl.classList.toggle("open", sidebarOpen);
-      }
+  Object.values(lastPayload).forEach(p => {
+    if (repairGraceUntil[p.device_id] && now < repairGraceUntil[p.device_id]) return; // just logged a repair — give it a moment
 
-      sidebarToggleBtn.addEventListener("click", () => {
-        sidebarManualOverride = true;
-        setSidebarOpen(!sidebarOpen);
+    const pf = p.peripheral_flags || {};
+    if (pf.has_keyboard === false) {
+      alerts.push({
+        device_id: p.device_id, hostname: p.hostname,
+        desc: "⌨️ No keyboard detected", timestamp: p.timestamp,
       });
-
-      // Called after every render of either list (issues or alerts). Auto-opens
-      // the drawer the moment there's something new to show, and auto-closes it
-      // once everything clears — unless the user just manually opened/closed it,
-      // in which case we leave it alone until the total count actually changes
-      // again (a fresh thing to notify about resets the override).
-      function updateSidebarAutoState() {
-        const total = openIssues.length + currentAlertsCount;
-        sidebarToggleBadge.style.display = total > 0 ? "flex" : "none";
-        sidebarToggleBadge.textContent = total;
-        sidebarToggleBtn.classList.toggle("has-alerts", total > 0);
-
-        if (total !== lastAlertTotal) {
-          sidebarManualOverride = false; // the situation changed — resume automatic behavior
-        }
-        if (!sidebarManualOverride) {
-          setSidebarOpen(total > 0);
-        }
-        lastAlertTotal = total;
-      }
-
-      function renderIssues() {
-        if (!openIssues.length) {
-          issuesListEl.innerHTML = `<div class="no-issues">No open problems.</div>`;
-          updateSidebarAutoState();
-          return;
-        }
-        issuesListEl.innerHTML = openIssues.map(issue => `
-          <div class="issue-card">
-            <div class="issue-tags">
-              <span class="issue-tag">${issue.room}</span>
-              <span class="issue-tag">${issue.system_unit}</span>
-            </div>
-            <div class="issue-desc">${issue.description}</div>
-            <div class="issue-meta">Reported by ${issue.reported_by} — ${new Date(issue.timestamp*1000).toLocaleString()}</div>
-            <button class="resolve-btn" data-issue-id="${issue.id}">✓ Mark Resolved</button>
-          </div>
-        `).join("");
-
-        issuesListEl.querySelectorAll(".resolve-btn").forEach(btn => {
-          btn.addEventListener("click", () => resolveIssue(parseInt(btn.dataset.issueId, 10)));
-        });
-        updateSidebarAutoState();
-      }
-
-      async function resolveIssue(issueId) {
-        try {
-          await fetch(`/api/issues/${issueId}/resolve`, {
-            method: "POST",
-            headers: { "X-API-Key": API_KEY },
-          });
-          openIssues = openIssues.filter(i => i.id !== issueId);
-          renderIssues();
-        } catch (e) {
-          alert("Could not resolve — check server connection.");
-        }
-      }
-
-      // ----------------- Sound + toast notifications -----------------
-      soundToggle.addEventListener("click", () => {
-        soundEnabled = !soundEnabled;
-        soundToggle.textContent = soundEnabled ? "🔔 Sound On" : "🔕 Sound Off";
-        soundToggle.classList.toggle("muted", !soundEnabled);
+    }
+    if (pf.has_mouse === false) {
+      alerts.push({
+        device_id: p.device_id, hostname: p.hostname,
+        desc: "🖱️ No mouse detected", timestamp: p.timestamp,
       });
-
-      function playAlertSound() {
-        if (!soundEnabled) return;
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.frequency.value = 880;
-          gain.gain.setValueAtTime(0.15, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.4);
-        } catch (e) { /* Audio may be blocked until the user interacts with the page once — that's fine */ }
-      }
-
-      function showToast(title, body, kind = "alert") {
-        const toast = document.createElement("div");
-        toast.className = `toast ${kind}`;
-        toast.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
-        toastContainer.appendChild(toast);
-        setTimeout(() => toast.remove(), 6000);
-      }
-
-      function notify(title, body, kind = "alert") {
-        showToast(title, body, kind);
-        if (kind === "alert") playAlertSound();
-      }
-
-      function naturalCompare(a, b) {
-        // "Unit 2" sorts before "Unit 10" — plain string sort would put "Unit 10" first
-        return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
-      }
-
-      function relayoutSection(container, countEl) {
-        const cardEls = Array.from(container.children);
-        cardEls.sort((a, b) => naturalCompare(a.dataset.hostname || "", b.dataset.hostname || ""));
-        cardEls.forEach(el => container.appendChild(el)); // re-appending in sorted order moves them into place
-        countEl.textContent = `(${cardEls.length})`; // recomputed by applyFilter() below when a filter is active
-      }
-
-      // ----------------- Group filter buttons -----------------
-      // Edit this list to add/rename groups — each becomes a button. "keyword" is
-      // matched as a case-insensitive substring against each device's hostname
-      // (e.g. "CC1" matches "CC1-PC-03", "cc1-front-desk", etc). A computer whose
-      // name doesn't contain any listed keyword only shows up under "All".
-      // The special keyword "__MAINTENANCE__" is reserved — it filters by the
-      // Under Maintenance flag instead of matching the hostname.
-      const FILTER_GROUPS = [
-        { label: "Computer Center 1", keyword: "CC1" },
-        { label: "Computer Center 2", keyword: "CC2" },
-        { label: "🔧 Under Maintenance", keyword: "__MAINTENANCE__" },
-      ];
-
-      const STATUS_FILTERS = [
-        { label: "All", value: "" },
-        { label: "Online", value: "online" },
-        { label: "Offline", value: "offline" },
-        { label: "Unresponsive", value: "unresponsive" },
-        { label: "Crashed", value: "crashed" },
-      ];
-
-      let activeFilter = "";       // "" = all groups, a keyword string, or "__MAINTENANCE__"
-      let activeStatusFilter = ""; // "" = all statuses, or one of STATUS_FILTERS' values
-      let searchQuery = "";        // free-text hostname search — combines with both filters above
-
-      function renderFilterBar() {
-        const bar = document.getElementById("filterBar");
-        const groups = [{ label: "All", keyword: "" }, ...FILTER_GROUPS];
-        bar.innerHTML = groups.map(g => `
-          <button class="filter-btn${g.keyword === activeFilter ? " active" : ""}" data-keyword="${g.keyword}">${g.label}</button>
-        `).join("");
-        bar.querySelectorAll(".filter-btn").forEach(btn => {
-          btn.addEventListener("click", () => {
-            activeFilter = btn.dataset.keyword;
-            renderFilterBar();
-            applyFilter();
-          });
-        });
-      }
-
-      function renderStatusFilterBar() {
-        const bar = document.getElementById("statusFilterBar");
-        bar.innerHTML = STATUS_FILTERS.map(f => `
-          <button class="filter-btn${f.value === activeStatusFilter ? " active" : ""}" data-status="${f.value}">${f.label}</button>
-        `).join("");
-        bar.querySelectorAll(".filter-btn").forEach(btn => {
-          btn.addEventListener("click", () => {
-            activeStatusFilter = btn.dataset.status;
-            renderStatusFilterBar();
-            applyFilter();
-          });
-        });
-      }
-
-      document.getElementById("searchInput").addEventListener("input", (e) => {
-        searchQuery = e.target.value.trim();
-        applyFilter();
+    }
+    (p.missing_components || []).forEach(m => {
+      alerts.push({
+        device_id: p.device_id, hostname: p.hostname,
+        desc: `⚠️ Missing: ${m.type} — ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}`,
+        timestamp: p.timestamp,
       });
+    });
+  });
 
-      // Shows/hides cards per the combined group + status + search filters, and
-      // updates the visible counts. All three conditions must pass (AND, not OR) —
-      // sorting itself is untouched, this only toggles visibility within the
-      // already-sorted order from relayoutSection().
-      function applyFilter() {
-        [onlineGrid, offlineGrid].forEach((grid, i) => {
-          const countEl = i === 0 ? onlineCountEl : offlineCountEl;
-          let visible = 0;
-          Array.from(grid.children).forEach(card => {
-            const hostname = (card.dataset.hostname || "").toUpperCase();
+  alerts.sort((a, b) => b.timestamp - a.timestamp);
 
-            let groupMatches;
-            if (activeFilter === "") groupMatches = true;
-            else if (activeFilter === "__MAINTENANCE__") groupMatches = card.dataset.maintenance === "true";
-            else groupMatches = hostname.includes(activeFilter.toUpperCase());
+  const listEl = document.getElementById("notifSidebarList");
+  const countEl = document.getElementById("notifSidebarCount");
+  countEl.textContent = `(${alerts.length})`;
+  currentAlertsCount = alerts.length;
 
-            const statusMatches = !activeStatusFilter || card.dataset.status === activeStatusFilter;
-            const searchMatches = !searchQuery || hostname.includes(searchQuery.toUpperCase());
+  if (!alerts.length) {
+    listEl.innerHTML = `<div class="no-issues">No active alerts.</div>`;
+    updateSidebarAutoState();
+    return;
+  }
 
-            const matches = groupMatches && statusMatches && searchMatches;
-            card.style.display = matches ? "" : "none";
-            if (matches) visible++;
-          });
-          countEl.textContent = `(${visible})`;
-        });
-      }
+  listEl.innerHTML = alerts.map(a => `
+    <div class="notif-alert-card" data-device-id="${a.device_id}">
+      <span class="notif-alert-host">${a.hostname}</span>
+      <div class="notif-alert-desc">${a.desc}</div>
+      <div class="notif-alert-time">${new Date(a.timestamp*1000).toLocaleString()}</div>
+      <div class="notif-alert-actions">
+        <button class="notif-repair-btn" data-device-id="${a.device_id}">🛠️ Log Repair</button>
+      </div>
+    </div>
+  `).join("");
 
-      function renderCard(payload) {
-        const id = payload.device_id;
-        lastPayload[id] = payload;
-        const status = payload.status || "online";
-        const targetGrid = status === "online" ? onlineGrid : offlineGrid;
+  listEl.querySelectorAll(".notif-alert-card").forEach(el => {
+    el.addEventListener("click", () => openModal(el.dataset.deviceId));
+  });
+  // Stop the repair button's click from also triggering the card's own
+  // click handler above (which would open the device modal at the same time).
+  listEl.querySelectorAll(".notif-repair-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openRepairForm(btn.dataset.deviceId);
+    });
+  });
+  updateSidebarAutoState();
+}
 
-        if (!cards[id]) {
-          const card = document.createElement("div");
-          card.className = "card";
-          card.addEventListener("click", () => openModal(id));
-          targetGrid.appendChild(card);
-          cards[id] = card;
-        } else if (cards[id].parentElement !== targetGrid) {
-          targetGrid.appendChild(cards[id]); // moves it from the other section
-        }
-        cards[id].dataset.hostname = payload.hostname || "";
-        cards[id].dataset.status = status;
-        cards[id].dataset.maintenance = payload.under_maintenance ? "true" : "false";
-        const hw = payload.hardware || {};
-        const missing = payload.missing_components || [];
-        const pf = payload.peripheral_flags || {};
+function renderModalContent(payload) {
+  const status = payload.status || "online";
+  const hw = payload.hardware || {};
+  const missing = payload.missing_components || [];
+  const devices = payload.devices || [];
+  const internal = payload.internal || [];
 
-        // Notify if the number of missing components just went UP since the last update
-        // (covers RAM/CPU/GPU/drives — peripheral connect/disconnect gets its own
-        // dedicated event from the server, handled separately below)
-        const prevMissingCount = lastMissingCount[id] ?? 0;
-        if (missing.length > prevMissingCount) {
-          const newlyMissing = missing.slice(0, missing.length - prevMissingCount);
-          notify(
-            `⚠️ ${payload.hostname}`,
-            newlyMissing.map(m => `${m.type}: ${m.name}`).join(", "),
-            "alert"
-          );
-        }
-        lastMissingCount[id] = missing.length;
+  const missingHtml = missing.length ? `
+    <div class="missing-box">
+      <b>⚠️ MISSING COMPONENTS (${missing.length})</b>
+      ${missing.map(m => `<div class="missing-item">⚠️ ${m.type}: ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}</div>`).join("")}
+      <button class="resolve-btn" id="resetBaselineBtn" style="margin-top:8px;">🔄 This is expected now — Reset Baseline</button>
+    </div>
+  ` : "";
 
-        cards[id].className = `card status-${status}${missing.length ? " has-missing" : ""}`;
-        cards[id].innerHTML = `
-          <div class="header-row">
-            <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance ? `<span class="maintenance-badge">🔧 Maintenance</span>` : ""}</h2>
-            <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
-          </div>
-          <div style="font-size:12px;color:#9aa1ac;">${payload.os || ""}</div>
+  modal.innerHTML = `
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="header-row">
+      <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance ? `<span class="maintenance-badge">🔧 Maintenance</span>` : ""}</h2>
+      <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
+    </div>
+    <div style="font-size:13px;color:#9aa1ac;">${payload.os || ""} — ${payload.device_id}</div>
 
-          <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
-          <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
+    <button class="history-btn" id="maintenanceHistoryBtn" style="margin-top:10px; margin-right:8px;">📋 Maintenance History</button>
+    <button class="history-btn" id="toggleMaintenanceBtn" style="margin-top:10px; ${payload.under_maintenance ? "border-color: rgba(61,220,132,0.4); color: #3ddc84;" : "border-color: rgba(255,165,61,0.4); color: #ffa53d;"}">
+      ${payload.under_maintenance ? "✅ Mark Back In Service" : "🔧 Mark Under Maintenance"}
+    </button>
 
-          <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB</span></div>
-          <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
+    <div class="section-title">Hardware</div>
+    <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
+    <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB (${hw.ram_percent ?? "-"}%)</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
+    <div class="stat"><span>Disk</span><span>${hw.disk_free_gb ?? "-"} GB free (${hw.disk_percent ?? "-"}% used)</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
+    ${hw.battery_percent != null ? `<div class="stat"><span>Battery</span><span>${hw.battery_percent}%</span></div>` : ""}
 
-          <div class="stat"><span>Disk</span><span>${hw.disk_percent ?? "-"}% used</span></div>
-          <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
+    <div class="peripheral-row">
+      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_keyboard ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_keyboard ? "✓" : "✕"} Keyboard</span>
+      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_mouse ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_mouse ? "✓" : "✕"} Mouse</span>
+    </div>
 
-          <div class="peripheral-row">
-            <span class="peripheral-chip ${pf.has_keyboard ? "present" : "absent"}">${pf.has_keyboard ? "✓" : "✕"} Keyboard</span>
-            <span class="peripheral-chip ${pf.has_mouse ? "present" : "absent"}">${pf.has_mouse ? "✓" : "✕"} Mouse</span>
-          </div>
+    ${missingHtml}
 
-          ${missing.length ? `<div class="missing-pill">⚠️ ${missing.length} component${missing.length > 1 ? "s" : ""} missing</div>` : ""}
-          <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleTimeString()} — click for full details</div>
-        `;
+    <div class="section-title collapsible" id="internalToggle">
+      <span class="collapse-arrow">${expandedSections.internal ? "▼" : "▶"}</span> Internal Components (${internal.length})
+    </div>
+    <div class="device-list" id="internalList" style="display:${expandedSections.internal ? "block" : "none"};">${internal.map(d => `<div>[${d.type}] ${d.name}${d.slot ? ` — slot ${d.slot}` : ""}${d.size_gb ? ` — ${d.size_gb} GB` : ""}</div>`).join("") || "—"}</div>
 
-        relayoutSection(onlineGrid, onlineCountEl);
-        relayoutSection(offlineGrid, offlineCountEl);
-        applyFilter();
-        renderNotificationSidebar();
+    <div class="section-title collapsible" id="peripheralsToggle">
+      <span class="collapse-arrow">${expandedSections.peripherals ? "▼" : "▶"}</span> Peripherals / External Devices (${devices.length})
+    </div>
+    <div class="device-list" id="peripheralsList" style="display:${expandedSections.peripherals ? "block" : "none"};">${devices.map(d => `<div>[${d.type}] ${d.name}</div>`).join("") || "—"}</div>
 
-        // If this device's modal is currently open, refresh its contents live too
-        if (openDeviceId === id) renderModalContent(payload);
-      }
+    <button class="history-btn" id="historyBtn">📜 View Connection History</button>
+    <div class="history-list" id="historyList"></div>
 
-      // Persistent right-hand alerts panel — separate from the bell dropdown, this
-      // stays on screen at all times rather than needing a click to reveal.
-      // Rebuilt from lastPayload (every device's most recent report) each time any
-      // device updates, so it's always showing current state, not a stale snapshot.
-      function renderNotificationSidebar() {
-        const alerts = [];
-        const now = Date.now();
+    <div class="section-title" style="margin-top:18px;">🛠️ Repair Log</div>
+    <button class="history-btn" id="viewRepairLogBtn">📖 View Repair Log</button>
+    <button class="history-btn" id="logRepairBtn" style="margin-left:8px; border-color: rgba(79,140,255,0.4); color: #4f8cff;">+ Log a Repair</button>
+    <div class="history-list" id="repairLogList"></div>
 
-        Object.values(lastPayload).forEach(p => {
-          if (repairGraceUntil[p.device_id] && now < repairGraceUntil[p.device_id]) return; // just logged a repair — give it a moment
+    <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleString()}</div>
+  `;
+  document.getElementById("modalClose").addEventListener("click", closeModal);
+  document.getElementById("internalToggle").addEventListener("click", () => toggleSection("internal"));
+  document.getElementById("peripheralsToggle").addEventListener("click", () => toggleSection("peripherals"));
+  document.getElementById("historyBtn").addEventListener("click", () => loadHistory(payload.device_id));
+  document.getElementById("viewRepairLogBtn").addEventListener("click", () => loadRepairLog(payload.device_id));
+  document.getElementById("logRepairBtn").addEventListener("click", () => openRepairForm(payload.device_id));
+  document.getElementById("toggleMaintenanceBtn").addEventListener("click", () => toggleMaintenance(payload.device_id, payload.under_maintenance));
+  document.getElementById("maintenanceHistoryBtn").addEventListener("click", () => {
+    closeModal();
+    showMaintenanceHistory(payload.device_id);
+  });
+  const resetBtn = document.getElementById("resetBaselineBtn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => resetBaseline(payload.device_id));
+  }
+  restoreLogs(); // put back any log list the user had open before this re-render
+}
 
-          const pf = p.peripheral_flags || {};
-          if (pf.has_keyboard === false) {
-            alerts.push({
-              device_id: p.device_id, hostname: p.hostname,
-              desc: "⌨️ No keyboard detected", timestamp: p.timestamp,
-            });
-          }
-          if (pf.has_mouse === false) {
-            alerts.push({
-              device_id: p.device_id, hostname: p.hostname,
-              desc: "🖱️ No mouse detected", timestamp: p.timestamp,
-            });
-          }
-          (p.missing_components || []).forEach(m => {
-            alerts.push({
-              device_id: p.device_id, hostname: p.hostname,
-              desc: `⚠️ Missing: ${m.type} — ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}`,
-              timestamp: p.timestamp,
-            });
-          });
-        });
+// ----------------- Floating Maintenance form -----------------
+let maintTarget = null; // { deviceId, turningOn }
 
-        alerts.sort((a, b) => b.timestamp - a.timestamp);
+function toggleMaintenance(deviceId, currentlyUnderMaintenance) {
+  const turningOn = !currentlyUnderMaintenance;
+  maintTarget = { deviceId, turningOn };
+  const dev = lastPayload[deviceId];
+  document.getElementById("maintTitle").textContent = turningOn ? "🔧 Mark Under Maintenance" : "✅ Back In Service";
+  document.getElementById("maintDeviceLabel").textContent = dev ? dev.hostname : deviceId;
+  document.getElementById("maintOnFields").style.display = turningOn ? "block" : "none";
+  document.getElementById("maintOffFields").style.display = turningOn ? "none" : "block";
+  document.getElementById("maintReasonInput").value = "";
+  document.getElementById("maintNoteInput").value = "";
+  document.getElementById("maintCompleteTickets").checked = true;
+  document.getElementById("maintNameInput").value = "";
+  hideMaintError();
+  document.getElementById("maintOverlay").classList.add("open");
+}
 
-        const listEl = document.getElementById("notifSidebarList");
-        const countEl = document.getElementById("notifSidebarCount");
-        countEl.textContent = `(${alerts.length})`;
-        currentAlertsCount = alerts.length;
+function closeMaintForm() {
+  document.getElementById("maintOverlay").classList.remove("open");
+  maintTarget = null;
+}
 
-        if (!alerts.length) {
-          listEl.innerHTML = `<div class="no-issues">No active alerts.</div>`;
-          updateSidebarAutoState();
-          return;
-        }
+function showMaintError(msg) {
+  const el = document.getElementById("maintError");
+  el.textContent = msg;
+  el.style.display = "block";
+}
 
-        listEl.innerHTML = alerts.map(a => `
-          <div class="notif-alert-card" data-device-id="${a.device_id}">
-            <span class="notif-alert-host">${a.hostname}</span>
-            <div class="notif-alert-desc">${a.desc}</div>
-            <div class="notif-alert-time">${new Date(a.timestamp*1000).toLocaleString()}</div>
-            <div class="notif-alert-actions">
-              <button class="notif-repair-btn" data-device-id="${a.device_id}">🛠️ Log Repair</button>
-            </div>
-          </div>
-        `).join("");
+function hideMaintError() {
+  document.getElementById("maintError").style.display = "none";
+}
 
-        listEl.querySelectorAll(".notif-alert-card").forEach(el => {
-          el.addEventListener("click", () => openModal(el.dataset.deviceId));
-        });
-        // Stop the repair button's click from also triggering the card's own
-        // click handler above (which would open the device modal at the same time).
-        listEl.querySelectorAll(".notif-repair-btn").forEach(btn => {
-          btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            openRepairForm(btn.dataset.deviceId);
-          });
-        });
-        updateSidebarAutoState();
-      }
+async function submitMaintForm() {
+  if (!maintTarget) return;
+  const { deviceId, turningOn } = maintTarget;
+  const name = document.getElementById("maintNameInput").value.trim();
+  const reason = document.getElementById("maintReasonInput").value.trim();
+  const note = document.getElementById("maintNoteInput").value.trim();
+  const complete_tickets = document.getElementById("maintCompleteTickets").checked;
 
-      function renderModalContent(payload) {
-        const status = payload.status || "online";
-        const hw = payload.hardware || {};
-        const missing = payload.missing_components || [];
-        const devices = payload.devices || [];
-        const internal = payload.internal || [];
+  if (turningOn && !reason) { showMaintError("Please enter the reason for maintenance."); return; }
+  if (!name) { showMaintError("Please enter your name."); return; }
+  hideMaintError();
 
-        const missingHtml = missing.length ? `
-          <div class="missing-box">
-            <b>⚠️ MISSING COMPONENTS (${missing.length})</b>
-            ${missing.map(m => `<div class="missing-item">⚠️ ${m.type}: ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}</div>`).join("")}
-            <button class="resolve-btn" id="resetBaselineBtn" style="margin-top:8px;">🔄 This is expected now — Reset Baseline</button>
-          </div>
-        ` : "";
+  const body = { under_maintenance: turningOn, name };
+  if (turningOn) body.reason = reason;
+  else { body.note = note; body.complete_tickets = complete_tickets; }
 
-        modal.innerHTML = `
-          <button class="modal-close" id="modalClose">✕</button>
-          <div class="header-row">
-            <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance ? `<span class="maintenance-badge">🔧 Maintenance</span>` : ""}</h2>
-            <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
-          </div>
-          <div style="font-size:13px;color:#9aa1ac;">${payload.os || ""} — ${payload.device_id}</div>
+  try {
+    const resp = await fetch(`/api/maintenance/${encodeURIComponent(deviceId)}`, {
+      method: "POST",
+      headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (resp.ok) {
+      closeMaintForm(); // card badge + toast come from the "maintenance" WebSocket message
+    } else if (resp.status === 401) {
+      showMaintError("API_KEY in this dashboard doesn't match the server's.");
+    } else if (resp.status === 400) {
+      const err = await resp.json().catch(() => ({}));
+      showMaintError(err.detail || "Missing required field.");
+    } else {
+      showMaintError("Could not update maintenance status — check the server connection.");
+    }
+  } catch (e) {
+    showMaintError("Could not reach the server.");
+  }
+}
 
-          <button class="history-btn" id="toggleMaintenanceBtn" style="margin-top:10px; ${payload.under_maintenance ? "border-color: rgba(61,220,132,0.4); color: #3ddc84;" : "border-color: rgba(255,165,61,0.4); color: #ffa53d;"}">
-            ${payload.under_maintenance ? "✅ Mark Back In Service" : "🔧 Mark Under Maintenance"}
-          </button>
+document.getElementById("maintClose").addEventListener("click", closeMaintForm);
+document.getElementById("maintCancel").addEventListener("click", closeMaintForm);
+document.getElementById("maintSubmit").addEventListener("click", submitMaintForm);
+document.getElementById("maintOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "maintOverlay") closeMaintForm();
+});
 
-          <div class="section-title">Hardware</div>
-          <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
-          <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
-          <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB (${hw.ram_percent ?? "-"}%)</span></div>
-          <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
-          <div class="stat"><span>Disk</span><span>${hw.disk_free_gb ?? "-"} GB free (${hw.disk_percent ?? "-"}% used)</span></div>
-          <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
-          ${hw.battery_percent != null ? `<div class="stat"><span>Battery</span><span>${hw.battery_percent}%</span></div>` : ""}
+// ----------------- Floating "Log a Repair" form -----------------
+let repairTargetDeviceId = null;
 
-          <div class="peripheral-row">
-            <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_keyboard ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_keyboard ? "✓" : "✕"} Keyboard</span>
-            <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_mouse ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_mouse ? "✓" : "✕"} Mouse</span>
-          </div>
+function openRepairForm(deviceId) {
+  repairTargetDeviceId = deviceId;
+  document.getElementById("repairFormDeviceLabel").textContent = (lastPayload[deviceId] || {}).hostname || deviceId;
+  document.getElementById("repairNoteInput").value = "";
+  document.getElementById("repairTechInput").value = "";
+  document.getElementById("repairUpdateBaseline").checked = false;
+  hideRepairFormError();
+  document.getElementById("repairOverlay").classList.add("open");
+  document.getElementById("repairNoteInput").focus();
+}
 
-          ${missingHtml}
+function closeRepairForm() {
+  document.getElementById("repairOverlay").classList.remove("open");
+  hideRepairFormError();
+  repairTargetDeviceId = null;
+}
 
-          <div class="section-title collapsible" id="internalToggle">
-            <span class="collapse-arrow">${expandedSections.internal ? "▼" : "▶"}</span> Internal Components (${internal.length})
-          </div>
-          <div class="device-list" id="internalList" style="display:${expandedSections.internal ? "block" : "none"};">${internal.map(d => `<div>[${d.type}] ${d.name}${d.slot ? ` — slot ${d.slot}` : ""}${d.size_gb ? ` — ${d.size_gb} GB` : ""}</div>`).join("") || "—"}</div>
+function showRepairFormError(message) {
+  const errEl = document.getElementById("repairFormError");
+  errEl.textContent = message;
+  errEl.style.display = "block";
+}
 
-          <div class="section-title collapsible" id="peripheralsToggle">
-            <span class="collapse-arrow">${expandedSections.peripherals ? "▼" : "▶"}</span> Peripherals / External Devices (${devices.length})
-          </div>
-          <div class="device-list" id="peripheralsList" style="display:${expandedSections.peripherals ? "block" : "none"};">${devices.map(d => `<div>[${d.type}] ${d.name}</div>`).join("") || "—"}</div>
+function hideRepairFormError() {
+  const errEl = document.getElementById("repairFormError");
+  errEl.style.display = "none";
+  errEl.textContent = "";
+}
 
-          <button class="history-btn" id="historyBtn">📜 View Connection History</button>
-          <div class="history-list" id="historyList"></div>
+function markRepairFieldInvalid(inputId, invalid) {
+  const el = document.getElementById(inputId);
+  el.style.borderColor = invalid ? "#ff5c5c" : "#2a2e37";
+}
 
-          <div class="section-title" style="margin-top:18px;">🛠️ Repair Log</div>
-          <button class="history-btn" id="viewRepairLogBtn">📖 View Repair Log</button>
-          <button class="history-btn" id="logRepairBtn" style="margin-left:8px; border-color: rgba(79,140,255,0.4); color: #4f8cff;">+ Log a Repair</button>
-          <div class="history-list" id="repairLogList"></div>
+async function submitRepairForm() {
+  const note = document.getElementById("repairNoteInput").value.trim();
+  const name = document.getElementById("repairTechInput").value.trim();
+  const updateBaseline = document.getElementById("repairUpdateBaseline").checked;
 
-          <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleString()}</div>
-        `;
-        document.getElementById("modalClose").addEventListener("click", closeModal);
-        document.getElementById("internalToggle").addEventListener("click", () => toggleSection("internal"));
-        document.getElementById("peripheralsToggle").addEventListener("click", () => toggleSection("peripherals"));
-        document.getElementById("historyBtn").addEventListener("click", () => loadHistory(payload.device_id));
-        document.getElementById("viewRepairLogBtn").addEventListener("click", () => loadRepairLog(payload.device_id));
-        document.getElementById("logRepairBtn").addEventListener("click", () => openRepairForm(payload.device_id));
-        document.getElementById("toggleMaintenanceBtn").addEventListener("click", () => toggleMaintenance(payload.device_id, payload.under_maintenance));
-        const resetBtn = document.getElementById("resetBaselineBtn");
-        if (resetBtn) {
-          resetBtn.addEventListener("click", () => resetBaseline(payload.device_id));
-        }
-        restoreLogs(); // put back any log list the user had open before this re-render
-      }
+  markRepairFieldInvalid("repairNoteInput", !note);
+  markRepairFieldInvalid("repairTechInput", !name);
 
-      async function toggleMaintenance(deviceId, currentlyUnderMaintenance) {
-        const name = prompt("Your name:");
-        if (!name || !name.trim()) return;
+  if (!note && !name) {
+    showRepairFormError("Please describe what was fixed and enter your name.");
+    return;
+  }
+  if (!note) {
+    showRepairFormError("Please describe what was fixed or replaced.");
+    return;
+  }
+  if (!name) {
+    showRepairFormError("Please enter your name.");
+    return;
+  }
+  hideRepairFormError();
 
-        try {
-          const resp = await fetch(`/api/maintenance/${encodeURIComponent(deviceId)}`, {
-            method: "POST",
-            headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
-            body: JSON.stringify({ under_maintenance: !currentlyUnderMaintenance, name: name.trim() }),
-          });
-          if (!resp.ok) {
-            alert("Could not update maintenance status — check the server connection and API_KEY.");
-          }
-          // No local state update here — the "maintenance" WebSocket broadcast
-          // (handled in ws.onmessage) updates lastPayload and re-renders for
-          // everyone, including this tab, so it stays in sync with the server.
-        } catch (e) {
-          alert("Could not reach the server.");
-        }
-      }
+  const deviceId = repairTargetDeviceId;
+  const submitBtn = document.getElementById("repairFormSubmit");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting…";
 
-      // ----------------- Floating "Log a Repair" form -----------------
-      let repairTargetDeviceId = null;
+  try {
+    const resp = await fetch(`/api/repair-log/${encodeURIComponent(deviceId)}`, {
+      method: "POST",
+      headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ note, name, update_baseline: updateBaseline }),
+    });
+    if (resp.ok) {
+      showToast("🛠️ Repair Logged", updateBaseline ? `${note} — baseline updated` : note, "connected");
+      repairGraceUntil[deviceId] = Date.now() + REPAIR_GRACE_MS;
+      renderNotificationSidebar(); // drop this device's alerts from the sidebar right away
+      if (openDeviceId === deviceId) loadRepairLog(deviceId);
+      closeRepairForm();
+    } else if (resp.status === 401) {
+      showRepairFormError("API_KEY in this dashboard doesn't match the server's. A technician needs to fix that first.");
+    } else if (resp.status === 400) {
+      const body = await resp.json().catch(() => ({}));
+      showRepairFormError(body.detail || "Missing required field.");
+    } else {
+      showRepairFormError("Could not log the repair — check the server connection.");
+    }
+  } catch (e) {
+    showRepairFormError("Could not reach the server.");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit";
+  }
+}
 
-      function openRepairForm(deviceId) {
-        repairTargetDeviceId = deviceId;
-        document.getElementById("repairFormDeviceLabel").textContent = (lastPayload[deviceId] || {}).hostname || deviceId;
-        document.getElementById("repairNoteInput").value = "";
-        document.getElementById("repairTechInput").value = "";
-        document.getElementById("repairUpdateBaseline").checked = false;
-        hideRepairFormError();
-        document.getElementById("repairOverlay").classList.add("open");
-        document.getElementById("repairNoteInput").focus();
-      }
+async function resetBaseline(deviceId) {
+  if (!confirm("This marks the CURRENT hardware/peripherals as the new expected baseline. Only do this if the change was intentional. Continue?")) {
+    return;
+  }
+  try {
+    const resp = await fetch(`/api/baseline/${encodeURIComponent(deviceId)}/reset`, {
+      method: "POST",
+      headers: { "X-API-Key": API_KEY },
+    });
+    if (resp.ok) {
+      showToast("✅ Baseline Reset", "New configuration saved as expected.", "connected");
+    } else {
+      alert("Reset failed — check the server is running and API_KEY matches.");
+    }
+  } catch (e) {
+    alert("Could not reach the server.");
+  }
+}
 
-      function closeRepairForm() {
-        document.getElementById("repairOverlay").classList.remove("open");
-        hideRepairFormError();
-        repairTargetDeviceId = null;
-      }
+function toggleSection(name) {
+  expandedSections[name] = !expandedSections[name];
+  const listEl = document.getElementById(name === "internal" ? "internalList" : "peripheralsList");
+  const toggleEl = document.getElementById(name === "internal" ? "internalToggle" : "peripheralsToggle");
+  if (listEl) listEl.style.display = expandedSections[name] ? "block" : "none";
+  if (toggleEl) toggleEl.querySelector(".collapse-arrow").textContent = expandedSections[name] ? "▼" : "▶";
+}
 
-      function showRepairFormError(message) {
-        const errEl = document.getElementById("repairFormError");
-        errEl.textContent = message;
-        errEl.style.display = "block";
-      }
+async function loadHistory(deviceId) {
+  logState.history.open = true;
+  const setList = (html) => {
+    // Re-query every time: a live update may have re-rendered the modal
+    // (replacing this element) while the request was in flight.
+    logState.history.html = html;
+    const el = document.getElementById("historyList");
+    if (el && logState.deviceId === deviceId) el.innerHTML = html;
+  };
+  if (!logState.history.html) setList(`<div style="color:#6b7280;">Loading…</div>`);
+  try {
+    const resp = await fetch(`/api/history/${encodeURIComponent(deviceId)}`);
+    const allEvents = await resp.json();
+    const events = allEvents.filter(e => e.event_type !== "repaired"); // repairs live in their own section
+    if (!events.length) {
+      setList(`<div style="color:#6b7280;">No connect/disconnect events recorded yet.</div>`);
+      return;
+    }
+    setList(events.map(e => `
+      <div class="history-item ${e.event_type}">
+        <span>${e.event_type === "connected" ? "🔌+" : "🔌−"} ${e.component_type}: ${e.component_name}</span>
+        <span class="history-time">${new Date(e.timestamp*1000).toLocaleString()}</span>
+      </div>
+    `).join(""));
+  } catch (e) {
+    setList(`<div style="color:#ff5c5c;">Could not load history.</div>`);
+  }
+}
 
-      function hideRepairFormError() {
-        const errEl = document.getElementById("repairFormError");
-        errEl.style.display = "none";
-        errEl.textContent = "";
-      }
+async function loadRepairLog(deviceId) {
+  logState.repair.open = true;
+  const setList = (html) => {
+    logState.repair.html = html;
+    const el = document.getElementById("repairLogList");
+    if (el && logState.deviceId === deviceId) el.innerHTML = html;
+  };
+  if (!logState.repair.html) setList(`<div style="color:#6b7280;">Loading…</div>`);
+  try {
+    const resp = await fetch(`/api/history/${encodeURIComponent(deviceId)}`);
+    const allEvents = await resp.json();
+    const events = allEvents.filter(e => e.event_type === "repaired");
+    if (!events.length) {
+      setList(`<div style="color:#6b7280;">No repairs logged yet.</div>`);
+      return;
+    }
+    setList(events.map(e => `
+      <div class="history-item repaired">
+        <span>🛠️ ${e.component_name} <span style="color:#6b7280;">— ${e.component_type}</span></span>
+        <span class="history-time">${new Date(e.timestamp*1000).toLocaleString()}</span>
+      </div>
+    `).join(""));
+  } catch (e) {
+    setList(`<div style="color:#ff5c5c;">Could not load repair log.</div>`);
+  }
+}
 
-      function markRepairFieldInvalid(inputId, invalid) {
-        const el = document.getElementById(inputId);
-        el.style.borderColor = invalid ? "#ff5c5c" : "#2a2e37";
-      }
+function openModal(deviceId) {
+  openDeviceId = deviceId;
+  if (logState.deviceId !== deviceId) resetLogState(deviceId);
+  renderModalContent(lastPayload[deviceId]);
+  overlay.classList.add("open");
+}
 
-      async function submitRepairForm() {
-        const note = document.getElementById("repairNoteInput").value.trim();
-        const name = document.getElementById("repairTechInput").value.trim();
-        const updateBaseline = document.getElementById("repairUpdateBaseline").checked;
+function closeModal() {
+  openDeviceId = null;
+  resetLogState(null);
+  overlay.classList.remove("open");
+}
 
-        markRepairFieldInvalid("repairNoteInput", !note);
-        markRepairFieldInvalid("repairTechInput", !name);
+overlay.addEventListener("click", (e) => {
+  if (e.target === overlay) closeModal(); // click outside modal closes it
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { closeModal(); closeRepairForm(); closeNewTicketForm(); closeMaintForm(); }
+});
 
-        if (!note && !name) {
-          showRepairFormError("Please describe what was fixed and enter your name.");
-          return;
-        }
-        if (!note) {
-          showRepairFormError("Please describe what was fixed or replaced.");
-          return;
-        }
-        if (!name) {
-          showRepairFormError("Please enter your name.");
-          return;
-        }
-        hideRepairFormError();
+document.getElementById("repairFormClose").addEventListener("click", closeRepairForm);
+document.getElementById("repairFormCancel").addEventListener("click", closeRepairForm);
+document.getElementById("repairFormSubmit").addEventListener("click", submitRepairForm);
+document.getElementById("repairOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "repairOverlay") closeRepairForm();
+});
+document.getElementById("repairNoteInput").addEventListener("input", () => markRepairFieldInvalid("repairNoteInput", false));
+document.getElementById("repairTechInput").addEventListener("input", () => markRepairFieldInvalid("repairTechInput", false));
 
-        const deviceId = repairTargetDeviceId;
-        const submitBtn = document.getElementById("repairFormSubmit");
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Submitting…";
+function applyStatusUpdate(deviceId, status) {
+  const prev = lastPayload[deviceId];
+  if (prev) {
+    const wasStatus = prev.status;
+    prev.status = status;
+    renderCard(prev);
+    if (status === "crashed" && wasStatus !== "crashed") {
+      notify(`🔴 ${prev.hostname}`, "No longer responding — likely crashed.", "alert");
+    }
+  }
+}
 
-        try {
-          const resp = await fetch(`/api/repair-log/${encodeURIComponent(deviceId)}`, {
-            method: "POST",
-            headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
-            body: JSON.stringify({ note, name, update_baseline: updateBaseline }),
-          });
-          if (resp.ok) {
-            showToast("🛠️ Repair Logged", updateBaseline ? `${note} — baseline updated` : note, "connected");
-            repairGraceUntil[deviceId] = Date.now() + REPAIR_GRACE_MS;
-            renderNotificationSidebar(); // drop this device's alerts from the sidebar right away
-            if (openDeviceId === deviceId) loadRepairLog(deviceId);
-            closeRepairForm();
-          } else if (resp.status === 401) {
-            showRepairFormError("API_KEY in this dashboard doesn't match the server's. A technician needs to fix that first.");
-          } else if (resp.status === 400) {
-            const body = await resp.json().catch(() => ({}));
-            showRepairFormError(body.detail || "Missing required field.");
-          } else {
-            showRepairFormError("Could not log the repair — check the server connection.");
-          }
-        } catch (e) {
-          showRepairFormError("Could not reach the server.");
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = "Submit";
-        }
-      }
+function handleDeviceEvent(evt) {
+  if (evt.event_type === "repaired") {
+    notify(`🛠️ Repair Logged — ${evt.hostname}`, `${evt.component_name} (by ${evt.component_type})`, "connected");
+    if (openDeviceId === evt.device_id && logState.repair.open) {
+      loadRepairLog(evt.device_id);
+    }
+  } else {
+    const isDisconnect = evt.event_type === "disconnected";
+    notify(
+      `${isDisconnect ? "🔌 Disconnected" : "🔌 Connected"} — ${evt.hostname}`,
+      `${evt.component_type}: ${evt.component_name}`,
+      isDisconnect ? "alert" : "connected"
+    );
+    if (openDeviceId === evt.device_id && logState.history.open) {
+      loadHistory(evt.device_id);
+    }
+  }
+}
 
-      async function resetBaseline(deviceId) {
-        if (!confirm("This marks the CURRENT hardware/peripherals as the new expected baseline. Only do this if the change was intentional. Continue?")) {
-          return;
-        }
-        try {
-          const resp = await fetch(`/api/baseline/${encodeURIComponent(deviceId)}/reset`, {
-            method: "POST",
-            headers: { "X-API-Key": API_KEY },
-          });
-          if (resp.ok) {
-            showToast("✅ Baseline Reset", "New configuration saved as expected.", "connected");
-          } else {
-            alert("Reset failed — check the server is running and API_KEY matches.");
-          }
-        } catch (e) {
-          alert("Could not reach the server.");
-        }
-      }
+function connect() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(`${proto}://${location.host}/ws`);
 
-      function toggleSection(name) {
-        expandedSections[name] = !expandedSections[name];
-        const listEl = document.getElementById(name === "internal" ? "internalList" : "peripheralsList");
-        const toggleEl = document.getElementById(name === "internal" ? "internalToggle" : "peripheralsToggle");
-        if (listEl) listEl.style.display = expandedSections[name] ? "block" : "none";
-        if (toggleEl) toggleEl.querySelector(".collapse-arrow").textContent = expandedSections[name] ? "▼" : "▶";
-      }
-
-      async function loadHistory(deviceId) {
-        logState.history.open = true;
-        const setList = (html) => {
-          // Re-query every time: a live update may have re-rendered the modal
-          // (replacing this element) while the request was in flight.
-          logState.history.html = html;
-          const el = document.getElementById("historyList");
-          if (el && logState.deviceId === deviceId) el.innerHTML = html;
-        };
-        if (!logState.history.html) setList(`<div style="color:#6b7280;">Loading…</div>`);
-        try {
-          const resp = await fetch(`/api/history/${encodeURIComponent(deviceId)}`);
-          const allEvents = await resp.json();
-          const events = allEvents.filter(e => e.event_type !== "repaired"); // repairs live in their own section
-          if (!events.length) {
-            setList(`<div style="color:#6b7280;">No connect/disconnect events recorded yet.</div>`);
-            return;
-          }
-          setList(events.map(e => `
-            <div class="history-item ${e.event_type}">
-              <span>${e.event_type === "connected" ? "🔌+" : "🔌−"} ${e.component_type}: ${e.component_name}</span>
-              <span class="history-time">${new Date(e.timestamp*1000).toLocaleString()}</span>
-            </div>
-          `).join(""));
-        } catch (e) {
-          setList(`<div style="color:#ff5c5c;">Could not load history.</div>`);
-        }
-      }
-
-      async function loadRepairLog(deviceId) {
-        logState.repair.open = true;
-        const setList = (html) => {
-          logState.repair.html = html;
-          const el = document.getElementById("repairLogList");
-          if (el && logState.deviceId === deviceId) el.innerHTML = html;
-        };
-        if (!logState.repair.html) setList(`<div style="color:#6b7280;">Loading…</div>`);
-        try {
-          const resp = await fetch(`/api/history/${encodeURIComponent(deviceId)}`);
-          const allEvents = await resp.json();
-          const events = allEvents.filter(e => e.event_type === "repaired");
-          if (!events.length) {
-            setList(`<div style="color:#6b7280;">No repairs logged yet.</div>`);
-            return;
-          }
-          setList(events.map(e => `
-            <div class="history-item repaired">
-              <span>🛠️ ${e.component_name} <span style="color:#6b7280;">— ${e.component_type}</span></span>
-              <span class="history-time">${new Date(e.timestamp*1000).toLocaleString()}</span>
-            </div>
-          `).join(""));
-        } catch (e) {
-          setList(`<div style="color:#ff5c5c;">Could not load repair log.</div>`);
-        }
-      }
-
-      function openModal(deviceId) {
-        openDeviceId = deviceId;
-        if (logState.deviceId !== deviceId) resetLogState(deviceId);
-        renderModalContent(lastPayload[deviceId]);
-        overlay.classList.add("open");
-      }
-
-      function closeModal() {
-        openDeviceId = null;
-        resetLogState(null);
-        overlay.classList.remove("open");
-      }
-
-      overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) closeModal(); // click outside modal closes it
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.type === "snapshot") {
+      msg.data.forEach(d => {
+        lastMissingCount[d.device_id] = (d.missing_components || []).length;
+        renderCard(d);
       });
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") { closeModal(); closeRepairForm(); }
-      });
-
-      document.getElementById("repairFormClose").addEventListener("click", closeRepairForm);
-      document.getElementById("repairFormCancel").addEventListener("click", closeRepairForm);
-      document.getElementById("repairFormSubmit").addEventListener("click", submitRepairForm);
-      document.getElementById("repairOverlay").addEventListener("click", (e) => {
-        if (e.target.id === "repairOverlay") closeRepairForm();
-      });
-      document.getElementById("repairNoteInput").addEventListener("input", () => markRepairFieldInvalid("repairNoteInput", false));
-      document.getElementById("repairTechInput").addEventListener("input", () => markRepairFieldInvalid("repairTechInput", false));
-
-      function applyStatusUpdate(deviceId, status) {
-        const prev = lastPayload[deviceId];
-        if (prev) {
-          const wasStatus = prev.status;
-          prev.status = status;
-          renderCard(prev);
-          if (status === "crashed" && wasStatus !== "crashed") {
-            notify(`🔴 ${prev.hostname}`, "No longer responding — likely crashed.", "alert");
-          }
-        }
+    } else if (msg.type === "update") {
+      renderCard(msg.data);
+    } else if (msg.type === "status") {
+      applyStatusUpdate(msg.data.device_id, msg.data.status);
+    } else if (msg.type === "device_event") {
+      handleDeviceEvent(msg.data);
+    } else if (msg.type === "issues_snapshot") {
+      openIssues = msg.data.filter(i => !i.resolved);
+      renderIssues();
+    } else if (msg.type === "issue") {
+      openIssues.unshift(msg.data);
+      renderIssues();
+      notify(`🆘 New Problem Reported`, `${msg.data.room} / ${msg.data.system_unit}: ${msg.data.description}`, "alert");
+    } else if (msg.type === "issue_resolved") {
+      openIssues = openIssues.filter(i => i.id !== msg.data.id);
+      renderIssues();
+    } else if (msg.type === "repair_ticket") {
+      if (document.getElementById("repairView").style.display !== "none") {
+        loadRepairTickets();
       }
-
-      function handleDeviceEvent(evt) {
-        if (evt.event_type === "repaired") {
-          notify(`🛠️ Repair Logged — ${evt.hostname}`, `${evt.component_name} (by ${evt.component_type})`, "connected");
-          if (openDeviceId === evt.device_id && logState.repair.open) {
-            loadRepairLog(evt.device_id);
-          }
-        } else {
-          const isDisconnect = evt.event_type === "disconnected";
-          notify(
-            `${isDisconnect ? "🔌 Disconnected" : "🔌 Connected"} — ${evt.hostname}`,
-            `${evt.component_type}: ${evt.component_name}`,
-            isDisconnect ? "alert" : "connected"
-          );
-          if (openDeviceId === evt.device_id && logState.history.open) {
-            loadHistory(evt.device_id);
-          }
-        }
+    } else if (msg.type === "maintenance") {
+      const prev = lastPayload[msg.data.device_id];
+      if (prev) {
+        prev.under_maintenance = msg.data.under_maintenance;
+        renderCard(prev);
       }
+      notify(
+        msg.data.under_maintenance ? `🔧 ${msg.data.hostname} marked Under Maintenance` : `✅ ${msg.data.hostname} back in service`,
+        `by ${msg.data.set_by}`,
+        "connected"
+      );
+    }
+  };
 
-      function connect() {
-        const proto = location.protocol === "https:" ? "wss" : "ws";
-        const ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws.onclose = () => setTimeout(connect, 2000);
+}
 
-        ws.onmessage = (event) => {
-          const msg = JSON.parse(event.data);
-          if (msg.type === "snapshot") {
-            msg.data.forEach(d => {
-              lastMissingCount[d.device_id] = (d.missing_components || []).length;
-              renderCard(d);
-            });
-          } else if (msg.type === "update") {
-            renderCard(msg.data);
-          } else if (msg.type === "status") {
-            applyStatusUpdate(msg.data.device_id, msg.data.status);
-          } else if (msg.type === "device_event") {
-            handleDeviceEvent(msg.data);
-          } else if (msg.type === "issues_snapshot") {
-            openIssues = msg.data.filter(i => !i.resolved);
-            renderIssues();
-          } else if (msg.type === "issue") {
-            openIssues.unshift(msg.data);
-            renderIssues();
-            notify(`🆘 New Problem Reported`, `${msg.data.room} / ${msg.data.system_unit}: ${msg.data.description}`, "alert");
-          } else if (msg.type === "issue_resolved") {
-            openIssues = openIssues.filter(i => i.id !== msg.data.id);
-            renderIssues();
-          } else if (msg.type === "maintenance") {
-            const prev = lastPayload[msg.data.device_id];
-            if (prev) {
-              prev.under_maintenance = msg.data.under_maintenance;
-              renderCard(prev);
-            }
-            notify(
-              msg.data.under_maintenance ? `🔧 ${msg.data.hostname} marked Under Maintenance` : `✅ ${msg.data.hostname} back in service`,
-              `by ${msg.data.set_by}`,
-              "connected"
-            );
-          }
-        };
+// ----------------- Repair Tracking: ticket list, search, clickable cards -----------------
+let lastLoadedTickets = []; // currently displayed tickets — used by Generate Report
+let ticketLoadSeq = 0;      // bumped per load so a slow, older response can't overwrite a newer one
 
-        ws.onclose = () => setTimeout(connect, 2000);
-      }
+// Ticket fields are free text typed by people — never insert them into the
+// page as raw HTML (a ticket containing markup would run in everyone's browser).
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 
-      // ----------------- Top-level nav: Monitoring System / Repair Tracking -----------------
-      document.querySelectorAll(".nav-tab").forEach(tab => {
-        tab.addEventListener("click", () => {
-          document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
-          tab.classList.add("active");
-          document.getElementById("monitoringView").style.display = tab.dataset.view === "monitoring" ? "" : "none";
-          document.getElementById("repairView").style.display = tab.dataset.view === "repair" ? "" : "none";
-        });
+function statusClass(status) {
+  return (status || "").toLowerCase().replace(/\s+/g, "-");
+}
+
+function populateRepairDeviceFilter() {
+  const sel = document.getElementById("repairDeviceFilter");
+  const current = sel.value;
+  const devices = Object.values(lastPayload).sort((a, b) => naturalCompare(a.hostname || "", b.hostname || ""));
+  sel.innerHTML = `<option value="">All PCs</option>` + devices.map(d =>
+    `<option value="${escapeHtml(d.device_id)}">${escapeHtml(d.hostname)}</option>`
+  ).join("");
+  sel.value = current; // keep the previous selection if it's still a valid option
+}
+
+async function loadRepairTickets() {
+  const deviceId = document.getElementById("repairDeviceFilter").value;
+  const status = document.getElementById("repairStatusFilter").value;
+  const search = document.getElementById("repairSearchInput").value.trim().toUpperCase();
+  const listEl = document.getElementById("repairTicketsList");
+  const seq = ++ticketLoadSeq;
+  listEl.innerHTML = `<div class="no-issues">Loading…</div>`;
+
+  let url = deviceId ? `/api/repair-tickets/${encodeURIComponent(deviceId)}` : `/api/repair-tickets`;
+  if (status) url += `?status=${encodeURIComponent(status)}`;
+
+  try {
+    const resp = await fetch(url);
+    let tickets = await resp.json();
+    if (seq !== ticketLoadSeq) return; // a newer load started while this one was in flight
+
+    // Search is applied client-side across every text field a technician
+    // might search by — PC name, the problem itself, what was done, the
+    // part swapped, and who worked on it.
+    if (search) {
+      tickets = tickets.filter(t => [
+        t.hostname, t.reported_problem, t.actions_taken,
+        t.part_type, t.model_before, t.model_after, t.technician,
+      ].some(field => (field || "").toUpperCase().includes(search)));
+    }
+
+    lastLoadedTickets = tickets;
+
+    if (!tickets.length) {
+      listEl.innerHTML = `<div class="no-issues">No repair tickets match this filter.</div>`;
+      return;
+    }
+
+    listEl.innerHTML = tickets.map(renderTicketCard).join("");
+
+    listEl.querySelectorAll(".ticket-card").forEach(el => {
+      el.addEventListener("click", () => {
+        // Jump straight to the PC this ticket belongs to, over on the
+        // Monitoring tab — same pattern as clicking a sidebar alert.
+        switchView("monitoring");
+        openModal(el.dataset.deviceId);
       });
+    });
+    listEl.querySelectorAll(".ticket-mark-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation(); // don't also trigger the card's own click (which would navigate away)
+        updateTicketStatus(parseInt(btn.dataset.ticketId, 10), btn.dataset.nextStatus);
+      });
+    });
+  } catch (e) {
+    if (seq !== ticketLoadSeq) return;
+    listEl.innerHTML = `<div style="color:#ff5c5c;">Could not load repair tickets.</div>`;
+  }
+}
 
-      renderFilterBar();
-      renderStatusFilterBar();
-      connect();
-    </script>
-  </body>
+function renderTicketCard(t) {
+  const nextStatus = t.repair_status === "Pending" ? "In Progress"
+                    : t.repair_status === "In Progress" ? "Completed"
+                    : null;
+  const partChange = (t.part_type || t.model_before || t.model_after) ? `
+    <div class="ticket-part-change">🔧 <b>${escapeHtml(t.part_type || "Part")}</b>: ${escapeHtml(t.model_before || "—")} → ${escapeHtml(t.model_after || "—")}</div>
+  ` : "";
+  return `
+    <div class="ticket-card" data-device-id="${escapeHtml(t.device_id)}">
+      <div class="ticket-header">
+        <div>
+          <div class="ticket-host">${escapeHtml(t.hostname)}</div>
+          <div class="ticket-date">${new Date(t.timestamp*1000).toLocaleString()}</div>
+        </div>
+        <span class="ticket-status ${statusClass(t.repair_status)}">${escapeHtml(t.repair_status)}</span>
+      </div>
+      <div class="ticket-field"><b>Reported Problem:</b> ${escapeHtml(t.reported_problem)}</div>
+      ${t.actions_taken ? `<div class="ticket-field"><b>Actions Taken:</b> ${escapeHtml(t.actions_taken)}</div>` : ""}
+      ${partChange}
+      <div class="ticket-footer">
+        <span>Technician: ${escapeHtml(t.technician)}</span>
+        ${nextStatus ? `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-next-status="${nextStatus}">Mark ${nextStatus}</button>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+async function updateTicketStatus(ticketId, newStatus) {
+  try {
+    const resp = await fetch(`/api/repair-tickets/${ticketId}/status`, {
+      method: "POST",
+      headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ repair_status: newStatus }),
+    });
+    if (resp.ok) {
+      showToast("🛠️ Ticket Updated", `Marked as ${newStatus}`, "connected");
+      loadRepairTickets();
+    } else {
+      alert("Could not update ticket status — check API_KEY matches the server's.");
+    }
+  } catch (e) {
+    alert("Could not reach the server.");
+  }
+}
+
+function generateTicketReport() {
+  if (!lastLoadedTickets.length) {
+    alert("No tickets to export for the current filter — adjust the filters above first.");
+    return;
+  }
+  const headers = ["Date", "PC", "Reported Problem", "Actions Taken", "Part Type", "Model Before", "Model After", "Status", "Technician"];
+  const rows = lastLoadedTickets.map(t => [
+    new Date(t.timestamp * 1000).toLocaleString(),
+    t.hostname, t.reported_problem, t.actions_taken || "",
+    t.part_type || "", t.model_before || "", t.model_after || "",
+    t.repair_status, t.technician,
+  ]);
+  const csvEscape = (v) => `"${String(v).replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map(row => row.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `repair-report-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("repairDeviceFilter").addEventListener("change", loadRepairTickets);
+document.getElementById("repairStatusFilter").addEventListener("change", loadRepairTickets);
+document.getElementById("repairSearchInput").addEventListener("input", loadRepairTickets);
+document.getElementById("generateReportBtn").addEventListener("click", generateTicketReport);
+
+// ----------------- New Repair Ticket form -----------------
+function openNewTicketForm(preselectDeviceId) {
+  const sel = document.getElementById("ticketDeviceSelect");
+  const devices = Object.values(lastPayload).sort((a, b) => naturalCompare(a.hostname || "", b.hostname || ""));
+  sel.innerHTML = devices.map(d => `<option value="${escapeHtml(d.device_id)}">${escapeHtml(d.hostname)}</option>`).join("");
+  if (preselectDeviceId) sel.value = preselectDeviceId;
+
+  document.getElementById("ticketProblemInput").value = "";
+  document.getElementById("ticketActionsInput").value = "";
+  document.getElementById("ticketPartTypeInput").value = "";
+  document.getElementById("ticketModelBeforeInput").value = "";
+  document.getElementById("ticketModelAfterInput").value = "";
+  document.getElementById("ticketStatusSelect").value = "Pending";
+  document.getElementById("ticketTechInput").value = "";
+  hideNewTicketError();
+  document.getElementById("newTicketOverlay").classList.add("open");
+}
+
+function closeNewTicketForm() {
+  document.getElementById("newTicketOverlay").classList.remove("open");
+}
+
+function showNewTicketError(msg) {
+  const el = document.getElementById("newTicketError");
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+function hideNewTicketError() {
+  const el = document.getElementById("newTicketError");
+  el.style.display = "none";
+}
+
+async function submitNewTicketForm() {
+  const deviceId = document.getElementById("ticketDeviceSelect").value;
+  const reported_problem = document.getElementById("ticketProblemInput").value.trim();
+  const actions_taken = document.getElementById("ticketActionsInput").value.trim();
+  const part_type = document.getElementById("ticketPartTypeInput").value.trim();
+  const model_before = document.getElementById("ticketModelBeforeInput").value.trim();
+  const model_after = document.getElementById("ticketModelAfterInput").value.trim();
+  const repair_status = document.getElementById("ticketStatusSelect").value;
+  const technician = document.getElementById("ticketTechInput").value.trim();
+
+  if (!deviceId) { showNewTicketError("Please select a PC."); return; }
+  if (!reported_problem) { showNewTicketError("Please describe the reported problem."); return; }
+  if (!technician) { showNewTicketError("Please enter your name."); return; }
+  hideNewTicketError();
+
+  try {
+    const resp = await fetch(`/api/repair-tickets/${encodeURIComponent(deviceId)}`, {
+      method: "POST",
+      headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician }),
+    });
+    if (resp.ok) {
+      showToast("🛠️ Ticket Created", reported_problem, "connected");
+      closeNewTicketForm();
+      loadRepairTickets();
+    } else if (resp.status === 401) {
+      showNewTicketError("API_KEY in this dashboard doesn't match the server's.");
+    } else if (resp.status === 400) {
+      const body = await resp.json().catch(() => ({}));
+      showNewTicketError(body.detail || "Missing required field.");
+    } else {
+      showNewTicketError("Could not create ticket — check the server connection.");
+    }
+  } catch (e) {
+    showNewTicketError("Could not reach the server.");
+  }
+}
+
+document.getElementById("newTicketBtn").addEventListener("click", () => openNewTicketForm());
+document.getElementById("newTicketClose").addEventListener("click", closeNewTicketForm);
+document.getElementById("newTicketCancel").addEventListener("click", closeNewTicketForm);
+document.getElementById("newTicketSubmit").addEventListener("click", submitNewTicketForm);
+document.getElementById("newTicketOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "newTicketOverlay") closeNewTicketForm();
+});
+
+// ----------------- Top-level nav: Monitoring System / Repair Tracking -----------------
+function switchView(view) {
+  document.querySelectorAll(".nav-tab").forEach(t => t.classList.toggle("active", t.dataset.view === view));
+  document.getElementById("monitoringView").style.display = view === "monitoring" ? "" : "none";
+  document.getElementById("repairView").style.display = view === "repair" ? "" : "none";
+}
+
+document.querySelectorAll(".nav-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    switchView(tab.dataset.view);
+    if (tab.dataset.view === "repair") {
+      populateRepairDeviceFilter();
+      loadRepairTickets();
+    }
+  });
+});
+
+// Jump to one PC's maintenance history: switch to the Repair Tracking view,
+// pre-filter it to that PC, and load once (not once for the tab and again
+// for the filter).
+function showMaintenanceHistory(deviceId) {
+  switchView("repair");
+  populateRepairDeviceFilter();
+  document.getElementById("repairDeviceFilter").value = deviceId;
+  document.getElementById("repairStatusFilter").value = "";
+  document.getElementById("repairSearchInput").value = "";
+  loadRepairTickets();
+}
+
+renderFilterBar();
+renderStatusFilterBar();
+connect();
+</script>
+</body>
 </html>

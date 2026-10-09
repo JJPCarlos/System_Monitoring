@@ -85,10 +85,102 @@ def init_db():
             timestamp REAL
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS repair_tickets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device_id TEXT,
+            hostname TEXT,
+            reported_problem TEXT,
+            actions_taken TEXT,
+            part_type TEXT,
+            model_before TEXT,
+            model_after TEXT,
+            repair_status TEXT,
+            technician TEXT,
+            timestamp REAL
+        )
+    """)
     conn.commit()
     conn.close()
 
 init_db()
+
+# ----------------- REPAIR TICKETS (structured maintenance history, separate
+# from the lightweight "Log a Repair" note — this is the full ticket system:
+# reported problem, actions taken, part replaced with before/after model,
+# and a status that can be updated over time) -----------------
+REPAIR_STATUSES = ("Pending", "In Progress", "Completed")
+
+def save_repair_ticket(device_id: str, hostname: str, reported_problem: str, actions_taken: str,
+                        part_type: str, model_before: str, model_after: str,
+                        repair_status: str, technician: str, timestamp: float) -> int:
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.execute(
+        """INSERT INTO repair_tickets
+           (device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician, timestamp)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician, timestamp),
+    )
+    conn.commit()
+    ticket_id = cur.lastrowid
+    conn.close()
+    return ticket_id
+
+def _ticket_row_to_dict(r) -> dict:
+    return {
+        "id": r[0], "device_id": r[1], "hostname": r[2], "reported_problem": r[3],
+        "actions_taken": r[4], "part_type": r[5], "model_before": r[6], "model_after": r[7],
+        "repair_status": r[8], "technician": r[9], "timestamp": r[10],
+    }
+
+def get_repair_tickets(device_id: str = None, status: str = None) -> list:
+    conn = sqlite3.connect(DB_PATH)
+    query = "SELECT id, device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician, timestamp FROM repair_tickets"
+    clauses, params = [], []
+    if device_id:
+        clauses.append("device_id = ?")
+        params.append(device_id)
+    if status:
+        clauses.append("repair_status = ?")
+        params.append(status)
+    if clauses:
+        query += " WHERE " + " AND ".join(clauses)
+    query += " ORDER BY timestamp DESC"
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    return [_ticket_row_to_dict(r) for r in rows]
+
+def get_repair_ticket(ticket_id: int):
+    conn = sqlite3.connect(DB_PATH)
+    row = conn.execute(
+        "SELECT id, device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician, timestamp FROM repair_tickets WHERE id = ?",
+        (ticket_id,),
+    ).fetchone()
+    conn.close()
+    return _ticket_row_to_dict(row) if row else None
+
+def update_repair_ticket_status(ticket_id: int, status: str):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("UPDATE repair_tickets SET repair_status = ? WHERE id = ?", (status, ticket_id))
+    conn.commit()
+    conn.close()
+
+def complete_open_tickets(device_id: str, note: str) -> list:
+    """Mark every Pending / In Progress ticket for a device as Completed.
+    If a note is given it is appended to the ticket's actions_taken."""
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute(
+        "SELECT id, actions_taken FROM repair_tickets WHERE device_id = ? AND repair_status != 'Completed'",
+        (device_id,),
+    ).fetchall()
+    ids = []
+    for tid, actions in rows:
+        new_actions = "\n".join(x for x in (actions, note) if x)
+        conn.execute("UPDATE repair_tickets SET repair_status = 'Completed', actions_taken = ? WHERE id = ?", (new_actions, tid))
+        ids.append(tid)
+    conn.commit()
+    conn.close()
+    return ids
 
 # ----------------- MAINTENANCE FLAG (persisted so every dashboard viewer agrees) -----------------
 def get_maintenance(device_id: str) -> bool:
@@ -450,20 +542,105 @@ async def set_maintenance_route(device_id: str, request: Request):
     body = await request.json()
     flag = bool(body.get("under_maintenance"))
     name = body.get("name", "").strip()
+    reason = body.get("reason", "").strip()
+    note = body.get("note", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
-
-    timestamp = time.time()
-    set_maintenance(device_id, flag, name, timestamp)
+    # Turning maintenance ON must say why — that reason becomes a ticket.
+    if flag and not reason:
+        raise HTTPException(status_code=400, detail="reason is required when marking a PC under maintenance")
 
     devices = get_latest_per_device()
     match = next((d for d in devices if d["device_id"] == device_id), None)
     hostname = match["hostname"] if match else device_id
+    timestamp = time.time()
+
+    set_maintenance(device_id, flag, name, timestamp)
+
+    ticket = None
+    completed_ids = []
+    if flag:
+        ticket_id = save_repair_ticket(device_id, hostname, reason, "", "", "", "", "Pending", name, timestamp)
+        ticket = get_repair_ticket(ticket_id)
+        await manager.broadcast({"type": "repair_ticket", "data": ticket})
+    else:
+        # Back in service: close this PC's open tickets (optional note appended).
+        if body.get("complete_tickets", True):
+            completed_ids = complete_open_tickets(device_id, note)
+            for tid in completed_ids:
+                await manager.broadcast({"type": "repair_ticket", "data": get_repair_ticket(tid)})
 
     await manager.broadcast({
         "type": "maintenance",
         "data": {"device_id": device_id, "hostname": hostname, "under_maintenance": flag, "set_by": name, "timestamp": timestamp},
     })
+    return {"status": "ok", "ticket_id": ticket["id"] if ticket else None, "completed_ticket_ids": completed_ids}
+
+@app.post("/api/repair-tickets/{device_id}")
+async def create_repair_ticket(device_id: str, request: Request):
+    """Technician-only: open a structured repair ticket for a device —
+    reported problem, actions taken, part replaced (with before/after model),
+    and a status. Separate from the lightweight /api/repair-log note."""
+    if request.headers.get("X-API-Key") != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    body = await request.json()
+    reported_problem = body.get("reported_problem", "").strip()
+    actions_taken = body.get("actions_taken", "").strip()
+    part_type = body.get("part_type", "").strip()
+    model_before = body.get("model_before", "").strip()
+    model_after = body.get("model_after", "").strip()
+    repair_status = body.get("repair_status", "Pending").strip()
+    technician = body.get("technician", "").strip()
+
+    if not reported_problem:
+        raise HTTPException(status_code=400, detail="reported_problem is required")
+    if not technician:
+        raise HTTPException(status_code=400, detail="technician is required")
+    if repair_status not in REPAIR_STATUSES:
+        raise HTTPException(status_code=400, detail=f"repair_status must be one of {REPAIR_STATUSES}")
+
+    devices = get_latest_per_device()
+    match = next((d for d in devices if d["device_id"] == device_id), None)
+    hostname = match["hostname"] if match else device_id
+    timestamp = time.time()
+
+    ticket_id = save_repair_ticket(
+        device_id, hostname, reported_problem, actions_taken,
+        part_type, model_before, model_after, repair_status, technician, timestamp,
+    )
+    ticket = get_repair_ticket(ticket_id)
+    await manager.broadcast({"type": "repair_ticket", "data": ticket})
+    return {"status": "ok", "id": ticket_id}
+
+@app.get("/api/repair-tickets")
+async def list_repair_tickets(status: str = None):
+    """Fleet-wide ticket list, optionally filtered by status — used by the
+    Repair Tracking page's "All PCs" view and report generation."""
+    return get_repair_tickets(status=status)
+
+@app.get("/api/repair-tickets/{device_id}")
+async def list_repair_tickets_for_device(device_id: str, status: str = None):
+    """One device's maintenance history."""
+    return get_repair_tickets(device_id=device_id, status=status)
+
+@app.post("/api/repair-tickets/{ticket_id}/status")
+async def update_repair_ticket_status_route(ticket_id: int, request: Request):
+    if request.headers.get("X-API-Key") != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    body = await request.json()
+    status = body.get("repair_status", "").strip()
+    if status not in REPAIR_STATUSES:
+        raise HTTPException(status_code=400, detail=f"repair_status must be one of {REPAIR_STATUSES}")
+
+    ticket = get_repair_ticket(ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    update_repair_ticket_status(ticket_id, status)
+    ticket["repair_status"] = status
+    await manager.broadcast({"type": "repair_ticket", "data": ticket})
     return {"status": "ok"}
 
 @app.get("/api/devices")
