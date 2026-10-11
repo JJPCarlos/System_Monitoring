@@ -14,16 +14,24 @@ Run:
 """
 
 import asyncio
+import base64
+import hashlib
+import hmac
 import json
+import secrets
 import sqlite3
 import time
 from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, HTTPException, Depends
 from fastapi.responses import HTMLResponse, FileResponse
 
-API_KEY = "changeme-shared-secret"   # <-- must match agent's API_KEY
+API_KEY = "changeme-shared-secret"   # <-- must match agent's API_KEY (agents only; the dashboard uses login tokens)
+TOKEN_TTL_HOURS = 12                 # how long a dashboard login stays valid
+MIN_PASSWORD_LENGTH = 6
+DEFAULT_ADMIN = ("admin", "admin123")   # created on first run if there are no accounts — change it after logging in
+SECRET_PATH = Path(__file__).parent / "secret.key"   # signs login tokens; created on first run
 DB_PATH = Path(__file__).parent / "reports.db"
 
 STALE_THRESHOLD_SECONDS = 15      # ~3x the agent's default 5s report interval — flips to "unresponsive"
@@ -417,6 +425,179 @@ async def watch_for_crashes():
 async def startup_event():
     asyncio.create_task(watch_for_crashes())
 
+
+# ----------------- AUTH (dashboard login -> signed token) -----------------
+# Agents keep using the shared API_KEY (report / shutdown / report-issue).
+# Everything the dashboard touches needs a login token instead, so the page
+# no longer carries any secret in its source.
+def _load_secret() -> bytes:
+    if not SECRET_PATH.exists():
+        SECRET_PATH.write_bytes(secrets.token_bytes(32))
+    return SECRET_PATH.read_bytes()
+
+TOKEN_SECRET = _load_secret()
+
+def init_users():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT PRIMARY KEY COLLATE NOCASE,
+            salt TEXT,
+            password_hash TEXT,
+            created_at REAL
+        )
+    """)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
+    if "role" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
+    if "pw_changed" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN pw_changed REAL DEFAULT 0")
+    # There is exactly ONE admin: the built-in account. It always exists, and
+    # every other account is a regular user (older installs may have had more).
+    admin_name = DEFAULT_ADMIN[0]
+    if conn.execute("SELECT COUNT(*) FROM users WHERE username = ?", (admin_name,)).fetchone()[0]:
+        conn.execute("UPDATE users SET role = 'admin' WHERE username = ?", (admin_name,))
+    else:
+        now = time.time()
+        salt = secrets.token_bytes(16)
+        conn.execute("INSERT INTO users (username, salt, password_hash, created_at, role, pw_changed) VALUES (?, ?, ?, ?, 'admin', ?)",
+                     (admin_name, salt.hex(), _hash_password(DEFAULT_ADMIN[1], salt), now, now))
+    conn.execute("UPDATE users SET role = 'user' WHERE username != ?", (admin_name,))
+    conn.commit()
+    conn.close()
+
+
+def _hash_password(password: str, salt: bytes) -> str:
+    return hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 200_000).hex()
+
+def count_users() -> int:
+    conn = sqlite3.connect(DB_PATH)
+    n = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    conn.close()
+    return n
+
+def list_users(include_admin: bool = False) -> list:
+    """The admin account is hidden from user management unless asked for."""
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute("SELECT username, role, created_at FROM users ORDER BY username COLLATE NOCASE").fetchall()
+    conn.close()
+    return [{"username": r[0], "role": r[1] or "user", "created_at": r[2]}
+            for r in rows if include_admin or (r[1] or "user") != "admin"]
+
+def get_role(username: str):
+    conn = sqlite3.connect(DB_PATH)
+    row = conn.execute("SELECT role FROM users WHERE username = ?", (username,)).fetchone()
+    conn.close()
+    return (row[0] or "user") if row else None
+
+def get_user_exact(username: str) -> str:
+    conn = sqlite3.connect(DB_PATH)
+    row = conn.execute("SELECT username FROM users WHERE username = ?", (username,)).fetchone()
+    conn.close()
+    return row[0] if row else username
+
+def create_user(username: str, password: str, role: str = "user"):
+    salt = secrets.token_bytes(16)
+    now = time.time()
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.execute("INSERT INTO users (username, salt, password_hash, created_at, role, pw_changed) VALUES (?, ?, ?, ?, ?, ?)",
+                     (username, salt.hex(), _hash_password(password, salt), now, role, now))
+        conn.commit()
+    finally:
+        conn.close()
+
+def set_user_password(username: str, password: str) -> bool:
+    """Also stamps pw_changed, which logs out every token issued before now."""
+    salt = secrets.token_bytes(16)
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.execute("UPDATE users SET salt = ?, password_hash = ?, pw_changed = ? WHERE username = ?",
+                       (salt.hex(), _hash_password(password, salt), time.time(), username))
+    conn.commit()
+    changed = cur.rowcount > 0
+    conn.close()
+    return changed
+
+def delete_user(username: str) -> bool:
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.execute("DELETE FROM users WHERE username = ?", (username,))
+    conn.commit()
+    changed = cur.rowcount > 0
+    conn.close()
+    return changed
+
+def check_credentials(username: str, password: str):
+    """Returns the stored username (original casing) if the login is valid, else None."""
+    conn = sqlite3.connect(DB_PATH)
+    row = conn.execute("SELECT username, salt, password_hash FROM users WHERE username = ?", (username,)).fetchone()
+    conn.close()
+    if not row:
+        _hash_password(password, b"x" * 16)  # keep timing similar for unknown users
+        return None
+    if hmac.compare_digest(_hash_password(password, bytes.fromhex(row[1])), row[2]):
+        return row[0]
+    return None
+
+def uses_default_password(username: str) -> bool:
+    """True while the built-in admin account still has its factory password."""
+    return username.lower() == DEFAULT_ADMIN[0] and check_credentials(DEFAULT_ADMIN[0], DEFAULT_ADMIN[1]) is not None
+
+def make_token(username: str) -> str:
+    payload = base64.urlsafe_b64encode(json.dumps({"u": username, "iat": time.time(), "exp": time.time() + TOKEN_TTL_HOURS * 3600}).encode()).decode()
+    sig = hmac.new(TOKEN_SECRET, payload.encode(), hashlib.sha256).hexdigest()
+    return f"{payload}.{sig}"
+
+def verify_token(token: str):
+    """Returns the username for a valid, unexpired token, else None."""
+    try:
+        payload, sig = token.rsplit(".", 1)
+        expected = hmac.new(TOKEN_SECRET, payload.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return None
+        data = json.loads(base64.urlsafe_b64decode(payload.encode()))
+        if data["exp"] < time.time():
+            return None
+        # The account must still exist, and the token must be newer than the
+        # last password change — so deleting a user or resetting a password
+        # logs that person out immediately.
+        conn = sqlite3.connect(DB_PATH)
+        row = conn.execute("SELECT username, pw_changed FROM users WHERE username = ?", (data["u"],)).fetchone()
+        conn.close()
+        if not row or data.get("iat", 0) < (row[1] or 0):
+            return None
+        return row[0]
+    except Exception:
+        return None
+
+def current_user(request: Request) -> str:
+    """Use as a dependency (or call directly) on every dashboard-facing route."""
+    header = request.headers.get("Authorization", "")
+    user = verify_token(header[7:]) if header.startswith("Bearer ") else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required")
+    return user
+
+def require_admin(request: Request) -> str:
+    user = current_user(request)
+    if get_role(user) != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    return user
+
+# Throttle wrong passwords: 5 failures per minute per IP.
+_login_failures: dict = {}
+
+def _check_throttle(ip: str):
+    now = time.time()
+    recent = [t for t in _login_failures.get(ip, []) if now - t < 60]
+    _login_failures[ip] = recent
+    if len(recent) >= 5:
+        raise HTTPException(status_code=429, detail="Too many failed attempts — wait a minute and try again")
+
+def _record_failure(ip: str):
+    _login_failures.setdefault(ip, []).append(time.time())
+
+init_users()   # after the helpers above: it may seed the default admin, which needs password hashing
+
 # ----------------- ROUTES -----------------
 @app.post("/api/report")
 async def receive_report(request: Request):
@@ -481,8 +662,7 @@ async def receive_shutdown(request: Request):
 async def reset_baseline(device_id: str, request: Request):
     """Call this after an intentional hardware change, so the new configuration
     becomes the new 'expected' baseline instead of showing as missing forever."""
-    if request.headers.get("X-API-Key") != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    current_user(request)
 
     devices = get_latest_per_device()
     match = next((d for d in devices if d["device_id"] == device_id), None)
@@ -500,8 +680,7 @@ async def log_repair(device_id: str, request: Request):
     viewer) can add an entry. Reuses the same device_events table/history as
     connect/disconnect events, tagged with its own event_type so the
     dashboard can style it distinctly."""
-    if request.headers.get("X-API-Key") != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    current_user(request)
 
     body = await request.json()
     note = body.get("note", "").strip()
@@ -536,8 +715,7 @@ async def set_maintenance_route(device_id: str, request: Request):
     """Technician-only: mark a PC as under maintenance (or clear that flag).
     Persisted server-side so every dashboard viewer sees the same state,
     rather than each browser tracking it independently."""
-    if request.headers.get("X-API-Key") != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    current_user(request)
 
     body = await request.json()
     flag = bool(body.get("under_maintenance"))
@@ -581,8 +759,7 @@ async def create_repair_ticket(device_id: str, request: Request):
     """Technician-only: open a structured repair ticket for a device —
     reported problem, actions taken, part replaced (with before/after model),
     and a status. Separate from the lightweight /api/repair-log note."""
-    if request.headers.get("X-API-Key") != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    current_user(request)
 
     body = await request.json()
     reported_problem = body.get("reported_problem", "").strip()
@@ -614,20 +791,19 @@ async def create_repair_ticket(device_id: str, request: Request):
     return {"status": "ok", "id": ticket_id}
 
 @app.get("/api/repair-tickets")
-async def list_repair_tickets(status: str = None):
+async def list_repair_tickets(status: str = None, user: str = Depends(current_user)):
     """Fleet-wide ticket list, optionally filtered by status — used by the
     Repair Tracking page's "All PCs" view and report generation."""
     return get_repair_tickets(status=status)
 
 @app.get("/api/repair-tickets/{device_id}")
-async def list_repair_tickets_for_device(device_id: str, status: str = None):
+async def list_repair_tickets_for_device(device_id: str, status: str = None, user: str = Depends(current_user)):
     """One device's maintenance history."""
     return get_repair_tickets(device_id=device_id, status=status)
 
 @app.post("/api/repair-tickets/{ticket_id}/status")
 async def update_repair_ticket_status_route(ticket_id: int, request: Request):
-    if request.headers.get("X-API-Key") != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    current_user(request)
 
     body = await request.json()
     status = body.get("repair_status", "").strip()
@@ -644,11 +820,11 @@ async def update_repair_ticket_status_route(ticket_id: int, request: Request):
     return {"status": "ok"}
 
 @app.get("/api/devices")
-async def list_devices():
+async def list_devices(user: str = Depends(current_user)):
     return get_latest_per_device()
 
 @app.get("/api/history/{device_id}")
-async def device_history(device_id: str, limit: int = 100):
+async def device_history(device_id: str, limit: int = 100, user: str = Depends(current_user)):
     return get_device_history(device_id, limit)
 
 @app.post("/api/report-issue")
@@ -677,19 +853,105 @@ async def report_issue(request: Request):
     return {"status": "ok", "id": issue_id}
 
 @app.get("/api/issues")
-async def list_issues(include_resolved: bool = False):
+async def list_issues(include_resolved: bool = False, user: str = Depends(current_user)):
     return get_issues(include_resolved)
 
 @app.post("/api/issues/{issue_id}/resolve")
 async def resolve_issue_route(issue_id: int, request: Request):
-    if request.headers.get("X-API-Key") != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    current_user(request)
     resolve_issue(issue_id)
     await manager.broadcast({"type": "issue_resolved", "data": {"id": issue_id}})
     return {"status": "ok"}
 
+@app.post("/api/login")
+async def login(request: Request):
+    ip = request.client.host if request.client else "?"
+    _check_throttle(ip)
+    body = await request.json()
+    username = check_credentials(str(body.get("username", "")).strip(), str(body.get("password", "")))
+    if not username:
+        _record_failure(ip)
+        raise HTTPException(status_code=401, detail="Wrong username or password")
+    return {"token": make_token(username), "username": username, "role": get_role(username),
+            "default_password": uses_default_password(username)}
+
+@app.post("/api/auth/change-password")
+async def change_own_password(request: Request, user: str = Depends(current_user)):
+    """Admin only: change your own password (needs the current one).
+    Technicians don't change passwords themselves — the admin resets theirs from the Users tab."""
+    if get_role(user) != "admin":
+        raise HTTPException(status_code=403, detail="Only the admin can change passwords")
+    ip = request.client.host if request.client else "?"
+    _check_throttle(ip)
+    body = await request.json()
+    if check_credentials(user, str(body.get("current_password", ""))) is None:
+        _record_failure(ip)
+        raise HTTPException(status_code=400, detail="Current password is wrong")
+    new_password = str(body.get("new_password", ""))
+    if len(new_password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(status_code=400, detail=f"New password must be at least {MIN_PASSWORD_LENGTH} characters")
+    set_user_password(user, new_password)   # logs out every older token...
+    return {"status": "ok", "token": make_token(user)}   # ...so hand back a fresh one for this browser
+
+@app.get("/api/auth/me")
+async def auth_me(user: str = Depends(current_user)):
+    return {"username": user, "role": get_role(user), "default_password": uses_default_password(user)}
+
+# ----- Admin: manage accounts -----
+def _valid_new_password(body) -> str:
+    password = str(body.get("password", ""))
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(status_code=400, detail=f"password must be at least {MIN_PASSWORD_LENGTH} characters")
+    return password
+
+@app.get("/api/users")
+async def admin_list_users(admin: str = Depends(require_admin)):
+    return list_users()   # the admin account itself is not listed
+
+@app.post("/api/users")
+async def admin_create_user(request: Request, admin: str = Depends(require_admin)):
+    body = await request.json()
+    username = str(body.get("username", "")).strip()
+    if not username:
+        raise HTTPException(status_code=400, detail="username is required")
+    if username.lower() == DEFAULT_ADMIN[0]:
+        raise HTTPException(status_code=409, detail=f"'{username}' is reserved")
+    password = _valid_new_password(body)
+    try:
+        create_user(username, password, "user")   # there is only one admin; new accounts are always users
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=409, detail=f"'{username}' already exists")
+    return {"status": "ok"}
+
+@app.post("/api/users/{username}/password")
+async def admin_reset_password(username: str, request: Request, admin: str = Depends(require_admin)):
+    body = await request.json()
+    password = _valid_new_password(body)
+    if not set_user_password(username, password):
+        raise HTTPException(status_code=404, detail="No such user")
+    # Resetting your own password invalidates your own token, so hand back a fresh one.
+    if username.lower() == admin.lower():
+        return {"status": "ok", "token": make_token(get_user_exact(username))}
+    return {"status": "ok"}
+
+@app.delete("/api/users/{username}")
+async def admin_delete_user(username: str, admin: str = Depends(require_admin)):
+    if username.lower() == admin.lower():
+        raise HTTPException(status_code=400, detail="You can't delete your own account")
+    role = get_role(username)
+    if role is None:
+        raise HTTPException(status_code=404, detail="No such user")
+    if role == "admin":
+        raise HTTPException(status_code=400, detail="The admin account can't be deleted")
+    delete_user(username)
+    return {"status": "ok"}
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    if not verify_token(websocket.query_params.get("token", "")):
+        await websocket.accept()
+        await websocket.close(code=4401)   # accepted first so the browser can read the close code
+        return
     await manager.connect(websocket)
     await websocket.send_json({"type": "snapshot", "data": get_latest_per_device()})
     await websocket.send_json({"type": "issues_snapshot", "data": get_issues()})

@@ -4,156 +4,209 @@
 <meta charset="UTF-8">
 <title>Device Tracker — Live Dashboard</title>
 <style>
-  body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e6e6; margin: 0; padding: 24px; }
+  :root {
+    color-scheme: dark;
+    --bg: #0f1115; --surface: #1a1d24; --surface-2: #22252c; --border: #2a2e37; --border-2: #3a3f4a;
+    --text: #e6e6e6; --text-2: #cfd3da; --muted: #9aa1ac; --faint: #6b7280; --offline: #8a8f98;
+    --highlight: var(--accent); --accent: #4f8cff; --danger: #ff5c5c; --good: #3ddc84; --warn: #ffd23d; --orange: #ffa53d; --danger-soft: #ffb3b3;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f4f6fa; --surface: #ffffff; --surface-2: #eef1f6; --border: #d5dae3; --border-2: #bfc7d4;
+    --text: #1b1f27; --text-2: #363e4d; --muted: #566072; --faint: #697386; --offline: #697386;
+    --highlight: #111418; --accent: #2563d9; --danger: #d32f2f; --good: #178a4a; --warn: #a37400; --orange: #bd5f00; --danger-soft: #b42323;
+  }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
   h1 { font-weight: 600; }
-  .notif-sidebar { position: fixed; top: 76px; right: 20px; width: 320px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 16px; z-index: 55; box-shadow: 0 8px 24px rgba(0,0,0,0.5); transform: translateX(380px); opacity: 0; pointer-events: none; transition: transform 0.25s ease, opacity 0.25s ease; }
+  .notif-sidebar { position: fixed; top: 76px; right: 20px; width: 320px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; z-index: 55; box-shadow: 0 8px 24px rgba(0,0,0,0.5); transform: translateX(380px); opacity: 0; pointer-events: none; transition: transform 0.25s ease, opacity 0.25s ease; }
   .notif-sidebar.open { transform: translateX(0); opacity: 1; pointer-events: auto; }
   .notif-sidebar h2 { font-size: 15px; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .notif-sidebar-list { overflow-y: auto; flex: 1; }
-  .sidebar-toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 60; background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 8px 16px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-  .sidebar-toggle-btn:hover { border-color: #4f8cff; }
-  .sidebar-toggle-btn.has-alerts { border-color: rgba(255,92,92,0.4); color: #ff5c5c; }
-  .sidebar-toggle-badge { background: #ff5c5c; color: white; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
-  .notif-alert-card { background: #22252c; border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
-  .notif-alert-card:hover { border-color: #ff5c5c; }
-  .notif-alert-host { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: #4f8cff; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
-  .notif-alert-desc { font-size: 13px; color: #ffb3b3; }
-  .notif-alert-time { font-size: 11px; color: #6b7280; margin-top: 4px; }
-  .notif-alert-actions { margin-top: 8px; }
-  .notif-repair-btn { background: #2a2e37; border: 1px solid rgba(79,140,255,0.4); color: #4f8cff; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
-  .notif-repair-btn:hover { background: #4f8cff; color: white; }
-  .notif-section-title { font-size: 13px; font-weight: 600; color: #cfd3da; margin: 4px 0 10px 0; }
-  .section-header { font-size: 15px; font-weight: 600; color: #cfd3da; margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
+  .sidebar-toggle-btn { position: fixed; top: 20px; right: 72px; z-index: 60; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 8px 16px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .sidebar-toggle-btn:hover { border-color: var(--highlight); }
+  .settings-btn { position: fixed; top: 20px; right: 20px; z-index: 60; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 8px 12px; font-size: 14px; cursor: pointer; line-height: 1.2; }
+  .settings-btn:hover { border-color: var(--highlight); }
+  #settingsOverlay { z-index: 300; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .setting-row small { display: block; color: var(--faint); font-size: 11px; margin-top: 2px; }
+  .switch { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span { position: absolute; inset: 0; background: var(--border-2); border-radius: 22px; cursor: pointer; transition: background 0.15s; }
+  .switch span::before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+  .switch input:checked + span { background: var(--accent); }
+  .switch input:checked + span::before { transform: translateX(16px); }
+  .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sidebar-toggle-btn.has-alerts { border-color: rgba(255,92,92,0.4); color: var(--danger); }
+  .sidebar-toggle-badge { background: var(--danger); color: white; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+  .notif-alert-card { background: var(--surface-2); border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+  .notif-alert-card:hover { border-color: var(--danger); }
+  .notif-alert-host { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: var(--accent); padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
+  .notif-alert-desc { font-size: 13px; color: var(--danger-soft); }
+  .notif-alert-time { font-size: 11px; color: var(--faint); margin-top: 4px; }
+  .notif-section-title { font-size: 13px; font-weight: 600; color: var(--text-2); margin: 4px 0 10px 0; }
+  .section-header { font-size: 15px; font-weight: 600; color: var(--text-2); margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
   .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-  .filter-btn { background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
-  .filter-btn:hover { border-color: #4f8cff; }
-  .filter-btn.active { background: #4f8cff; border-color: #4f8cff; color: white; }
-  .main-nav { display: flex; gap: 4px; border-bottom: 1px solid #2a2e37; margin-bottom: 20px; padding-bottom: 0; }
-  .nav-tab { background: none; border: none; color: #9aa1ac; font-size: 14px; font-weight: 500; padding: 12px 18px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-  .nav-tab:hover { color: #e6e6e6; }
-  .nav-tab.active { color: #4f8cff; border-bottom-color: #4f8cff; }
+  .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+  .filter-btn:hover { border-color: var(--highlight); }
+  .filter-btn.active { background: var(--highlight); border-color: var(--highlight); color: white; }
+  .main-nav { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; padding-bottom: 0; }
+  .nav-tab { background: none; border: none; color: var(--muted); font-size: 14px; font-weight: 500; padding: 12px 18px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
   /* ---- Repair Tracking ---- */
   .repair-controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 20px 0; align-items: center; }
-  .repair-select { background: #1a1d24; border: 1px solid #2a2e37; color: #e6e6e6; border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; }
+  .repair-select { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; }
   .repair-tickets-list { display: flex; flex-direction: column; gap: 10px; }
-  .ticket-form-label { font-size: 12px; color: #9aa1ac; display: block; margin-bottom: 6px; }
-  .ticket-form-input { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: #22252c; border: 1px solid #2a2e37; color: #e6e6e6; font-family: inherit; font-size: 13px; }
+  .ticket-form-label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .ticket-form-input { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 13px; }
   #newTicketOverlay { z-index: 300; }
   #maintOverlay { z-index: 300; }
+  .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .login-screen.open { display: flex; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: min(360px, 100%); }
+  .default-pw-banner { display: none; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.35); color: var(--danger-soft); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; cursor: pointer; }
+  #addUserOverlay, #resetPwOverlay { z-index: 300; }
+  .user-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .user-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; }
+  .user-name { font-weight: 600; font-size: 14px; }
+  .user-meta { font-size: 12px; color: var(--faint); }
+  .role-badge { font-size: 11px; border-radius: 10px; padding: 2px 9px; border: 1px solid var(--border-2); color: var(--muted); }
+  .role-badge.admin { border-color: rgba(79,140,255,0.5); color: var(--accent); }
+  .user-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .user-actions .resolve-btn { margin-top: 0; }
+  .danger-btn:hover { background: var(--danger) !important; border-color: var(--danger) !important; color: var(--bg) !important; }
 
-  .ticket-card { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s; }
-  .ticket-card:hover { border-color: #4f8cff; }
+  .ticket-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s; }
+  .ticket-card:hover { border-color: var(--highlight); }
   .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
   .ticket-host { font-weight: 600; font-size: 14px; }
-  .ticket-date { font-size: 11px; color: #6b7280; }
+  .ticket-date { font-size: 11px; color: var(--faint); }
   .ticket-status { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; }
-  .ticket-status.pending { background: rgba(255,210,61,0.15); color: #ffd23d; }
-  .ticket-status.in-progress { background: rgba(79,140,255,0.15); color: #4f8cff; }
-  .ticket-status.completed { background: rgba(61,220,132,0.15); color: #3ddc84; }
+  .ticket-status.pending { background: rgba(255,210,61,0.15); color: var(--warn); }
+  .ticket-status.in-progress { background: rgba(79,140,255,0.15); color: var(--accent); }
+  .ticket-status.completed { background: rgba(61,220,132,0.15); color: var(--good); }
   .ticket-field { font-size: 13px; margin-bottom: 6px; }
-  .ticket-field b { color: #9aa1ac; font-weight: 500; }
-  .ticket-part-change { font-size: 13px; background: #22252c; border-radius: 6px; padding: 8px 10px; margin: 6px 0; }
-  .ticket-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: #6b7280; }
-  .ticket-mark-btn { background: #2a2e37; border: 1px solid rgba(79,140,255,0.4); color: #4f8cff; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
-  .ticket-mark-btn:hover { background: #4f8cff; color: white; }
-  .search-input { display: block; width: 100%; max-width: 420px; margin-top: 18px; padding: 9px 14px; border-radius: 20px; background: #1a1d24; border: 1px solid #2a2e37; color: #e6e6e6; font-size: 13px; font-family: inherit; box-sizing: border-box; }
-  .search-input:focus { outline: none; border-color: #4f8cff; }
-  .maintenance-badge { display: inline-block; background: rgba(255,165,61,0.15); color: #ffa53d; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
-  .section-count { font-weight: 400; color: #6b7280; font-size: 13px; }
+  .ticket-field b { color: var(--muted); font-weight: 500; }
+  .ticket-part-change { font-size: 13px; background: var(--surface-2); border-radius: 6px; padding: 8px 10px; margin: 6px 0; }
+  .ticket-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--faint); }
+  .ticket-mark-btn { background: var(--border); border: 1px solid rgba(79,140,255,0.4); color: var(--accent); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
+  .ticket-mark-btn:hover { background: var(--highlight); color: white; }
+  .search-input { display: block; width: 100%; max-width: 420px; margin-top: 18px; padding: 9px 14px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-size: 13px; font-family: inherit; box-sizing: border-box; }
+  .search-input:focus { outline: none; border-color: var(--highlight); }
+  .maintenance-badge { display: inline-block; background: rgba(255,165,61,0.15); color: var(--orange); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+  .section-count { font-weight: 400; color: var(--faint); font-size: 13px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
 
-  .card { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 10px; padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
-  .card:hover { border-color: #4f8cff; transform: translateY(-2px); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
+  .card:hover { border-color: var(--highlight); transform: translateY(-2px); }
   .card h2 { margin: 0 0 8px 0; font-size: 16px; }
-  .stat { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; color: #cfd3da; }
-  .bar-bg { background: #2a2e37; border-radius: 6px; height: 8px; margin: 4px 0 10px 0; overflow: hidden; }
-  .bar-fill { height: 100%; background: #4f8cff; }
+  .stat { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; color: var(--text-2); }
+  .bar-bg { background: var(--border); border-radius: 6px; height: 8px; margin: 4px 0 10px 0; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); }
 
   .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
-  .status-dot.status-online { background: #3ddc84; box-shadow: 0 0 6px rgba(61,220,132,0.6); }
-  .status-dot.status-offline { background: #8a8f98; box-shadow: 0 0 6px rgba(138,143,152,0.5); }
-  .status-dot.status-unresponsive { background: #ffd23d; box-shadow: 0 0 6px rgba(255,210,61,0.6); }
-  .status-dot.status-crashed { background: #ff5c5c; box-shadow: 0 0 6px rgba(255,92,92,0.6); }
+  .status-dot.status-online { background: var(--good); box-shadow: 0 0 6px rgba(61,220,132,0.6); }
+  .status-dot.status-offline { background: var(--offline); box-shadow: 0 0 6px rgba(138,143,152,0.5); }
+  .status-dot.status-unresponsive { background: var(--warn); box-shadow: 0 0 6px rgba(255,210,61,0.6); }
+  .status-dot.status-crashed { background: var(--danger); box-shadow: 0 0 6px rgba(255,92,92,0.6); }
   .status-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; }
-  .status-label.status-online { background: rgba(61,220,132,0.15); color: #3ddc84; }
-  .status-label.status-offline { background: rgba(138,143,152,0.15); color: #8a8f98; }
-  .status-label.status-unresponsive { background: rgba(255,210,61,0.15); color: #ffd23d; }
-  .status-label.status-crashed { background: rgba(255,92,92,0.15); color: #ff5c5c; }
+  .status-label.status-online { background: rgba(61,220,132,0.15); color: var(--good); }
+  .status-label.status-offline { background: rgba(138,143,152,0.15); color: var(--offline); }
+  .status-label.status-unresponsive { background: rgba(255,210,61,0.15); color: var(--warn); }
+  .status-label.status-crashed { background: rgba(255,92,92,0.15); color: var(--danger); }
   .card.status-offline, .card.status-unresponsive, .card.status-crashed { opacity: 0.75; }
   .card.has-missing { border-color: rgba(255,92,92,0.5); }
 
-  .timestamp { font-size: 11px; color: #6b7280; margin-top: 8px; }
+  .timestamp { font-size: 11px; color: var(--faint); margin-top: 8px; }
   .header-row { display: flex; justify-content: space-between; align-items: center; }
-  .missing-pill { margin-top: 10px; font-size: 12px; color: #ff5c5c; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); border-radius: 6px; padding: 6px 10px; }
+  .missing-pill { margin-top: 10px; font-size: 12px; color: var(--danger); background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); border-radius: 6px; padding: 6px 10px; }
   .peripheral-row { display: flex; gap: 8px; margin-top: 10px; }
   .peripheral-chip { font-size: 12px; padding: 3px 9px; border-radius: 12px; display: flex; align-items: center; gap: 4px; }
-  .peripheral-chip.present { background: rgba(61,220,132,0.12); color: #3ddc84; }
-  .peripheral-chip.absent { background: rgba(255,92,92,0.12); color: #ff5c5c; }
+  .peripheral-chip.present { background: rgba(61,220,132,0.12); color: var(--good); }
+  .peripheral-chip.absent { background: rgba(255,92,92,0.12); color: var(--danger); }
 
   /* ---- Modal ---- */
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
   #repairOverlay { z-index: 300; } /* stacks above the device-detail modal so it can open on top of it */
   .overlay.open { display: flex; }
-  .modal { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 12px; padding: 24px; width: min(560px, 90vw); max-height: 85vh; overflow-y: auto; position: relative; }
-  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: #9aa1ac; font-size: 20px; cursor: pointer; line-height: 1; }
-  .modal-close:hover { color: #e6e6e6; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: min(560px, 90vw); max-height: 85vh; overflow-y: auto; position: relative; }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; }
+  .modal-close:hover { color: var(--text); }
   .modal h2 { margin: 0 0 4px 0; font-size: 20px; }
-  .section-title { font-size: 13px; color: #9aa1ac; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px 0; }
+  .section-title { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px 0; }
   .section-title.collapsible { cursor: pointer; user-select: none; }
-  .section-title.collapsible:hover { color: #e6e6e6; }
+  .section-title.collapsible:hover { color: var(--text); }
   .collapse-arrow { display: inline-block; width: 14px; font-size: 10px; }
-  .device-list { font-size: 13px; color: #cfd3da; }
-  .device-list div { padding: 4px 0; border-bottom: 1px solid #22252c; }
+  .device-list { font-size: 13px; color: var(--text-2); }
+  .device-list div { padding: 4px 0; border-bottom: 1px solid var(--surface-2); }
   .missing-box { margin-top: 10px; padding: 10px 12px; border-radius: 6px; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); }
-  .missing-box b { color: #ff5c5c; font-size: 13px; }
-  .missing-item { font-size: 13px; color: #ffb3b3; padding: 3px 0; }
+  .missing-box b { color: var(--danger); font-size: 13px; }
+  .missing-item { font-size: 13px; color: var(--danger-soft); padding: 3px 0; }
 
   /* ---- Issue cards (used inside the bell dropdown) ---- */
-  .issue-card { background: #22252c; border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .issue-card { background: var(--surface-2); border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
   .issue-tags { display: flex; gap: 6px; margin-bottom: 6px; }
-  .issue-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: #4f8cff; padding: 2px 8px; border-radius: 4px; }
-  .issue-desc { font-size: 13px; color: #e6e6e6; }
-  .issue-meta { font-size: 11px; color: #6b7280; margin-top: 4px; }
-  .resolve-btn { background: #2a2e37; border: 1px solid #3a3f4a; color: #cfd3da; border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; margin-top: 6px; }
-  .resolve-btn:hover { background: #3ddc84; color: #0f1115; border-color: #3ddc84; }
-  .no-issues { color: #6b7280; font-size: 13px; padding: 8px 0; }
+  .issue-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: var(--accent); padding: 2px 8px; border-radius: 4px; }
+  .issue-desc { font-size: 13px; color: var(--text); }
+  .issue-meta { font-size: 11px; color: var(--faint); margin-top: 4px; }
+  .resolve-btn { background: var(--border); border: 1px solid var(--border-2); color: var(--text-2); border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; margin-top: 6px; }
+  .resolve-btn:hover { background: var(--good); color: var(--bg); border-color: var(--good); }
+  .no-issues { color: var(--faint); font-size: 13px; padding: 8px 0; }
 
   /* ---- Toast notifications ---- */
   .toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
-  .toast { background: #1a1d24; border-left: 4px solid #ff5c5c; border-radius: 6px; padding: 10px 14px; width: 300px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); animation: slideIn 0.2s ease-out; font-size: 13px; }
-  .toast.connected { border-left-color: #3ddc84; }
+  .toast { background: var(--surface); border-left: 4px solid var(--danger); border-radius: 6px; padding: 10px 14px; width: 300px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); animation: slideIn 0.2s ease-out; font-size: 13px; }
+  .toast.connected { border-left-color: var(--good); }
   .toast-title { font-weight: 600; margin-bottom: 2px; }
-  .toast-body { color: #9aa1ac; font-size: 12px; }
+  .toast-body { color: var(--muted); font-size: 12px; }
   @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
   /* ---- History ---- */
-  .history-btn { background: #2a2e37; border: 1px solid #3a3f4a; color: #cfd3da; border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; margin-top: 10px; }
-  .history-btn:hover { background: #4f8cff; color: white; border-color: #4f8cff; }
+  .history-btn { background: var(--border); border: 1px solid var(--border-2); color: var(--text-2); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; margin-top: 10px; }
+  .history-btn:hover { background: var(--highlight); color: white; border-color: var(--highlight); }
   .history-list { font-size: 12px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
-  .history-item { padding: 5px 0; border-bottom: 1px solid #22252c; display: flex; justify-content: space-between; }
-  .history-item.connected { color: #3ddc84; }
-  .history-item.disconnected { color: #ff5c5c; }
-  .history-item.repaired { color: #4f8cff; }
-  .history-time { color: #6b7280; }
+  .history-item { padding: 5px 0; border-bottom: 1px solid var(--surface-2); display: flex; justify-content: space-between; }
+  .history-item.connected { color: var(--good); }
+  .history-item.disconnected { color: var(--danger); }
+  .history-item.repaired { color: var(--accent); }
+  .history-time { color: var(--faint); }
 
   /* ---- Sound toggle ---- */
-  .sound-toggle { position: fixed; top: 20px; left: 24px; background: #1a1d24; border: 1px solid #2a2e37; color: #cfd3da; border-radius: 20px; padding: 6px 14px; font-size: 12px; cursor: pointer; z-index: 150; }
-  .sound-toggle.muted { color: #6b7280; }
 </style>
+<script>try{if(localStorage.getItem('dtTheme')==='light')document.documentElement.dataset.theme='light';}catch(e){}</script>
 </head>
 <body>
-  <button class="sound-toggle" id="soundToggle">🔔 Sound On</button>
 
   <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
     ⚠️ Notifications <span class="sidebar-toggle-badge" id="sidebarToggleBadge" style="display:none;">0</span>
   </button>
+  <button class="settings-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
+
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <h2 style="margin:0 0 4px 0; font-size:20px;" id="loginTitle">🔐 Log in</h2>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;" id="loginSubtitle">Device Tracker — Live Dashboard</div>
+
+      <div id="loginError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+
+      <label class="ticket-form-label">Username</label>
+      <input type="text" id="loginUser" autocomplete="username" class="ticket-form-input" style="margin-bottom:14px;">
+
+      <label class="ticket-form-label">Password</label>
+      <input type="password" id="loginPass" autocomplete="current-password" class="ticket-form-input" style="margin-bottom:14px;">
+
+
+      <button class="resolve-btn" id="loginSubmit" style="width:100%;padding:10px;margin-top:6px;font-size:13px;background:var(--accent);color:white;border-color:var(--accent);">Log in</button>
+    </div>
+  </div>
 
   <div class="toast-container" id="toastContainer"></div>
 
   <div class="main-nav" id="mainNav">
     <button class="nav-tab active" data-view="monitoring">🖥️ Monitoring System</button>
     <button class="nav-tab" data-view="repair">🛠️ Repair Tracking</button>
+    <button class="nav-tab" data-view="users" id="usersTab" style="display:none;">👥 Users</button>
   </div>
 
   <div class="notif-sidebar" id="notifSidebar">
@@ -167,6 +220,8 @@
     </div>
   </div>
 
+  <div class="default-pw-banner" id="defaultPwBanner">⚠️ This account still uses the default password (admin123). Click here to change it.</div>
+
   <div id="monitoringView" class="nav-view">
     <h1>🖥️ Device Tracker — Live Dashboard</h1>
 
@@ -175,11 +230,19 @@
     <div class="filter-bar" id="filterBar"></div>
     <div class="filter-bar" id="statusFilterBar" style="margin-top:8px;"></div>
 
-    <div class="section-header">🟢 Online <span class="section-count" id="onlineCount">(0)</span></div>
-    <div class="grid" id="onlineGrid"></div>
+    <div class="section-header">🖥️ PCs <span class="section-count" id="deviceCount">(0)</span></div>
+    <div class="grid" id="deviceGrid"></div>
+  </div>
 
-    <div class="section-header" style="margin-top:28px;">⚫ Offline / Unresponsive / Crashed <span class="section-count" id="offlineCount">(0)</span></div>
-    <div class="grid" id="offlineGrid"></div>
+  <div id="usersView" class="nav-view" style="display:none;">
+    <h1>👥 Users</h1>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Technician accounts that can log in to this dashboard. Only the admin (you) can add or manage them.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="resolve-btn" id="addUserBtn" style="margin-top:0;padding:8px 14px;font-size:13px;background:var(--accent);color:white;border-color:var(--accent);">+ Add User</button>
+      <button class="resolve-btn" id="changeMyPwBtn" style="margin-top:0;padding:8px 14px;font-size:13px;">🔑 Change my password</button>
+    </div>
+    <div id="usersError" style="display:none;color:var(--danger);font-size:12px;margin-top:12px;"></div>
+    <div class="user-list" id="userList"></div>
   </div>
 
   <div id="repairView" class="nav-view" style="display:none;">
@@ -195,6 +258,7 @@
         <option value="In Progress">In Progress</option>
         <option value="Completed">Completed</option>
       </select>
+      <button class="history-btn" id="logRepairBtn">🛠️ Log a Repair</button>
       <button class="history-btn" id="newTicketBtn">+ New Repair Ticket</button>
       <button class="history-btn" id="generateReportBtn">📄 Generate Report (CSV)</button>
     </div>
@@ -210,24 +274,106 @@
     <div class="modal" style="width:min(380px, 90vw);">
       <button class="modal-close" id="repairFormClose">✕</button>
       <h2 style="margin:0 0 4px 0; font-size:18px;">🛠️ Log a Repair</h2>
-      <div style="font-size:12px;color:#9aa1ac;margin-bottom:12px;" id="repairFormDeviceLabel"></div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin:12px 0 6px;">PC <span style="color:var(--danger);">*</span></label>
+      <select id="repairDeviceSelect" class="repair-select" style="width:100%;margin-bottom:16px;"></select>
 
-      <div id="repairFormError" style="display:none;color:#ff5c5c;font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <div id="repairFormError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
-      <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">What was fixed or replaced?</label>
-      <textarea id="repairNoteInput" rows="3" placeholder="e.g. Replaced keyboard, Reseated RAM..." style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:16px;"></textarea>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">What was fixed or replaced?</label>
+      <textarea id="repairNoteInput" rows="3" placeholder="e.g. Replaced keyboard, Reseated RAM..." style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;resize:vertical;margin-bottom:16px;"></textarea>
 
-      <label style="font-size:12px;color:#9aa1ac;display:block;margin-bottom:6px;">Your Name <span style="color:#ff5c5c;">*</span></label>
-      <input type="text" id="repairTechInput" placeholder="Required" style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:#22252c;border:1px solid #2a2e37;color:#e6e6e6;font-family:inherit;font-size:13px;margin-bottom:16px;" />
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Your Name <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="repairTechInput" placeholder="Required" style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;margin-bottom:16px;" />
 
-      <label style="font-size:13px;color:#cfd3da;display:flex;align-items:flex-start;gap:8px;margin-bottom:20px;cursor:pointer;">
+      <label style="font-size:13px;color:var(--text-2);display:flex;align-items:flex-start;gap:8px;margin-bottom:20px;cursor:pointer;">
         <input type="checkbox" id="repairUpdateBaseline" style="margin-top:3px;">
         <span>Also save the current internal components as the new expected baseline (use this if you installed/swapped hardware)</span>
       </label>
 
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="resolve-btn" id="repairFormCancel">Cancel</button>
-        <button class="resolve-btn" id="repairFormSubmit" style="background:#4f8cff;color:white;border-color:#4f8cff;">Submit</button>
+        <button class="resolve-btn" id="repairFormSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="settingsOverlay">
+    <div class="modal" style="width:min(420px, 92vw); max-height:88vh; overflow-y:auto;">
+      <button class="modal-close" id="settingsClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:18px;">⚙️ Settings</h2>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Signed in as <b id="settingsUser"></b></div>
+
+      <div class="section-title" style="margin-top:14px;">🎨 Appearance <span style="font-weight:400;color:var(--faint);font-size:11px;">(this browser only)</span></div>
+      <div class="setting-row">
+        <div>Light mode<small>Switch the dashboard to a light theme</small></div>
+        <label class="switch"><input type="checkbox" id="settingLight"><span></span></label>
+      </div>
+
+      <div class="section-title" style="margin-top:22px;">🔔 Notifications <span style="font-weight:400;color:var(--faint);font-size:11px;">(this browser only)</span></div>
+      <div class="setting-row">
+        <div>Alert sound<small>Play a beep for new alerts</small></div>
+        <label class="switch"><input type="checkbox" id="settingSound"><span></span></label>
+      </div>
+      <div class="setting-row">
+        <div>Pop-up alerts<small>Show the corner pop-ups for connects, disconnects, crashes and missing parts. Confirmations of your own actions still show.</small></div>
+        <label class="switch"><input type="checkbox" id="settingToasts"><span></span></label>
+      </div>
+
+      <div id="settingsPwSection">
+      <div class="section-title" style="margin-top:22px;">🔑 Change my password</div>
+      <div id="settingsPwError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin:8px 0;"></div>
+      <div id="settingsPwOk" style="display:none;color:var(--good);font-size:12px;margin:8px 0;">Password changed.</div>
+      <label class="ticket-form-label" style="margin-top:8px;">Current password</label>
+      <input type="password" id="settingsCurPw" autocomplete="current-password" class="ticket-form-input" style="margin-bottom:12px;">
+      <label class="ticket-form-label">New password</label>
+      <input type="password" id="settingsNewPw" autocomplete="new-password" placeholder="At least 6 characters" class="ticket-form-input" style="margin-bottom:12px;">
+      <label class="ticket-form-label">Repeat new password</label>
+      <input type="password" id="settingsNewPw2" autocomplete="new-password" class="ticket-form-input" style="margin-bottom:14px;">
+      <button class="resolve-btn" id="settingsPwSubmit" style="margin-top:0;background:var(--accent);color:white;border-color:var(--accent);padding:8px 14px;font-size:13px;">Change password</button>
+
+      </div>
+
+      <div style="margin-top:22px;padding-top:14px;border-top:1px solid var(--border);">
+        <button class="resolve-btn" id="settingsLogout" style="margin-top:0;padding:8px 14px;font-size:13px;">Log out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="addUserOverlay">
+    <div class="modal" style="width:min(380px, 90vw);">
+      <button class="modal-close" id="addUserClose">✕</button>
+      <h2 style="margin:0 0 14px 0; font-size:18px;">👤 Add User</h2>
+      <div id="addUserError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+
+      <label class="ticket-form-label">Username <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="addUserName" autocomplete="off" class="ticket-form-input" style="margin-bottom:14px;">
+
+      <label class="ticket-form-label">Password <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="addUserPass" autocomplete="off" placeholder="At least 6 characters" class="ticket-form-input" style="margin-bottom:6px;">
+      <div style="font-size:11px;color:var(--faint);margin-bottom:20px;">Shown as you type so you can tell the person. They can't change it themselves — you reset it from here.</div>
+
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="addUserCancel">Cancel</button>
+        <button class="resolve-btn" id="addUserSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="resetPwOverlay">
+    <div class="modal" style="width:min(380px, 90vw);">
+      <button class="modal-close" id="resetPwClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:18px;">🔑 Reset Password</h2>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;" id="resetPwLabel"></div>
+      <div id="resetPwError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+
+      <label class="ticket-form-label">New password <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="resetPwInput" autocomplete="off" placeholder="At least 6 characters" class="ticket-form-input" style="margin-bottom:6px;">
+      <div style="font-size:11px;color:var(--faint);margin-bottom:20px;">This logs the person out everywhere; they'll sign in again with the new password.</div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="resetPwCancel">Cancel</button>
+        <button class="resolve-btn" id="resetPwSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Reset</button>
       </div>
     </div>
   </div>
@@ -236,31 +382,31 @@
     <div class="modal" style="width:min(400px, 90vw);">
       <button class="modal-close" id="maintClose">✕</button>
       <h2 style="margin:0 0 4px 0; font-size:18px;" id="maintTitle">🔧 Mark Under Maintenance</h2>
-      <div style="font-size:12px;color:#9aa1ac;margin-bottom:12px;" id="maintDeviceLabel"></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;" id="maintDeviceLabel"></div>
 
-      <div id="maintError" style="display:none;color:#ff5c5c;font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <div id="maintError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
       <div id="maintOnFields">
-        <label class="ticket-form-label">Reason for maintenance <span style="color:#ff5c5c;">*</span></label>
+        <label class="ticket-form-label">Reason for maintenance <span style="color:var(--danger);">*</span></label>
         <textarea id="maintReasonInput" rows="3" placeholder="e.g. Won't boot, keyboard not responding..." class="ticket-form-input" style="margin-bottom:6px;resize:vertical;"></textarea>
-        <div style="font-size:11px;color:#6f7683;margin-bottom:14px;">A Pending repair ticket is created automatically from this.</div>
+        <div style="font-size:11px;color:var(--faint);margin-bottom:14px;">A Pending repair ticket is created automatically from this.</div>
       </div>
 
       <div id="maintOffFields" style="display:none;">
         <label class="ticket-form-label">Final note (optional)</label>
         <textarea id="maintNoteInput" rows="3" placeholder="e.g. Replaced PSU, tested OK..." class="ticket-form-input" style="margin-bottom:14px;resize:vertical;"></textarea>
-        <label style="font-size:13px;color:#cfd3da;display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
+        <label style="font-size:13px;color:var(--text-2);display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
           <input type="checkbox" id="maintCompleteTickets" checked style="margin-top:3px;">
           <span>Mark this PC's open repair tickets as Completed</span>
         </label>
       </div>
 
-      <label class="ticket-form-label">Your Name <span style="color:#ff5c5c;">*</span></label>
+      <label class="ticket-form-label">Your Name <span style="color:var(--danger);">*</span></label>
       <input type="text" id="maintNameInput" placeholder="Required" class="ticket-form-input" style="margin-bottom:20px;" />
 
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="resolve-btn" id="maintCancel">Cancel</button>
-        <button class="resolve-btn" id="maintSubmit" style="background:#4f8cff;color:white;border-color:#4f8cff;">Confirm</button>
+        <button class="resolve-btn" id="maintSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Confirm</button>
       </div>
     </div>
   </div>
@@ -270,12 +416,12 @@
       <button class="modal-close" id="newTicketClose">✕</button>
       <h2 style="margin:0 0 16px 0; font-size:18px;">🛠️ New Repair Ticket</h2>
 
-      <div id="newTicketError" style="display:none;color:#ff5c5c;font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <div id="newTicketError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
-      <label class="ticket-form-label">PC <span style="color:#ff5c5c;">*</span></label>
+      <label class="ticket-form-label">PC <span style="color:var(--danger);">*</span></label>
       <select id="ticketDeviceSelect" class="repair-select" style="width:100%;margin-bottom:14px;"></select>
 
-      <label class="ticket-form-label">Reported Problem <span style="color:#ff5c5c;">*</span></label>
+      <label class="ticket-form-label">Reported Problem <span style="color:var(--danger);">*</span></label>
       <textarea id="ticketProblemInput" rows="2" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
 
       <label class="ticket-form-label">Actions Taken</label>
@@ -302,31 +448,29 @@
         <option value="Completed">Completed</option>
       </select>
 
-      <label class="ticket-form-label">Your Name <span style="color:#ff5c5c;">*</span></label>
+      <label class="ticket-form-label">Your Name <span style="color:var(--danger);">*</span></label>
       <input type="text" id="ticketTechInput" placeholder="Required" class="ticket-form-input" style="margin-bottom:20px;">
 
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="resolve-btn" id="newTicketCancel">Cancel</button>
-        <button class="resolve-btn" id="newTicketSubmit" style="background:#4f8cff;color:white;border-color:#4f8cff;">Submit</button>
+        <button class="resolve-btn" id="newTicketSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Submit</button>
       </div>
     </div>
   </div>
 
 <script>
-const onlineGrid = document.getElementById("onlineGrid");
-const offlineGrid = document.getElementById("offlineGrid");
-const onlineCountEl = document.getElementById("onlineCount");
-const offlineCountEl = document.getElementById("offlineCount");
+const deviceGrid = document.getElementById("deviceGrid");
+const deviceCountEl = document.getElementById("deviceCount");
 const overlay = document.getElementById("overlay");
 const modal = document.getElementById("modal");
 const toastContainer = document.getElementById("toastContainer");
-const soundToggle = document.getElementById("soundToggle");
 const issuesListEl = document.getElementById("issuesList");
 const cards = {};       // device_id -> card element
 const lastPayload = {}; // device_id -> last full payload
 const lastMissingCount = {}; // device_id -> number of missing components on the previous update
 let openDeviceId = null; // which device's modal is currently open, if any
 let soundEnabled = true;
+let toastsEnabled = true; // pop-ups for live alerts (user-action confirmations always show)
 let openIssues = []; // current open (unresolved) problem reports
 // Right after a repair is logged for a device, suppress its sidebar alerts
 // for a grace period rather than requiring an immediate fresh report to
@@ -361,10 +505,111 @@ function restoreLogs() {
   if (r && logState.repair.open) r.innerHTML = logState.repair.html;
 }
 
-// Must match API_KEY in server.py — needed so the "Resolve" button can call
-// the server. Fine for a trusted LAN dashboard; don't expose this page to
-// the public internet as-is.
-const API_KEY = "changeme-shared-secret";
+// ----------------- Login / token -----------------
+// The server hands out a signed token at login (valid for a limited time).
+// Every dashboard request sends it; the page itself holds no secret.
+const TOKEN_KEY = "deviceTrackerToken";
+const USER_KEY = "deviceTrackerUser";
+let authToken = null;
+let authUser = "";
+let authRole = "user";
+let ws = null;
+
+function storeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function storeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function storeDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+
+// fetch() that adds the login token. A 401 means the token is missing or
+// expired: show the login screen and abort so the caller doesn't render junk.
+async function apiFetch(url, opts = {}) {
+  const headers = Object.assign({}, opts.headers || {}, { "Authorization": "Bearer " + (authToken || "") });
+  const resp = await fetch(url, Object.assign({}, opts, { headers }));
+  if (resp.status === 401) {
+    showLogin("Your session expired — please log in again.");
+    throw new Error("unauthorized");
+  }
+  return resp;
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById("loginError");
+  el.textContent = msg || "";
+  el.style.display = msg ? "block" : "none";
+}
+
+function showLogin(message) {
+  authToken = null;
+  storeDel(TOKEN_KEY);
+  storeDel(USER_KEY);
+  if (ws) { ws.onclose = null; try { ws.close(); } catch (e) {} ws = null; }
+
+  document.getElementById("loginPass").value = "";
+  showLoginError(message);
+  document.getElementById("loginScreen").classList.add("open");
+  document.getElementById("loginUser").focus();
+}
+
+function startSession(token, username, role, defaultPassword) {
+  authToken = token;
+  authUser = username;
+  authRole = role || "user";
+  document.getElementById("usersTab").style.display = authRole === "admin" ? "" : "none";
+  document.getElementById("defaultPwBanner").style.display = defaultPassword ? "block" : "none";
+  storeSet(TOKEN_KEY, token);
+  storeSet(USER_KEY, username);
+  document.getElementById("loginScreen").classList.remove("open");
+  connect();
+}
+
+async function submitLogin() {
+  const username = document.getElementById("loginUser").value.trim();
+  const password = document.getElementById("loginPass").value;
+  if (!username || !password) { showLoginError("Enter a username and password."); return; }
+  showLoginError("");
+
+  try {
+    const resp = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const body = await resp.json().catch(() => ({}));
+    if (resp.ok) {
+      startSession(body.token, body.username, body.role, body.default_password);
+    } else {
+      showLoginError(body.detail || "Login failed.");
+    }
+  } catch (e) {
+    showLoginError("Could not reach the server.");
+  }
+}
+
+function logout() {
+  storeDel(TOKEN_KEY);
+  storeDel(USER_KEY);
+  location.reload(); // clears everything on screen; the login screen shows on reload
+}
+
+async function initAuth() {
+  const saved = storeGet(TOKEN_KEY);
+  if (saved) {
+    authToken = saved;
+    try {
+      const resp = await fetch("/api/auth/me", { headers: { "Authorization": "Bearer " + saved } });
+      if (resp.ok) {
+        const me = await resp.json();
+        startSession(saved, me.username, me.role, me.default_password);
+        return;
+      }
+    } catch (e) {}
+  }
+  showLogin("");
+}
+
+document.getElementById("loginSubmit").addEventListener("click", submitLogin);
+["loginUser", "loginPass"].forEach(id =>
+  document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") submitLogin(); })
+);
 
 const STATUS_TEXT = {
   online: "Online",
@@ -438,9 +683,8 @@ function renderIssues() {
 
 async function resolveIssue(issueId) {
   try {
-    await fetch(`/api/issues/${issueId}/resolve`, {
+    await apiFetch(`/api/issues/${issueId}/resolve`, {
       method: "POST",
-      headers: { "X-API-Key": API_KEY },
     });
     openIssues = openIssues.filter(i => i.id !== issueId);
     renderIssues();
@@ -450,11 +694,11 @@ async function resolveIssue(issueId) {
 }
 
 // ----------------- Sound + toast notifications -----------------
-soundToggle.addEventListener("click", () => {
-  soundEnabled = !soundEnabled;
-  soundToggle.textContent = soundEnabled ? "🔔 Sound On" : "🔕 Sound Off";
-  soundToggle.classList.toggle("muted", !soundEnabled);
-});
+function setSoundEnabled(on) {
+  soundEnabled = on;
+  document.getElementById("settingSound").checked = on;
+  storeSet("dtSound", on ? "1" : "0");
+}
 
 function playAlertSound() {
   if (!soundEnabled) return;
@@ -481,7 +725,7 @@ function showToast(title, body, kind = "alert") {
 }
 
 function notify(title, body, kind = "alert") {
-  showToast(title, body, kind);
+  if (toastsEnabled) showToast(title, body, kind);
   if (kind === "alert") playAlertSound();
 }
 
@@ -490,24 +734,26 @@ function naturalCompare(a, b) {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
 }
 
-function relayoutSection(container, countEl) {
-  const cardEls = Array.from(container.children);
-  cardEls.sort((a, b) => naturalCompare(a.dataset.hostname || "", b.dataset.hostname || ""));
-  cardEls.forEach(el => container.appendChild(el)); // re-appending in sorted order moves them into place
-  countEl.textContent = `(${cardEls.length})`; // recomputed by applyFilter() below when a filter is active
+// One grid: online PCs first, then everything else (offline / unresponsive /
+// crashed). Within each of those two groups, PCs are in natural name order
+// ("PC 2" before "PC 10").
+function relayoutGrid() {
+  const cardEls = Array.from(deviceGrid.children);
+  const rank = (el) => (el.dataset.status === "online" ? 0 : 1);
+  cardEls.sort((a, b) =>
+    rank(a) - rank(b) || naturalCompare(a.dataset.hostname || "", b.dataset.hostname || ""));
+  cardEls.forEach(el => deviceGrid.appendChild(el)); // re-appending in sorted order moves them into place
 }
 
 // ----------------- Group filter buttons -----------------
-// Edit this list to add/rename groups — each becomes a button. "keyword" is
-// matched as a case-insensitive substring against each device's hostname
-// (e.g. "CC1" matches "CC1-PC-03", "cc1-front-desk", etc). A computer whose
-// name doesn't contain any listed keyword only shows up under "All".
-// The special keyword "__MAINTENANCE__" is reserved — it filters by the
-// Under Maintenance flag instead of matching the hostname.
+// Edit this list to add/rename groups — each becomes a button. "room" is
+// matched against the ROOM value in each PC's agent config.toml, as a whole
+// number/word: "201" matches ROOM = "201" and ROOM = "Room 201", but not "2012".
+// A PC whose ROOM matches none of these only shows up under "All".
+// (Under Maintenance is in the status row below, not here.)
 const FILTER_GROUPS = [
-  { label: "Computer Center 1", keyword: "CC1" },
-  { label: "Computer Center 2", keyword: "CC2" },
-  { label: "🔧 Under Maintenance", keyword: "__MAINTENANCE__" },
+  { label: "Computer Center 1", room: "201" },
+  { label: "Computer Center 2", room: "202" },
 ];
 
 const STATUS_FILTERS = [
@@ -516,21 +762,22 @@ const STATUS_FILTERS = [
   { label: "Offline", value: "offline" },
   { label: "Unresponsive", value: "unresponsive" },
   { label: "Crashed", value: "crashed" },
+  { label: "🔧 Under Maintenance", value: "__MAINTENANCE__" },
 ];
 
-let activeFilter = "";       // "" = all groups, a keyword string, or "__MAINTENANCE__"
-let activeStatusFilter = ""; // "" = all statuses, or one of STATUS_FILTERS' values
+let activeFilter = "";       // "" = all groups, or a room value from FILTER_GROUPS
+let activeStatusFilter = ""; // "" = all, a status, or "__MAINTENANCE__" (a flag, not a status)
 let searchQuery = "";        // free-text hostname search — combines with both filters above
 
 function renderFilterBar() {
   const bar = document.getElementById("filterBar");
-  const groups = [{ label: "All", keyword: "" }, ...FILTER_GROUPS];
+  const groups = [{ label: "All", room: "" }, ...FILTER_GROUPS];
   bar.innerHTML = groups.map(g => `
-    <button class="filter-btn${g.keyword === activeFilter ? " active" : ""}" data-keyword="${g.keyword}">${g.label}</button>
+    <button class="filter-btn${g.room === activeFilter ? " active" : ""}" data-room="${g.room}">${g.label}</button>
   `).join("");
   bar.querySelectorAll(".filter-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      activeFilter = btn.dataset.keyword;
+      activeFilter = btn.dataset.room;
       renderFilterBar();
       applyFilter();
     });
@@ -559,46 +806,48 @@ document.getElementById("searchInput").addEventListener("input", (e) => {
 // Shows/hides cards per the combined group + status + search filters, and
 // updates the visible counts. All three conditions must pass (AND, not OR) —
 // sorting itself is untouched, this only toggles visibility within the
-// already-sorted order from relayoutSection().
+// already-sorted order from relayoutGrid().
+// True if `wanted` appears in the room text as its own number/word, so
+// "201" matches "201" and "Room 201" but not "2012" or "1201".
+function roomMatches(room, wanted) {
+  const esc = wanted.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp("(^|[^A-Za-z0-9])" + esc + "($|[^A-Za-z0-9])", "i").test(room);
+}
+
 function applyFilter() {
-  [onlineGrid, offlineGrid].forEach((grid, i) => {
-    const countEl = i === 0 ? onlineCountEl : offlineCountEl;
-    let visible = 0;
-    Array.from(grid.children).forEach(card => {
-      const hostname = (card.dataset.hostname || "").toUpperCase();
+  let visible = 0;
+  Array.from(deviceGrid.children).forEach(card => {
+    const hostname = (card.dataset.hostname || "").toUpperCase();
 
-      let groupMatches;
-      if (activeFilter === "") groupMatches = true;
-      else if (activeFilter === "__MAINTENANCE__") groupMatches = card.dataset.maintenance === "true";
-      else groupMatches = hostname.includes(activeFilter.toUpperCase());
+    const groupMatches = activeFilter === "" || roomMatches(card.dataset.room || "", activeFilter);
 
-      const statusMatches = !activeStatusFilter || card.dataset.status === activeStatusFilter;
-      const searchMatches = !searchQuery || hostname.includes(searchQuery.toUpperCase());
+    let statusMatches;
+    if (!activeStatusFilter) statusMatches = true;
+    else if (activeStatusFilter === "__MAINTENANCE__") statusMatches = card.dataset.maintenance === "true";
+    else statusMatches = card.dataset.status === activeStatusFilter;
+    const searchMatches = !searchQuery || hostname.includes(searchQuery.toUpperCase());
 
-      const matches = groupMatches && statusMatches && searchMatches;
-      card.style.display = matches ? "" : "none";
-      if (matches) visible++;
-    });
-    countEl.textContent = `(${visible})`;
+    const matches = groupMatches && statusMatches && searchMatches;
+    card.style.display = matches ? "" : "none";
+    if (matches) visible++;
   });
+  deviceCountEl.textContent = `(${visible})`;
 }
 
 function renderCard(payload) {
   const id = payload.device_id;
   lastPayload[id] = payload;
   const status = payload.status || "online";
-  const targetGrid = status === "online" ? onlineGrid : offlineGrid;
 
   if (!cards[id]) {
     const card = document.createElement("div");
     card.className = "card";
     card.addEventListener("click", () => openModal(id));
-    targetGrid.appendChild(card);
+    deviceGrid.appendChild(card);
     cards[id] = card;
-  } else if (cards[id].parentElement !== targetGrid) {
-    targetGrid.appendChild(cards[id]); // moves it from the other section
   }
   cards[id].dataset.hostname = payload.hostname || "";
+  cards[id].dataset.room = payload.room || "";
   cards[id].dataset.status = status;
   cards[id].dataset.maintenance = payload.under_maintenance ? "true" : "false";
   const hw = payload.hardware || {};
@@ -625,7 +874,7 @@ function renderCard(payload) {
       <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance ? `<span class="maintenance-badge">🔧 Maintenance</span>` : ""}</h2>
       <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
     </div>
-    <div style="font-size:12px;color:#9aa1ac;">${payload.os || ""}</div>
+    <div style="font-size:12px;color:var(--muted);">${payload.os || ""}</div>
 
     <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
     <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
@@ -645,8 +894,7 @@ function renderCard(payload) {
     <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleTimeString()} — click for full details</div>
   `;
 
-  relayoutSection(onlineGrid, onlineCountEl);
-  relayoutSection(offlineGrid, offlineCountEl);
+  relayoutGrid();
   applyFilter();
   renderNotificationSidebar();
 
@@ -705,22 +953,11 @@ function renderNotificationSidebar() {
       <span class="notif-alert-host">${a.hostname}</span>
       <div class="notif-alert-desc">${a.desc}</div>
       <div class="notif-alert-time">${new Date(a.timestamp*1000).toLocaleString()}</div>
-      <div class="notif-alert-actions">
-        <button class="notif-repair-btn" data-device-id="${a.device_id}">🛠️ Log Repair</button>
-      </div>
     </div>
   `).join("");
 
   listEl.querySelectorAll(".notif-alert-card").forEach(el => {
     el.addEventListener("click", () => openModal(el.dataset.deviceId));
-  });
-  // Stop the repair button's click from also triggering the card's own
-  // click handler above (which would open the device modal at the same time).
-  listEl.querySelectorAll(".notif-repair-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      openRepairForm(btn.dataset.deviceId);
-    });
   });
   updateSidebarAutoState();
 }
@@ -746,10 +983,10 @@ function renderModalContent(payload) {
       <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance ? `<span class="maintenance-badge">🔧 Maintenance</span>` : ""}</h2>
       <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
     </div>
-    <div style="font-size:13px;color:#9aa1ac;">${payload.os || ""} — ${payload.device_id}</div>
+    <div style="font-size:13px;color:var(--muted);">${payload.os || ""} — ${payload.device_id}</div>
 
     <button class="history-btn" id="maintenanceHistoryBtn" style="margin-top:10px; margin-right:8px;">📋 Maintenance History</button>
-    <button class="history-btn" id="toggleMaintenanceBtn" style="margin-top:10px; ${payload.under_maintenance ? "border-color: rgba(61,220,132,0.4); color: #3ddc84;" : "border-color: rgba(255,165,61,0.4); color: #ffa53d;"}">
+    <button class="history-btn" id="toggleMaintenanceBtn" style="margin-top:10px; ${payload.under_maintenance ? "border-color: rgba(61,220,132,0.4); color: var(--good);" : "border-color: rgba(255,165,61,0.4); color: var(--orange);"}">
       ${payload.under_maintenance ? "✅ Mark Back In Service" : "🔧 Mark Under Maintenance"}
     </button>
 
@@ -784,7 +1021,6 @@ function renderModalContent(payload) {
 
     <div class="section-title" style="margin-top:18px;">🛠️ Repair Log</div>
     <button class="history-btn" id="viewRepairLogBtn">📖 View Repair Log</button>
-    <button class="history-btn" id="logRepairBtn" style="margin-left:8px; border-color: rgba(79,140,255,0.4); color: #4f8cff;">+ Log a Repair</button>
     <div class="history-list" id="repairLogList"></div>
 
     <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleString()}</div>
@@ -794,7 +1030,6 @@ function renderModalContent(payload) {
   document.getElementById("peripheralsToggle").addEventListener("click", () => toggleSection("peripherals"));
   document.getElementById("historyBtn").addEventListener("click", () => loadHistory(payload.device_id));
   document.getElementById("viewRepairLogBtn").addEventListener("click", () => loadRepairLog(payload.device_id));
-  document.getElementById("logRepairBtn").addEventListener("click", () => openRepairForm(payload.device_id));
   document.getElementById("toggleMaintenanceBtn").addEventListener("click", () => toggleMaintenance(payload.device_id, payload.under_maintenance));
   document.getElementById("maintenanceHistoryBtn").addEventListener("click", () => {
     closeModal();
@@ -858,15 +1093,15 @@ async function submitMaintForm() {
   else { body.note = note; body.complete_tickets = complete_tickets; }
 
   try {
-    const resp = await fetch(`/api/maintenance/${encodeURIComponent(deviceId)}`, {
+    const resp = await apiFetch(`/api/maintenance/${encodeURIComponent(deviceId)}`, {
       method: "POST",
-      headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     if (resp.ok) {
       closeMaintForm(); // card badge + toast come from the "maintenance" WebSocket message
     } else if (resp.status === 401) {
-      showMaintError("API_KEY in this dashboard doesn't match the server's.");
+      showMaintError("Not logged in — please log in again.");
     } else if (resp.status === 400) {
       const err = await resp.json().catch(() => ({}));
       showMaintError(err.detail || "Missing required field.");
@@ -886,11 +1121,12 @@ document.getElementById("maintOverlay").addEventListener("click", (e) => {
 });
 
 // ----------------- Floating "Log a Repair" form -----------------
-let repairTargetDeviceId = null;
 
-function openRepairForm(deviceId) {
-  repairTargetDeviceId = deviceId;
-  document.getElementById("repairFormDeviceLabel").textContent = (lastPayload[deviceId] || {}).hostname || deviceId;
+function openRepairForm(preselectDeviceId) {
+  const sel = document.getElementById("repairDeviceSelect");
+  const devices = Object.values(lastPayload).sort((a, b) => naturalCompare(a.hostname || "", b.hostname || ""));
+  sel.innerHTML = devices.map(d => `<option value="${escapeHtml(d.device_id)}">${escapeHtml(d.hostname)}</option>`).join("");
+  if (preselectDeviceId) sel.value = preselectDeviceId;
   document.getElementById("repairNoteInput").value = "";
   document.getElementById("repairTechInput").value = "";
   document.getElementById("repairUpdateBaseline").checked = false;
@@ -902,7 +1138,6 @@ function openRepairForm(deviceId) {
 function closeRepairForm() {
   document.getElementById("repairOverlay").classList.remove("open");
   hideRepairFormError();
-  repairTargetDeviceId = null;
 }
 
 function showRepairFormError(message) {
@@ -919,7 +1154,7 @@ function hideRepairFormError() {
 
 function markRepairFieldInvalid(inputId, invalid) {
   const el = document.getElementById(inputId);
-  el.style.borderColor = invalid ? "#ff5c5c" : "#2a2e37";
+  el.style.borderColor = invalid ? "var(--danger)" : "var(--border)";
 }
 
 async function submitRepairForm() {
@@ -930,6 +1165,10 @@ async function submitRepairForm() {
   markRepairFieldInvalid("repairNoteInput", !note);
   markRepairFieldInvalid("repairTechInput", !name);
 
+  if (!document.getElementById("repairDeviceSelect").value) {
+    showRepairFormError("Please select a PC.");
+    return;
+  }
   if (!note && !name) {
     showRepairFormError("Please describe what was fixed and enter your name.");
     return;
@@ -944,15 +1183,15 @@ async function submitRepairForm() {
   }
   hideRepairFormError();
 
-  const deviceId = repairTargetDeviceId;
+  const deviceId = document.getElementById("repairDeviceSelect").value;
   const submitBtn = document.getElementById("repairFormSubmit");
   submitBtn.disabled = true;
   submitBtn.textContent = "Submitting…";
 
   try {
-    const resp = await fetch(`/api/repair-log/${encodeURIComponent(deviceId)}`, {
+    const resp = await apiFetch(`/api/repair-log/${encodeURIComponent(deviceId)}`, {
       method: "POST",
-      headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ note, name, update_baseline: updateBaseline }),
     });
     if (resp.ok) {
@@ -962,7 +1201,7 @@ async function submitRepairForm() {
       if (openDeviceId === deviceId) loadRepairLog(deviceId);
       closeRepairForm();
     } else if (resp.status === 401) {
-      showRepairFormError("API_KEY in this dashboard doesn't match the server's. A technician needs to fix that first.");
+      showRepairFormError("Not logged in — please log in again.");
     } else if (resp.status === 400) {
       const body = await resp.json().catch(() => ({}));
       showRepairFormError(body.detail || "Missing required field.");
@@ -982,14 +1221,13 @@ async function resetBaseline(deviceId) {
     return;
   }
   try {
-    const resp = await fetch(`/api/baseline/${encodeURIComponent(deviceId)}/reset`, {
+    const resp = await apiFetch(`/api/baseline/${encodeURIComponent(deviceId)}/reset`, {
       method: "POST",
-      headers: { "X-API-Key": API_KEY },
     });
     if (resp.ok) {
       showToast("✅ Baseline Reset", "New configuration saved as expected.", "connected");
     } else {
-      alert("Reset failed — check the server is running and API_KEY matches.");
+      alert("Reset failed — check the server connection.");
     }
   } catch (e) {
     alert("Could not reach the server.");
@@ -1013,13 +1251,13 @@ async function loadHistory(deviceId) {
     const el = document.getElementById("historyList");
     if (el && logState.deviceId === deviceId) el.innerHTML = html;
   };
-  if (!logState.history.html) setList(`<div style="color:#6b7280;">Loading…</div>`);
+  if (!logState.history.html) setList(`<div style="color:var(--faint);">Loading…</div>`);
   try {
-    const resp = await fetch(`/api/history/${encodeURIComponent(deviceId)}`);
+    const resp = await apiFetch(`/api/history/${encodeURIComponent(deviceId)}`);
     const allEvents = await resp.json();
     const events = allEvents.filter(e => e.event_type !== "repaired"); // repairs live in their own section
     if (!events.length) {
-      setList(`<div style="color:#6b7280;">No connect/disconnect events recorded yet.</div>`);
+      setList(`<div style="color:var(--faint);">No connect/disconnect events recorded yet.</div>`);
       return;
     }
     setList(events.map(e => `
@@ -1029,7 +1267,7 @@ async function loadHistory(deviceId) {
       </div>
     `).join(""));
   } catch (e) {
-    setList(`<div style="color:#ff5c5c;">Could not load history.</div>`);
+    setList(`<div style="color:var(--danger);">Could not load history.</div>`);
   }
 }
 
@@ -1040,23 +1278,23 @@ async function loadRepairLog(deviceId) {
     const el = document.getElementById("repairLogList");
     if (el && logState.deviceId === deviceId) el.innerHTML = html;
   };
-  if (!logState.repair.html) setList(`<div style="color:#6b7280;">Loading…</div>`);
+  if (!logState.repair.html) setList(`<div style="color:var(--faint);">Loading…</div>`);
   try {
-    const resp = await fetch(`/api/history/${encodeURIComponent(deviceId)}`);
+    const resp = await apiFetch(`/api/history/${encodeURIComponent(deviceId)}`);
     const allEvents = await resp.json();
     const events = allEvents.filter(e => e.event_type === "repaired");
     if (!events.length) {
-      setList(`<div style="color:#6b7280;">No repairs logged yet.</div>`);
+      setList(`<div style="color:var(--faint);">No repairs logged yet.</div>`);
       return;
     }
     setList(events.map(e => `
       <div class="history-item repaired">
-        <span>🛠️ ${e.component_name} <span style="color:#6b7280;">— ${e.component_type}</span></span>
+        <span>🛠️ ${e.component_name} <span style="color:var(--faint);">— ${e.component_type}</span></span>
         <span class="history-time">${new Date(e.timestamp*1000).toLocaleString()}</span>
       </div>
     `).join(""));
   } catch (e) {
-    setList(`<div style="color:#ff5c5c;">Could not load repair log.</div>`);
+    setList(`<div style="color:var(--danger);">Could not load repair log.</div>`);
   }
 }
 
@@ -1077,7 +1315,7 @@ overlay.addEventListener("click", (e) => {
   if (e.target === overlay) closeModal(); // click outside modal closes it
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { closeModal(); closeRepairForm(); closeNewTicketForm(); closeMaintForm(); }
+  if (e.key === "Escape") { closeModal(); closeRepairForm(); closeNewTicketForm(); closeMaintForm(); closeAddUserForm(); closeResetPwForm(); closeSettings(); }
 });
 
 document.getElementById("repairFormClose").addEventListener("click", closeRepairForm);
@@ -1122,7 +1360,7 @@ function handleDeviceEvent(evt) {
 
 function connect() {
   const proto = location.protocol === "https:" ? "wss" : "ws";
-  const ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(authToken || "")}`);
 
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
@@ -1165,7 +1403,10 @@ function connect() {
     }
   };
 
-  ws.onclose = () => setTimeout(connect, 2000);
+  ws.onclose = (e) => {
+    if (e.code === 4401) { showLogin("Your session expired — please log in again."); return; }
+    if (authToken) setTimeout(connect, 2000);
+  };
 }
 
 // ----------------- Repair Tracking: ticket list, search, clickable cards -----------------
@@ -1206,7 +1447,7 @@ async function loadRepairTickets() {
   if (status) url += `?status=${encodeURIComponent(status)}`;
 
   try {
-    const resp = await fetch(url);
+    const resp = await apiFetch(url);
     let tickets = await resp.json();
     if (seq !== ticketLoadSeq) return; // a newer load started while this one was in flight
 
@@ -1245,7 +1486,7 @@ async function loadRepairTickets() {
     });
   } catch (e) {
     if (seq !== ticketLoadSeq) return;
-    listEl.innerHTML = `<div style="color:#ff5c5c;">Could not load repair tickets.</div>`;
+    listEl.innerHTML = `<div style="color:var(--danger);">Could not load repair tickets.</div>`;
   }
 }
 
@@ -1278,16 +1519,16 @@ function renderTicketCard(t) {
 
 async function updateTicketStatus(ticketId, newStatus) {
   try {
-    const resp = await fetch(`/api/repair-tickets/${ticketId}/status`, {
+    const resp = await apiFetch(`/api/repair-tickets/${ticketId}/status`, {
       method: "POST",
-      headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ repair_status: newStatus }),
     });
     if (resp.ok) {
       showToast("🛠️ Ticket Updated", `Marked as ${newStatus}`, "connected");
       loadRepairTickets();
     } else {
-      alert("Could not update ticket status — check API_KEY matches the server's.");
+      alert("Could not update ticket status — check the server connection.");
     }
   } catch (e) {
     alert("Could not reach the server.");
@@ -1371,9 +1612,9 @@ async function submitNewTicketForm() {
   hideNewTicketError();
 
   try {
-    const resp = await fetch(`/api/repair-tickets/${encodeURIComponent(deviceId)}`, {
+    const resp = await apiFetch(`/api/repair-tickets/${encodeURIComponent(deviceId)}`, {
       method: "POST",
-      headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician }),
     });
     if (resp.ok) {
@@ -1381,7 +1622,7 @@ async function submitNewTicketForm() {
       closeNewTicketForm();
       loadRepairTickets();
     } else if (resp.status === 401) {
-      showNewTicketError("API_KEY in this dashboard doesn't match the server's.");
+      showNewTicketError("Not logged in — please log in again.");
     } else if (resp.status === 400) {
       const body = await resp.json().catch(() => ({}));
       showNewTicketError(body.detail || "Missing required field.");
@@ -1393,6 +1634,7 @@ async function submitNewTicketForm() {
   }
 }
 
+document.getElementById("logRepairBtn").addEventListener("click", () => openRepairForm());
 document.getElementById("newTicketBtn").addEventListener("click", () => openNewTicketForm());
 document.getElementById("newTicketClose").addEventListener("click", closeNewTicketForm);
 document.getElementById("newTicketCancel").addEventListener("click", closeNewTicketForm);
@@ -1401,11 +1643,227 @@ document.getElementById("newTicketOverlay").addEventListener("click", (e) => {
   if (e.target.id === "newTicketOverlay") closeNewTicketForm();
 });
 
+// ----------------- Users (admin only) -----------------
+function showUsersError(msg) {
+  const el = document.getElementById("usersError");
+  el.textContent = msg || "";
+  el.style.display = msg ? "block" : "none";
+}
+
+async function loadUsers() {
+  showUsersError("");
+  try {
+    const resp = await apiFetch("/api/users");
+    if (resp.status === 403) {
+      showUsersError("Your account is no longer an admin.");
+      document.getElementById("usersTab").style.display = "none";
+      authRole = "user";
+      document.getElementById("userList").innerHTML = "";
+      return;
+    }
+    renderUsers(await resp.json());
+  } catch (e) {
+    if (e.message !== "unauthorized") showUsersError("Could not load users — check the server connection.");
+  }
+}
+
+function renderUsers(users) {
+  if (!users.length) {
+    document.getElementById("userList").innerHTML = '<div class="user-meta">No technician accounts yet — click “+ Add User”.</div>';
+    return;
+  }
+  document.getElementById("userList").innerHTML = users.map(u => {
+    const created = u.created_at ? new Date(u.created_at * 1000).toLocaleDateString() : "";
+    const name = escapeHtml(u.username);
+    return `
+      <div class="user-row">
+        <span class="user-name">${name}</span>
+        <span class="user-meta">${created ? "added " + created : ""}</span>
+        <div class="user-actions">
+          <button class="resolve-btn" data-act="pw" data-user="${name}">🔑 Reset password</button>
+          <button class="resolve-btn danger-btn" data-act="del" data-user="${name}">🗑️ Delete</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+// One listener for the buttons in every row (rows are re-rendered, so don't attach per button).
+document.getElementById("userList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-act]");
+  if (!btn) return;
+  const user = btn.dataset.user;
+  if (btn.dataset.act === "pw") openResetPwForm(user);
+  else if (btn.dataset.act === "del") deleteUser(user);
+});
+
+async function deleteUser(username) {
+  if (!confirm(`Delete the account '${username}'? They'll be logged out immediately.`)) return;
+  try {
+    const resp = await apiFetch(`/api/users/${encodeURIComponent(username)}`, { method: "DELETE" });
+    if (!resp.ok) showUsersError((await resp.json().catch(() => ({}))).detail || "Could not delete user.");
+    else loadUsers();
+  } catch (e) { if (e.message !== "unauthorized") showUsersError("Could not reach the server."); }
+}
+
+// ----- Add user form -----
+function openAddUserForm() {
+  document.getElementById("addUserName").value = "";
+  document.getElementById("addUserPass").value = "";
+  document.getElementById("addUserError").style.display = "none";
+  document.getElementById("addUserOverlay").classList.add("open");
+  document.getElementById("addUserName").focus();
+}
+function closeAddUserForm() { document.getElementById("addUserOverlay").classList.remove("open"); }
+
+async function submitAddUser() {
+  const err = document.getElementById("addUserError");
+  const show = (m) => { err.textContent = m; err.style.display = "block"; };
+  const username = document.getElementById("addUserName").value.trim();
+  const password = document.getElementById("addUserPass").value;
+  if (!username) return show("Enter a username.");
+  if (password.length < 6) return show("Password must be at least 6 characters.");
+  try {
+    const resp = await apiFetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (resp.ok) {
+      closeAddUserForm();
+      showToast("👤 User Created", username, "connected");
+      loadUsers();
+    } else {
+      show((await resp.json().catch(() => ({}))).detail || "Could not create user.");
+    }
+  } catch (e) { if (e.message !== "unauthorized") show("Could not reach the server."); }
+}
+
+// ----- Reset password form -----
+let resetPwTarget = null;
+function openResetPwForm(username) {
+  resetPwTarget = username;
+  document.getElementById("resetPwLabel").textContent = username;
+  document.getElementById("resetPwInput").value = "";
+  document.getElementById("resetPwError").style.display = "none";
+  document.getElementById("resetPwOverlay").classList.add("open");
+  document.getElementById("resetPwInput").focus();
+}
+function closeResetPwForm() { document.getElementById("resetPwOverlay").classList.remove("open"); resetPwTarget = null; }
+
+async function submitResetPw() {
+  if (!resetPwTarget) return;
+  const err = document.getElementById("resetPwError");
+  const show = (m) => { err.textContent = m; err.style.display = "block"; };
+  const password = document.getElementById("resetPwInput").value;
+  if (password.length < 6) return show("Password must be at least 6 characters.");
+  const target = resetPwTarget;
+  try {
+    const resp = await apiFetch(`/api/users/${encodeURIComponent(target)}/password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      if (body.token) { authToken = body.token; storeSet(TOKEN_KEY, body.token); } // you reset your own: keep your session
+      if (target.toLowerCase() === authUser.toLowerCase() && password !== "admin123") {
+        document.getElementById("defaultPwBanner").style.display = "none";
+      }
+      closeResetPwForm();
+      showToast("🔑 Password Reset", target, "connected");
+    } else {
+      show((await resp.json().catch(() => ({}))).detail || "Could not reset password.");
+    }
+  } catch (e) { if (e.message !== "unauthorized") show("Could not reach the server."); }
+}
+
+document.getElementById("defaultPwBanner").addEventListener("click", () => {
+  switchView("users");
+  loadUsers();
+  openResetPwForm(authUser);
+});
+document.getElementById("addUserBtn").addEventListener("click", openAddUserForm);
+document.getElementById("changeMyPwBtn").addEventListener("click", () => openResetPwForm(authUser));
+document.getElementById("addUserClose").addEventListener("click", closeAddUserForm);
+document.getElementById("addUserCancel").addEventListener("click", closeAddUserForm);
+document.getElementById("addUserSubmit").addEventListener("click", submitAddUser);
+document.getElementById("resetPwClose").addEventListener("click", closeResetPwForm);
+document.getElementById("resetPwCancel").addEventListener("click", closeResetPwForm);
+document.getElementById("resetPwSubmit").addEventListener("click", submitResetPw);
+["addUserName", "addUserPass"].forEach(id => document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") submitAddUser(); }));
+document.getElementById("resetPwInput").addEventListener("keydown", (e) => { if (e.key === "Enter") submitResetPw(); });
+["addUserOverlay", "resetPwOverlay"].forEach(id => document.getElementById(id).addEventListener("click", (e) => {
+  if (e.target.id === id) { id === "addUserOverlay" ? closeAddUserForm() : closeResetPwForm(); }
+}));
+
+// ----------------- Settings -----------------
+function setLightMode(on) {
+  if (on) document.documentElement.dataset.theme = "light";
+  else delete document.documentElement.dataset.theme;
+  document.getElementById("settingLight").checked = on;
+  storeSet("dtTheme", on ? "light" : "dark");
+}
+
+function openSettings() {
+  document.getElementById("settingsUser").textContent = authUser;
+  document.getElementById("settingsPwSection").style.display = authRole === "admin" ? "" : "none"; // password changes are admin-only
+  document.getElementById("settingSound").checked = soundEnabled;
+  document.getElementById("settingToasts").checked = toastsEnabled;
+  ["settingsCurPw", "settingsNewPw", "settingsNewPw2"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("settingsPwError").style.display = "none";
+  document.getElementById("settingsPwOk").style.display = "none";
+  document.getElementById("settingsOverlay").classList.add("open");
+}
+function closeSettings() { document.getElementById("settingsOverlay").classList.remove("open"); }
+
+async function submitSettingsPassword() {
+  const err = document.getElementById("settingsPwError");
+  const okEl = document.getElementById("settingsPwOk");
+  const show = (m) => { okEl.style.display = "none"; err.textContent = m; err.style.display = "block"; };
+  const cur = document.getElementById("settingsCurPw").value;
+  const pw = document.getElementById("settingsNewPw").value;
+  const pw2 = document.getElementById("settingsNewPw2").value;
+  if (!cur) return show("Enter your current password.");
+  if (pw.length < 6) return show("New password must be at least 6 characters.");
+  if (pw !== pw2) return show("The new passwords don't match.");
+  try {
+    const resp = await apiFetch("/api/auth/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ current_password: cur, new_password: pw }),
+    });
+    const body = await resp.json().catch(() => ({}));
+    if (resp.ok) {
+      authToken = body.token; storeSet(TOKEN_KEY, body.token); // old token is now invalid; keep this session
+      if (pw !== "admin123") document.getElementById("defaultPwBanner").style.display = "none";
+      ["settingsCurPw", "settingsNewPw", "settingsNewPw2"].forEach(id => document.getElementById(id).value = "");
+      err.style.display = "none"; okEl.style.display = "block";
+    } else {
+      show(body.detail || "Could not change the password.");
+    }
+  } catch (e) { if (e.message !== "unauthorized") show("Could not reach the server."); }
+}
+
+document.getElementById("settingsBtn").addEventListener("click", openSettings);
+document.getElementById("settingsClose").addEventListener("click", closeSettings);
+document.getElementById("settingsOverlay").addEventListener("click", (e) => { if (e.target.id === "settingsOverlay") closeSettings(); });
+document.getElementById("settingLight").addEventListener("change", (e) => setLightMode(e.target.checked));
+document.getElementById("settingSound").addEventListener("change", (e) => setSoundEnabled(e.target.checked));
+document.getElementById("settingToasts").addEventListener("change", (e) => {
+  toastsEnabled = e.target.checked;
+  storeSet("dtToasts", toastsEnabled ? "1" : "0");
+});
+document.getElementById("settingsPwSubmit").addEventListener("click", submitSettingsPassword);
+["settingsCurPw", "settingsNewPw", "settingsNewPw2"].forEach(id =>
+  document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") submitSettingsPassword(); }));
+document.getElementById("settingsLogout").addEventListener("click", logout);
+
 // ----------------- Top-level nav: Monitoring System / Repair Tracking -----------------
 function switchView(view) {
   document.querySelectorAll(".nav-tab").forEach(t => t.classList.toggle("active", t.dataset.view === view));
   document.getElementById("monitoringView").style.display = view === "monitoring" ? "" : "none";
   document.getElementById("repairView").style.display = view === "repair" ? "" : "none";
+  document.getElementById("usersView").style.display = view === "users" ? "" : "none";
 }
 
 document.querySelectorAll(".nav-tab").forEach(tab => {
@@ -1415,6 +1873,7 @@ document.querySelectorAll(".nav-tab").forEach(tab => {
       populateRepairDeviceFilter();
       loadRepairTickets();
     }
+    if (tab.dataset.view === "users") loadUsers();
   });
 });
 
@@ -1430,9 +1889,12 @@ function showMaintenanceHistory(deviceId) {
   loadRepairTickets();
 }
 
+setSoundEnabled(storeGet("dtSound") !== "0");
+setLightMode(storeGet("dtTheme") === "light");
+toastsEnabled = storeGet("dtToasts") !== "0";
 renderFilterBar();
 renderStatusFilterBar();
-connect();
+initAuth();
 </script>
 </body>
 </html>
