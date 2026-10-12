@@ -1,2 +1,3 @@
 .directory
 agent\agent.log
+agent\learned_devices.json
