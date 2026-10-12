@@ -22,6 +22,7 @@ from ctypes import wintypes
 import json
 import os
 import platform
+import re
 import socket
 import sys
 import threading
@@ -79,8 +80,9 @@ SYSTEM_UNIT = config.get("SYSTEM_UNIT", "Unassigned")
 # classifies as Keyboard/Mouse". Accepts EITHER a single comma-separated
 # string (e.g. "VID_1038&PID_182E, VID_1D57&PID_FA60") OR a TOML array
 # (e.g. ["VID_1038&PID_182E", "VID_1D57&PID_FA60"]) — both work the same way.
-# Leave blank/empty to fall back to the old any-device behavior.
-# Find your device's VID/PID by running diagnose_devices.py.
+# Leave blank to let the agent learn the external keyboard/mouse by itself
+# (AUTO_LEARN_INPUT_DEVICES, see config.example.toml); IDs set here always win.
+# Find a device's VID/PID by running diagnose_devices.py if you want to pin it by hand.
 def _parse_id_list(raw) -> list:
     if isinstance(raw, list):
         return [str(item).strip().upper() for item in raw if str(item).strip()]
@@ -347,29 +349,109 @@ def get_custom_data():
     return {"note": "replace get_custom_data() with your real app data"}
 
 
+# ----------------- AUTO-LEARNED KEYBOARD / MOUSE -----------------
+# The first time an EXTERNAL keyboard or mouse is seen, its VID/PID is remembered in
+# learned_devices.json (next to this script). From then on, if a remembered one is not
+# connected, the dashboard raises "No keyboard/mouse detected". Until something has been
+# seen (and nothing is set in config.toml) the check stays blank — no alert, because
+# there is nothing known to be missing. KEYBOARD_ID / MOUSE_ID in config.toml, when set,
+# always win over what was learned. Built-in laptop keyboards/touchpads never get here:
+# get_connected_devices() already filters them out.
+AUTO_LEARN = bool(config.get("AUTO_LEARN_INPUT_DEVICES", True))
+LEARNED_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "learned_devices.json")
+_VIDPID_RE = re.compile(r"VID_[0-9A-F]{4}&PID_[0-9A-F]{4}")
+_learn_lock = threading.Lock()
+
+
+def _load_learned() -> dict:
+    try:
+        with open(LEARNED_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return {"keyboard": list(data.get("keyboard", [])), "mouse": list(data.get("mouse", []))}
+    except FileNotFoundError:
+        return {"keyboard": [], "mouse": []}
+    except Exception as e:
+        print(f"[WARN] Could not read {LEARNED_FILE}: {e} — starting with nothing learned")
+        return {"keyboard": [], "mouse": []}
+
+
+def _save_learned(data: dict):
+    tmp = LEARNED_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    os.replace(tmp, LEARNED_FILE)  # atomic — a crash mid-write can't leave a broken file
+
+
+learned = _load_learned()
+
+
+def _vid_pid(device_id: str):
+    m = _VIDPID_RE.search((device_id or "").upper())
+    return m.group(0) if m else None
+
+
+def learn_input_devices(devices: list) -> bool:
+    """Remember any external keyboard/mouse VID/PID not seen before. Returns True if
+    something new was learned. A VID/PID that shows up as BOTH a Keyboard and a Mouse
+    (a dongle or a macro-key mouse) is remembered as a mouse only, so its spurious
+    keyboard interface can't raise a false "No keyboard" later."""
+    found = {"Keyboard": set(), "Mouse": set()}
+    for d in devices:
+        if d.get("type") in found:
+            vp = _vid_pid(d.get("device_id", ""))
+            if vp:
+                found[d["type"]].add(vp)
+    found["Keyboard"] -= found["Mouse"]
+
+    changed = False
+    with _learn_lock:
+        for kind, typ, configured in (("keyboard", "Keyboard", KEYBOARD_IDS), ("mouse", "Mouse", MOUSE_IDS)):
+            if configured:
+                continue  # config.toml is set for this kind — nothing to learn
+            for vp in sorted(found[typ]):
+                if vp not in learned[kind]:
+                    learned[kind].append(vp)
+                    changed = True
+                    print(f"[LEARN] Remembering external {kind}: {vp}")
+        if changed:
+            try:
+                _save_learned(learned)
+            except Exception as e:
+                print(f"[WARN] Could not save {LEARNED_FILE}: {e}")
+    return changed
+
+
+def forget_learned_devices():
+    """Clear everything learned (tray menu) — use after replacing a keyboard/mouse."""
+    with _learn_lock:
+        learned["keyboard"].clear()
+        learned["mouse"].clear()
+        try:
+            _save_learned(learned)
+        except Exception as e:
+            print(f"[WARN] Could not save {LEARNED_FILE}: {e}")
+    print("[LEARN] Forgot remembered keyboard/mouse")
+
+
 def compute_peripheral_flags(devices: list) -> dict:
-    """Whether a keyboard/mouse is currently connected. If KEYBOARD_IDS/MOUSE_IDS
-    are configured, this checks for any of those SPECIFIC devices' VID/PID
-    rather than any device Windows happens to classify as Keyboard/Mouse —
-    sidesteps the macro-key-interface and combo-dongle ambiguity entirely,
-    since it's keyed to exact pieces of hardware instead of a PnP class."""
-    if KEYBOARD_IDS:
-        has_keyboard = any(
-            d["type"] == "Keyboard" and any(kid in d.get("device_id", "") for kid in KEYBOARD_IDS)
-            for d in devices
-        )
-    else:
-        has_keyboard = any(d["type"] == "Keyboard" for d in devices)
+    """Whether the expected keyboard/mouse is connected.
+    Expected = IDs set in config.toml, else IDs learned automatically.
+    With nothing expected: auto-learn on -> True (blank, no alert); auto-learn off ->
+    the old behaviour (is any device of that class present)."""
+    if AUTO_LEARN:
+        learn_input_devices(devices)
 
-    if MOUSE_IDS:
-        has_mouse = any(
-            d["type"] == "Mouse" and any(mid in d.get("device_id", "") for mid in MOUSE_IDS)
-            for d in devices
-        )
-    else:
-        has_mouse = any(d["type"] == "Mouse" for d in devices)
-
-    return {"has_keyboard": has_keyboard, "has_mouse": has_mouse}
+    flags = {}
+    for kind, typ, configured in (("keyboard", "Keyboard", KEYBOARD_IDS), ("mouse", "Mouse", MOUSE_IDS)):
+        ids = configured or (list(learned[kind]) if AUTO_LEARN else [])
+        if ids:
+            present = any(d["type"] == typ and any(i in d.get("device_id", "").upper() for i in ids) for d in devices)
+        elif AUTO_LEARN:
+            present = True
+        else:
+            present = any(d["type"] == typ for d in devices)
+        flags[f"has_{kind}"] = present
+    return flags
 
 
 def build_payload(wmi_conn=None):
@@ -573,6 +655,16 @@ def reporting_loop():
         pythoncom.CoUninitialize()
 
 
+def forget_from_tray(icon=None, item=None):
+    forget_learned_devices()
+    try:
+        ctypes.windll.user32.MessageBoxW(
+            0, "Remembered keyboard/mouse cleared.\nThe next external keyboard/mouse seen will be remembered again.",
+            "Device Tracker", 0x40)
+    except Exception:
+        pass
+
+
 def main():
     global tray_icon
     hide_console()
@@ -587,11 +679,11 @@ def main():
         pystray.MenuItem(f"{DISPLAY_NAME} — {ROOM} / {SYSTEM_UNIT}", None, enabled=False),
         pystray.MenuItem("Open Dashboard", open_dashboard),
         pystray.MenuItem("Report a Problem...", open_report_form),
+        pystray.MenuItem("Forget remembered keyboard/mouse", forget_from_tray),
         pystray.MenuItem("Quit", quit_app),
     )
     tray_icon = pystray.Icon("device_tracker", make_tray_image(), "Device Tracker Agent", menu)
     tray_icon.run()
-
 
 
 if __name__ == "__main__":

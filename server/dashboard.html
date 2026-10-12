@@ -107,6 +107,8 @@
   .ticket-mark-btn { background: var(--border); border: 1px solid rgba(79,140,255,0.4); color: var(--accent); border-radius: 6px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
   .ticket-mark-btn:hover { background: var(--highlight); color: white; }
   .ticket-mark-btn + .ticket-mark-btn { margin-left: 6px; }
+  .ticket-del-btn { color: var(--danger); border-color: rgba(255,92,92,0.45); }
+  .ticket-del-btn:hover { background: var(--danger); color: white; }
   .search-input { display: block; width: 100%; max-width: 420px; margin-top: 18px; padding: 9px 14px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-size: 15px; font-family: inherit; box-sizing: border-box; }
   .search-input:focus { outline: none; border-color: var(--highlight); }
   .maintenance-badge { display: inline-block; background: rgba(255,165,61,0.15); color: var(--orange); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
@@ -1658,9 +1660,19 @@ function connect() {
     } else if (msg.type === "issue_resolved") {
       openIssues = openIssues.filter(i => i.id !== msg.data.id);
       renderIssues();
+    } else if (msg.type === "repair_ticket_deleted") {
+      const gone = msg.data;
+      if (authRole !== "admin" && myOpenTasks.has(gone.id)) {
+        myOpenTasks.delete(gone.id); renderMyTasks();
+        notify("📋 Task withdrawn", `<b>${escapeHtml(gone.hostname)}</b>: ${escapeHtml(gone.reported_problem)}`, "alert");
+      }
+      if (document.getElementById("repairView").style.display !== "none") loadRepairTickets();
     } else if (msg.type === "repair_ticket") {
+      if (msg.edited && msg.data.assigned_to === authUser && msg.data.repair_status !== "Completed") {
+        showToast("✏️ Task updated", `<b>${escapeHtml(msg.data.hostname)}</b>: ${escapeHtml(msg.data.reported_problem)}`, "alert");
+      }
       if (authRole !== "admin") trackTask(msg.data);
-      if (msg.data.repair_status === "Pending" && msg.data.assigned_to === authUser && msg.data.assigned_by && msg.data.assigned_by !== authUser) {
+      if (!msg.edited && msg.data.repair_status === "Pending" && msg.data.assigned_to === authUser && msg.data.assigned_by && msg.data.assigned_by !== authUser) {
         announceTask(msg.data);
       }
       if (document.getElementById("repairView").style.display !== "none") {
@@ -1764,6 +1776,8 @@ async function loadRepairTickets() {
         const id = parseInt(btn.dataset.ticketId, 10);
         if (btn.dataset.act === "complete") openCompleteForm(id);
         else if (btn.dataset.act === "reassign") openReassignForm(id);
+        else if (btn.dataset.act === "edit") openNewTicketForm(null, lastLoadedTickets.find(x => x.id === id));
+        else if (btn.dataset.act === "delete") deleteTicket(id);
         else updateTicketStatus(id, "In Progress");
       });
     });
@@ -1780,8 +1794,12 @@ function renderTicketCard(t) {
     <div class="ticket-part-change">🔧 <b>${escapeHtml(t.part_type || "Part")}</b>: ${escapeHtml(t.model_before || "—")} → ${escapeHtml(t.model_after || "—")}</div>
   ` : "";
   let buttons = "";
-  const reassignBtn = canAct && t.repair_status !== "Completed"
-    ? `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="reassign">Reassign…</button>` : "";
+  const reassignBtn = (canAct && t.repair_status !== "Completed"
+    ? `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="reassign">Reassign…</button>` : "")
+    + (authRole === "admin" && t.repair_status !== "Completed"
+    ? `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="edit">Edit…</button>` : "")
+    + (authRole === "admin"
+    ? `<button class="ticket-mark-btn ticket-del-btn" data-ticket-id="${t.id}" data-act="delete">Delete</button>` : "");
   if (canAct && t.repair_status === "Pending") {
     buttons = `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="start">Start</button>
                <button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="complete">Complete…</button>`;
@@ -1870,16 +1888,28 @@ document.getElementById("myTasksBtn").addEventListener("click", () => {
 });
 
 // ----------------- New Repair Ticket form -----------------
-async function openNewTicketForm(preselectDeviceId) {
+let editingTicket = null; // set while the Assign form is being used to edit an existing task
+
+async function openNewTicketForm(preselectDeviceId, ticket) {
+  editingTicket = ticket || null;
+  document.querySelector("#newTicketOverlay h2").textContent = editingTicket ? "✏️ Edit Task" : "📋 Assign Task";
+  document.getElementById("newTicketSubmit").textContent = editingTicket ? "Save" : "Assign";
   const sel = document.getElementById("ticketDeviceSelect");
   const devices = Object.values(lastPayload).sort((a, b) => naturalCompare(a.hostname || "", b.hostname || ""));
   sel.innerHTML = devices.map(d => `<option value="${escapeHtml(d.device_id)}">${escapeHtml(d.hostname)}</option>`).join("");
   if (preselectDeviceId) sel.value = preselectDeviceId;
+  if (editingTicket) {
+    // keep the PC selectable even if it isn't currently reporting
+    if (![...sel.options].some(o => o.value === editingTicket.device_id)) {
+      sel.insertAdjacentHTML("afterbegin", `<option value="${escapeHtml(editingTicket.device_id)}">${escapeHtml(editingTicket.hostname)}</option>`);
+    }
+    sel.value = editingTicket.device_id;
+  }
   makeSearchable(sel).refresh();
 
   const who = document.getElementById("ticketAssigneeSelect");
   who.innerHTML = `<option value="">Loading…</option>`;
-  document.getElementById("ticketProblemInput").value = "";
+  document.getElementById("ticketProblemInput").value = editingTicket ? editingTicket.reported_problem : "";
   hideNewTicketError();
   document.getElementById("newTicketOverlay").classList.add("open");
   sel._combo.focus(); // start typing a PC name right away
@@ -1889,6 +1919,7 @@ async function openNewTicketForm(preselectDeviceId) {
     who.innerHTML = users.length
       ? users.map(u => `<option value="${escapeHtml(u.username)}">${escapeHtml(u.username)}</option>`).join("")
       : `<option value="">No technician accounts yet — add one in Users</option>`;
+    if (editingTicket) who.value = editingTicket.assigned_to || editingTicket.technician;
   } catch (e) {
     who.innerHTML = `<option value="">Could not load technicians</option>`;
   }
@@ -1920,13 +1951,17 @@ async function submitNewTicketForm() {
   hideNewTicketError();
 
   try {
-    const resp = await apiFetch(`/api/repair-tickets/${encodeURIComponent(deviceId)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reported_problem, assigned_to }),
-    });
+    const resp = editingTicket
+      ? await apiFetch(`/api/repair-tickets/${editingTicket.id}/edit`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ device_id: deviceId, reported_problem, assigned_to }),
+        })
+      : await apiFetch(`/api/repair-tickets/${encodeURIComponent(deviceId)}`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reported_problem, assigned_to }),
+        });
     if (resp.ok) {
-      showToast("📋 Task Assigned", `${assigned_to}: ${reported_problem}`, "connected");
+      showToast(editingTicket ? "✏️ Task Updated" : "📋 Task Assigned", `${escapeHtml(assigned_to)}: ${escapeHtml(reported_problem)}`, "connected");
       closeNewTicketForm();
       loadRepairTickets();
     } else if (resp.status === 401) {
@@ -1940,6 +1975,17 @@ async function submitNewTicketForm() {
   } catch (e) {
     showNewTicketError("Could not reach the server.");
   }
+}
+
+async function deleteTicket(id) {
+  const t = lastLoadedTickets.find(x => x.id === id);
+  if (!t) return;
+  if (!confirm(`Delete this task?\n\n${t.hostname}: ${t.reported_problem}\nAssigned to ${t.assigned_to || t.technician}\n\nThis can't be undone.`)) return;
+  try {
+    const resp = await apiFetch(`/api/repair-tickets/${id}`, { method: "DELETE" });
+    if (resp.ok) { showToast("🗑️ Task Deleted", `${escapeHtml(t.hostname)}: ${escapeHtml(t.reported_problem)}`, "connected"); loadRepairTickets(); }
+    else alert("Could not delete the task.");
+  } catch (e) { alert("Could not reach the server."); }
 }
 
 document.getElementById("newTicketBtn").addEventListener("click", () => openNewTicketForm());

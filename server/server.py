@@ -942,6 +942,60 @@ async def update_repair_ticket_status_route(ticket_id: int, request: Request):
     await manager.broadcast({"type": "repair_ticket", "data": ticket})
     return {"status": "ok"}
 
+@app.post("/api/repair-tickets/{ticket_id}/edit")
+async def edit_repair_ticket(ticket_id: int, request: Request):
+    """Admin-only: fix a mis-assigned task — change its PC, its description, or who it's
+    assigned to. Changing the technician hands it to them fresh (Pending). A completed
+    task can't be edited (delete it instead if it was a mistake)."""
+    admin = require_admin(request)
+    body = await request.json()
+
+    ticket = get_repair_ticket(ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    if ticket["repair_status"] == "Completed":
+        raise HTTPException(status_code=400, detail="A completed task can't be edited")
+
+    device_id = body.get("device_id", ticket["device_id"]).strip()
+    problem = body.get("reported_problem", ticket["reported_problem"]).strip()
+    new_tech = body.get("assigned_to", ticket["assigned_to"] or ticket["technician"]).strip()
+    if not problem:
+        raise HTTPException(status_code=400, detail="reported_problem is required")
+    if new_tech not in {u["username"] for u in list_users()}:
+        raise HTTPException(status_code=400, detail="assigned_to must be an existing technician account")
+
+    match = next((d for d in get_latest_per_device() if d["device_id"] == device_id), None)
+    hostname = match["hostname"] if match else (ticket["hostname"] if device_id == ticket["device_id"] else device_id)
+
+    handed_over = new_tech != (ticket["assigned_to"] or ticket["technician"])
+    conn = sqlite3.connect(DB_PATH)
+    if handed_over:
+        conn.execute("""UPDATE repair_tickets SET device_id = ?, hostname = ?, reported_problem = ?, assigned_to = ?, technician = ?,
+                        assigned_by = ?, reassigned_from = ?, repair_status = 'Pending', timestamp = ? WHERE id = ?""",
+                     (device_id, hostname, problem, new_tech, new_tech, admin, ticket["assigned_to"] or ticket["technician"], time.time(), ticket_id))
+    else:
+        conn.execute("UPDATE repair_tickets SET device_id = ?, hostname = ?, reported_problem = ? WHERE id = ?",
+                     (device_id, hostname, problem, ticket_id))
+    conn.commit()
+    conn.close()
+    ticket = get_repair_ticket(ticket_id)
+    await manager.broadcast({"type": "repair_ticket", "data": ticket, "edited": not handed_over})
+    return {"status": "ok"}
+
+@app.delete("/api/repair-tickets/{ticket_id}")
+async def delete_repair_ticket(ticket_id: int, request: Request):
+    """Admin-only: pull a task back entirely (e.g. assigned by mistake)."""
+    require_admin(request)
+    ticket = get_repair_ticket(ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("DELETE FROM repair_tickets WHERE id = ?", (ticket_id,))
+    conn.commit()
+    conn.close()
+    await manager.broadcast({"type": "repair_ticket_deleted", "data": ticket})
+    return {"status": "ok"}
+
 @app.get("/api/technicians")
 async def list_technicians(user: str = Depends(current_user)):
     """Names only (no roles/dates) so any technician can hand a task to another."""
