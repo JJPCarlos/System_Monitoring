@@ -7,28 +7,40 @@
   :root {
     color-scheme: dark;
     --bg: #0f1115; --surface: #1a1d24; --surface-2: #22252c; --border: #2a2e37; --border-2: #3a3f4a;
-    --text: #e6e6e6; --text-2: #cfd3da; --muted: #9aa1ac; --faint: #6b7280; --offline: #8a8f98;
+    --text: #e6e6e6; --text-2: #cfd3da; --muted: #b4bac5; --faint: #8f97a6; --offline: #8a8f98;
     --highlight: var(--accent); --accent: #4f8cff; --danger: #ff5c5c; --good: #3ddc84; --warn: #ffd23d; --orange: #ffa53d; --danger-soft: #ffb3b3;
   }
   :root[data-theme="light"] {
     color-scheme: light;
     --bg: #f4f6fa; --surface: #ffffff; --surface-2: #eef1f6; --border: #d5dae3; --border-2: #bfc7d4;
-    --text: #1b1f27; --text-2: #363e4d; --muted: #566072; --faint: #697386; --offline: #697386;
+    --text: #1b1f27; --text-2: #363e4d; --muted: #424c5e; --faint: #566072; --offline: #697386;
     --highlight: #111418; --accent: #2563d9; --danger: #d32f2f; --good: #178a4a; --warn: #a37400; --orange: #bd5f00; --danger-soft: #b42323;
   }
-  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
+  body { font-family: system-ui, sans-serif; font-weight: 500; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
   h1 { font-weight: 600; }
   .notif-sidebar { position: fixed; top: 76px; right: 20px; width: 320px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; z-index: 55; box-shadow: 0 8px 24px rgba(0,0,0,0.5); transform: translateX(380px); opacity: 0; pointer-events: none; transition: transform 0.25s ease, opacity 0.25s ease; }
   .notif-sidebar.open { transform: translateX(0); opacity: 1; pointer-events: auto; }
-  .notif-sidebar h2 { font-size: 15px; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .notif-sidebar h2 { font-size: 17px; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .notif-sidebar-list { overflow-y: auto; flex: 1; }
-  .sidebar-toggle-btn { position: fixed; top: 20px; right: 72px; z-index: 60; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 8px 16px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .sidebar-toggle-btn { position: fixed; top: 20px; right: 72px; z-index: 60; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 8px 16px; font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
   .sidebar-toggle-btn:hover { border-color: var(--highlight); }
-  .settings-btn { position: fixed; top: 20px; right: 20px; z-index: 60; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 8px 12px; font-size: 14px; cursor: pointer; line-height: 1.2; }
+  .settings-btn { position: fixed; top: 20px; right: 20px; z-index: 60; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 8px 12px; font-size: 16px; cursor: pointer; line-height: 1.2; }
   .settings-btn:hover { border-color: var(--highlight); }
   #settingsOverlay { z-index: 300; }
-  .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-  .setting-row small { display: block; color: var(--faint); font-size: 11px; margin-top: 2px; }
+  .combo { position: relative; }
+  .combo-native { display: none; }
+  .combo input { padding-right: 28px; cursor: text; }
+  .combo::after { content: "▾"; position: absolute; right: 11px; top: 10px; font-size: 14px; color: var(--muted); pointer-events: none; }
+  .combo-list { display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20; max-height: 220px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); padding: 4px; }
+  .combo.open .combo-list { display: block; }
+  .combo-item { padding: 8px 10px; border-radius: 6px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; gap: 10px; }
+  .combo-item small { opacity: 0.65; font-size: 13px; align-self: center; }
+  .combo-item.active { background: var(--highlight); color: #fff; }
+  .combo-empty { padding: 10px; font-size: 14px; color: var(--muted); }
+  .logged-as { font-size: 14px; color: var(--muted); margin: 4px 0 18px; }
+  .logged-as b { color: var(--text); }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 15px; }
+  .setting-row small { display: block; color: var(--faint); font-size: 13px; margin-top: 2px; }
   .switch { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .switch span { position: absolute; inset: 0; background: var(--border-2); border-radius: 22px; cursor: pointer; transition: background 0.15s; }
@@ -37,41 +49,43 @@
   .switch input:checked + span::before { transform: translateX(16px); }
   .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
   .sidebar-toggle-btn.has-alerts { border-color: rgba(255,92,92,0.4); color: var(--danger); }
-  .sidebar-toggle-badge { background: var(--danger); color: white; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+  .sidebar-toggle-badge { background: var(--danger); color: white; font-size: 13px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
   .notif-alert-card { background: var(--surface-2); border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
   .notif-alert-card:hover { border-color: var(--danger); }
-  .notif-alert-host { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: var(--accent); padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
-  .notif-alert-desc { font-size: 13px; color: var(--danger-soft); }
-  .notif-alert-time { font-size: 11px; color: var(--faint); margin-top: 4px; }
-  .notif-section-title { font-size: 13px; font-weight: 600; color: var(--text-2); margin: 4px 0 10px 0; }
-  .section-header { font-size: 15px; font-weight: 600; color: var(--text-2); margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
+  .task-notif-card { background: var(--surface-2); border: 1px solid rgba(79,140,255,0.4); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+  .task-notif-card:hover { border-color: var(--accent); }
+  .notif-alert-host { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: var(--accent); padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
+  .notif-alert-desc { font-size: 15px; color: var(--danger-soft); }
+  .notif-alert-time { font-size: 13px; color: var(--faint); margin-top: 4px; }
+  .notif-section-title { font-size: 15px; font-weight: 600; color: var(--text-2); margin: 4px 0 10px 0; }
+  .section-header { font-size: 17px; font-weight: 600; color: var(--text-2); margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
   .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-  .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+  .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 6px 14px; font-size: 15px; cursor: pointer; }
   .filter-btn:hover { border-color: var(--highlight); }
   .filter-btn.active { background: var(--highlight); border-color: var(--highlight); color: white; }
   .main-nav { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; padding-bottom: 0; }
-  .nav-tab { background: none; border: none; color: var(--muted); font-size: 14px; font-weight: 500; padding: 12px 18px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .nav-tab { background: none; border: none; color: var(--muted); font-size: 16px; font-weight: 500; padding: 12px 18px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .nav-tab:hover { color: var(--text); }
   .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
   /* ---- Repair Tracking ---- */
   .repair-controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 20px 0; align-items: center; }
-  .repair-select { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; }
+  .repair-select { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 12px; font-size: 15px; font-family: inherit; }
   .repair-tickets-list { display: flex; flex-direction: column; gap: 10px; }
-  .ticket-form-label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
-  .ticket-form-input { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 13px; }
+  .ticket-form-label { font-size: 14px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .ticket-form-input { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 15px; }
   #newTicketOverlay { z-index: 300; }
   #maintOverlay { z-index: 300; }
   .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 16px; }
   .login-screen.open { display: flex; }
   .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: min(360px, 100%); }
-  .default-pw-banner { display: none; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.35); color: var(--danger-soft); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; cursor: pointer; }
+  .default-pw-banner { display: none; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.35); color: var(--danger-soft); border-radius: 8px; padding: 10px 14px; font-size: 15px; margin-bottom: 16px; cursor: pointer; }
   #addUserOverlay, #resetPwOverlay { z-index: 300; }
   .user-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
   .user-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; }
-  .user-name { font-weight: 600; font-size: 14px; }
-  .user-meta { font-size: 12px; color: var(--faint); }
-  .role-badge { font-size: 11px; border-radius: 10px; padding: 2px 9px; border: 1px solid var(--border-2); color: var(--muted); }
+  .user-name { font-weight: 600; font-size: 16px; }
+  .user-meta { font-size: 14px; color: var(--faint); }
+  .role-badge { font-size: 13px; border-radius: 10px; padding: 2px 9px; border: 1px solid var(--border-2); color: var(--muted); }
   .role-badge.admin { border-color: rgba(79,140,255,0.5); color: var(--accent); }
   .user-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
   .user-actions .resolve-btn { margin-top: 0; }
@@ -80,28 +94,29 @@
   .ticket-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s; }
   .ticket-card:hover { border-color: var(--highlight); }
   .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
-  .ticket-host { font-weight: 600; font-size: 14px; }
-  .ticket-date { font-size: 11px; color: var(--faint); }
-  .ticket-status { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; }
+  .ticket-host { font-weight: 600; font-size: 16px; }
+  .ticket-date { font-size: 13px; color: var(--faint); }
+  .ticket-status { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; }
   .ticket-status.pending { background: rgba(255,210,61,0.15); color: var(--warn); }
   .ticket-status.in-progress { background: rgba(79,140,255,0.15); color: var(--accent); }
   .ticket-status.completed { background: rgba(61,220,132,0.15); color: var(--good); }
-  .ticket-field { font-size: 13px; margin-bottom: 6px; }
-  .ticket-field b { color: var(--muted); font-weight: 500; }
-  .ticket-part-change { font-size: 13px; background: var(--surface-2); border-radius: 6px; padding: 8px 10px; margin: 6px 0; }
-  .ticket-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--faint); }
-  .ticket-mark-btn { background: var(--border); border: 1px solid rgba(79,140,255,0.4); color: var(--accent); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
+  .ticket-field { font-size: 15px; margin-bottom: 6px; }
+  .ticket-field b { color: var(--muted); font-weight: 700; }
+  .ticket-part-change { font-size: 15px; background: var(--surface-2); border-radius: 6px; padding: 8px 10px; margin: 6px 0; }
+  .ticket-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 14px; color: var(--faint); }
+  .ticket-mark-btn { background: var(--border); border: 1px solid rgba(79,140,255,0.4); color: var(--accent); border-radius: 6px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
   .ticket-mark-btn:hover { background: var(--highlight); color: white; }
-  .search-input { display: block; width: 100%; max-width: 420px; margin-top: 18px; padding: 9px 14px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-size: 13px; font-family: inherit; box-sizing: border-box; }
+  .ticket-mark-btn + .ticket-mark-btn { margin-left: 6px; }
+  .search-input { display: block; width: 100%; max-width: 420px; margin-top: 18px; padding: 9px 14px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-size: 15px; font-family: inherit; box-sizing: border-box; }
   .search-input:focus { outline: none; border-color: var(--highlight); }
-  .maintenance-badge { display: inline-block; background: rgba(255,165,61,0.15); color: var(--orange); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
-  .section-count { font-weight: 400; color: var(--faint); font-size: 13px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+  .maintenance-badge { display: inline-block; background: rgba(255,165,61,0.15); color: var(--orange); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+  .section-count { font-weight: 400; color: var(--faint); font-size: 15px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; margin-top: 20px; }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
   .card:hover { border-color: var(--highlight); transform: translateY(-2px); }
-  .card h2 { margin: 0 0 8px 0; font-size: 16px; }
-  .stat { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; color: var(--text-2); }
+  .card h2 { margin: 0 0 8px 0; font-size: 18px; }
+  .stat { display: flex; justify-content: space-between; font-size: 16px; padding: 3px 0; color: var(--text-2); }
   .bar-bg { background: var(--border); border-radius: 6px; height: 8px; margin: 4px 0 10px 0; overflow: hidden; }
   .bar-fill { height: 100%; background: var(--accent); }
 
@@ -110,7 +125,7 @@
   .status-dot.status-offline { background: var(--offline); box-shadow: 0 0 6px rgba(138,143,152,0.5); }
   .status-dot.status-unresponsive { background: var(--warn); box-shadow: 0 0 6px rgba(255,210,61,0.6); }
   .status-dot.status-crashed { background: var(--danger); box-shadow: 0 0 6px rgba(255,92,92,0.6); }
-  .status-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; }
+  .status-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; }
   .status-label.status-online { background: rgba(61,220,132,0.15); color: var(--good); }
   .status-label.status-offline { background: rgba(138,143,152,0.15); color: var(--offline); }
   .status-label.status-unresponsive { background: rgba(255,210,61,0.15); color: var(--warn); }
@@ -118,54 +133,54 @@
   .card.status-offline, .card.status-unresponsive, .card.status-crashed { opacity: 0.75; }
   .card.has-missing { border-color: rgba(255,92,92,0.5); }
 
-  .timestamp { font-size: 11px; color: var(--faint); margin-top: 8px; }
+  .timestamp { font-size: 13px; color: var(--faint); margin-top: 8px; }
   .header-row { display: flex; justify-content: space-between; align-items: center; }
-  .missing-pill { margin-top: 10px; font-size: 12px; color: var(--danger); background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); border-radius: 6px; padding: 6px 10px; }
+  .missing-pill { margin-top: 10px; font-size: 14px; color: var(--danger); background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); border-radius: 6px; padding: 6px 10px; }
   .peripheral-row { display: flex; gap: 8px; margin-top: 10px; }
-  .peripheral-chip { font-size: 12px; padding: 3px 9px; border-radius: 12px; display: flex; align-items: center; gap: 4px; }
+  .peripheral-chip { font-size: 14px; padding: 3px 9px; border-radius: 12px; display: flex; align-items: center; gap: 4px; }
   .peripheral-chip.present { background: rgba(61,220,132,0.12); color: var(--good); }
   .peripheral-chip.absent { background: rgba(255,92,92,0.12); color: var(--danger); }
 
   /* ---- Modal ---- */
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
-  #repairOverlay { z-index: 300; } /* stacks above the device-detail modal so it can open on top of it */
+  #completeOverlay, #reassignOverlay { z-index: 300; } /* stacks above the device-detail modal so it can open on top of it */
   .overlay.open { display: flex; }
   .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: min(560px, 90vw); max-height: 85vh; overflow-y: auto; position: relative; }
-  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; }
   .modal-close:hover { color: var(--text); }
-  .modal h2 { margin: 0 0 4px 0; font-size: 20px; }
-  .section-title { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px 0; }
+  .modal h2 { margin: 0 0 4px 0; font-size: 22px; }
+  .section-title { font-size: 15px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px 0; }
   .section-title.collapsible { cursor: pointer; user-select: none; }
   .section-title.collapsible:hover { color: var(--text); }
-  .collapse-arrow { display: inline-block; width: 14px; font-size: 10px; }
-  .device-list { font-size: 13px; color: var(--text-2); }
+  .collapse-arrow { display: inline-block; width: 14px; font-size: 12px; }
+  .device-list { font-size: 15px; color: var(--text-2); }
   .device-list div { padding: 4px 0; border-bottom: 1px solid var(--surface-2); }
   .missing-box { margin-top: 10px; padding: 10px 12px; border-radius: 6px; background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.3); }
-  .missing-box b { color: var(--danger); font-size: 13px; }
-  .missing-item { font-size: 13px; color: var(--danger-soft); padding: 3px 0; }
+  .missing-box b { color: var(--danger); font-size: 15px; }
+  .missing-item { font-size: 15px; color: var(--danger-soft); padding: 3px 0; }
 
   /* ---- Issue cards (used inside the bell dropdown) ---- */
   .issue-card { background: var(--surface-2); border: 1px solid rgba(255,92,92,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
   .issue-tags { display: flex; gap: 6px; margin-bottom: 6px; }
-  .issue-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: var(--accent); padding: 2px 8px; border-radius: 4px; }
-  .issue-desc { font-size: 13px; color: var(--text); }
-  .issue-meta { font-size: 11px; color: var(--faint); margin-top: 4px; }
-  .resolve-btn { background: var(--border); border: 1px solid var(--border-2); color: var(--text-2); border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; margin-top: 6px; }
+  .issue-tag { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(79,140,255,0.15); color: var(--accent); padding: 2px 8px; border-radius: 4px; }
+  .issue-desc { font-size: 15px; color: var(--text); }
+  .issue-meta { font-size: 13px; color: var(--faint); margin-top: 4px; }
+  .resolve-btn { background: var(--border); border: 1px solid var(--border-2); color: var(--text-2); border-radius: 6px; padding: 5px 10px; font-size: 13px; cursor: pointer; margin-top: 6px; }
   .resolve-btn:hover { background: var(--good); color: var(--bg); border-color: var(--good); }
-  .no-issues { color: var(--faint); font-size: 13px; padding: 8px 0; }
+  .no-issues { color: var(--faint); font-size: 15px; padding: 8px 0; }
 
   /* ---- Toast notifications ---- */
   .toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
-  .toast { background: var(--surface); border-left: 4px solid var(--danger); border-radius: 6px; padding: 10px 14px; width: 300px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); animation: slideIn 0.2s ease-out; font-size: 13px; }
+  .toast { background: var(--surface); border-left: 4px solid var(--danger); border-radius: 6px; padding: 10px 14px; width: 300px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); animation: slideIn 0.2s ease-out; font-size: 15px; }
   .toast.connected { border-left-color: var(--good); }
   .toast-title { font-weight: 600; margin-bottom: 2px; }
-  .toast-body { color: var(--muted); font-size: 12px; }
+  .toast-body { color: var(--muted); font-size: 14px; }
   @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
   /* ---- History ---- */
-  .history-btn { background: var(--border); border: 1px solid var(--border-2); color: var(--text-2); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; margin-top: 10px; }
-  .history-btn:hover { background: var(--highlight); color: white; border-color: var(--highlight); }
-  .history-list { font-size: 12px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
+  .history-btn { background: var(--border); border: 1px solid var(--border-2); color: var(--text-2); border-radius: 6px; padding: 5px 12px; font-size: 14px; cursor: pointer; margin-top: 10px; }
+  .history-btn:hover, .history-btn.active { background: var(--highlight); color: white; border-color: var(--highlight); }
+  .history-list { font-size: 14px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
   .history-item { padding: 5px 0; border-bottom: 1px solid var(--surface-2); display: flex; justify-content: space-between; }
   .history-item.connected { color: var(--good); }
   .history-item.disconnected { color: var(--danger); }
@@ -185,10 +200,10 @@
 
   <div class="login-screen" id="loginScreen">
     <div class="login-card">
-      <h2 style="margin:0 0 4px 0; font-size:20px;" id="loginTitle">🔐 Log in</h2>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;" id="loginSubtitle">Device Tracker — Live Dashboard</div>
+      <h2 style="margin:0 0 4px 0; font-size:22px;" id="loginTitle">🔐 Log in</h2>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:16px;" id="loginSubtitle">Device Tracker — Live Dashboard</div>
 
-      <div id="loginError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <div id="loginError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
       <label class="ticket-form-label">Username</label>
       <input type="text" id="loginUser" autocomplete="username" class="ticket-form-input" style="margin-bottom:14px;">
@@ -197,7 +212,7 @@
       <input type="password" id="loginPass" autocomplete="current-password" class="ticket-form-input" style="margin-bottom:14px;">
 
 
-      <button class="resolve-btn" id="loginSubmit" style="width:100%;padding:10px;margin-top:6px;font-size:13px;background:var(--accent);color:white;border-color:var(--accent);">Log in</button>
+      <button class="resolve-btn" id="loginSubmit" style="width:100%;padding:10px;margin-top:6px;font-size:15px;background:var(--accent);color:white;border-color:var(--accent);">Log in</button>
     </div>
   </div>
 
@@ -212,8 +227,15 @@
   <div class="notif-sidebar" id="notifSidebar">
     <h2>⚠️ Notifications <span class="section-count" id="notifSidebarCount">(0)</span></h2>
     <div class="notif-sidebar-list">
-      <div class="notif-section-title">Reported Problems</div>
-      <div id="issuesList"><div class="no-issues">No open problems.</div></div>
+      <div id="techNotifSection" style="display:none;margin-bottom:18px;">
+        <div class="notif-section-title">My Assigned Tasks</div>
+        <div id="myTasksList"><div class="no-issues">No tasks assigned to you.</div></div>
+      </div>
+
+      <div id="problemsSection">
+        <div class="notif-section-title">Reported Problems</div>
+        <div id="issuesList"><div class="no-issues">No open problems.</div></div>
+      </div>
 
       <div class="notif-section-title" style="margin-top:18px;">Alerts</div>
       <div id="notifSidebarList"><div class="no-issues">No active alerts.</div></div>
@@ -236,12 +258,12 @@
 
   <div id="usersView" class="nav-view" style="display:none;">
     <h1>👥 Users</h1>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Technician accounts that can log in to this dashboard. Only the admin (you) can add or manage them.</div>
+    <div style="font-size:15px;color:var(--muted);margin-bottom:14px;">Technician accounts that can log in to this dashboard. Only the admin (you) can add or manage them.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="resolve-btn" id="addUserBtn" style="margin-top:0;padding:8px 14px;font-size:13px;background:var(--accent);color:white;border-color:var(--accent);">+ Add User</button>
-      <button class="resolve-btn" id="changeMyPwBtn" style="margin-top:0;padding:8px 14px;font-size:13px;">🔑 Change my password</button>
+      <button class="resolve-btn" id="addUserBtn" style="margin-top:0;padding:8px 14px;font-size:15px;background:var(--accent);color:white;border-color:var(--accent);">+ Add User</button>
+      <button class="resolve-btn" id="changeMyPwBtn" style="margin-top:0;padding:8px 14px;font-size:15px;">🔑 Change my password</button>
     </div>
-    <div id="usersError" style="display:none;color:var(--danger);font-size:12px;margin-top:12px;"></div>
+    <div id="usersError" style="display:none;color:var(--danger);font-size:14px;margin-top:12px;"></div>
     <div class="user-list" id="userList"></div>
   </div>
 
@@ -258,8 +280,8 @@
         <option value="In Progress">In Progress</option>
         <option value="Completed">Completed</option>
       </select>
-      <button class="history-btn" id="logRepairBtn">🛠️ Log a Repair</button>
-      <button class="history-btn" id="newTicketBtn">+ New Repair Ticket</button>
+      <button class="history-btn" id="myTasksBtn" aria-pressed="false">👤 My tasks</button>
+      <button class="history-btn" id="newTicketBtn" style="display:none;">+ Assign Task</button>
       <button class="history-btn" id="generateReportBtn">📄 Generate Report (CSV)</button>
     </div>
 
@@ -270,29 +292,57 @@
     <div class="modal" id="modal"></div>
   </div>
 
-  <div class="overlay" id="repairOverlay">
-    <div class="modal" style="width:min(380px, 90vw);">
-      <button class="modal-close" id="repairFormClose">✕</button>
-      <h2 style="margin:0 0 4px 0; font-size:18px;">🛠️ Log a Repair</h2>
-      <label style="font-size:12px;color:var(--muted);display:block;margin:12px 0 6px;">PC <span style="color:var(--danger);">*</span></label>
-      <select id="repairDeviceSelect" class="repair-select" style="width:100%;margin-bottom:16px;"></select>
+  <div class="overlay" id="completeOverlay">
+    <div class="modal" style="width:min(460px, 90vw); max-height:85vh; overflow-y:auto;">
+      <button class="modal-close" id="completeClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:20px;">✅ Complete Task</h2>
+      <div id="completeSummary" style="font-size:15px;color:var(--muted);margin:0 0 14px 0;"></div>
 
-      <div id="repairFormError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <div id="completeError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
-      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">What was fixed or replaced?</label>
-      <textarea id="repairNoteInput" rows="3" placeholder="e.g. Replaced keyboard, Reseated RAM..." style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;resize:vertical;margin-bottom:16px;"></textarea>
+      <label class="ticket-form-label">What did you do? <span style="color:var(--danger);">*</span></label>
+      <textarea id="completeActionsInput" rows="3" placeholder="e.g. Replaced keyboard, reseated RAM…" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
 
-      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Your Name <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="repairTechInput" placeholder="Required" style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;margin-bottom:16px;" />
+      <label class="ticket-form-label">Part Type</label>
+      <input type="text" id="completePartInput" placeholder="e.g. RAM, Keyboard, GPU" class="ticket-form-input" style="margin-bottom:14px;">
 
-      <label style="font-size:13px;color:var(--text-2);display:flex;align-items:flex-start;gap:8px;margin-bottom:20px;cursor:pointer;">
-        <input type="checkbox" id="repairUpdateBaseline" style="margin-top:3px;">
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div style="flex:1;">
+          <label class="ticket-form-label">Model Before</label>
+          <input type="text" id="completeBeforeInput" placeholder="Old part" class="ticket-form-input">
+        </div>
+        <div style="flex:1;">
+          <label class="ticket-form-label">Model After</label>
+          <input type="text" id="completeAfterInput" placeholder="New part" class="ticket-form-input">
+        </div>
+      </div>
+
+      <label style="font-size:15px;color:var(--text-2);display:flex;align-items:flex-start;gap:8px;margin-bottom:16px;cursor:pointer;">
+        <input type="checkbox" id="completeUpdateBaseline" style="margin-top:3px;">
         <span>Also save the current internal components as the new expected baseline (use this if you installed/swapped hardware)</span>
       </label>
 
+      <div class="logged-as">Completed by <b class="logged-as-name"></b></div>
+
       <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button class="resolve-btn" id="repairFormCancel">Cancel</button>
-        <button class="resolve-btn" id="repairFormSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Submit</button>
+        <button class="resolve-btn" id="completeCancel">Cancel</button>
+        <button class="resolve-btn" id="completeSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Mark Completed</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="reassignOverlay">
+    <div class="modal" style="width:min(420px, 90vw);">
+      <button class="modal-close" id="reassignClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:20px;">🔁 Reassign Task</h2>
+      <div id="reassignSummary" style="font-size:15px;color:var(--muted);margin:0 0 14px 0;"></div>
+      <div id="reassignError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <label class="ticket-form-label">Hand over to <span style="color:var(--danger);">*</span></label>
+      <select id="reassignSelect" class="repair-select" style="width:100%;margin-bottom:16px;"></select>
+      <div class="logged-as">Reassigned by <b class="logged-as-name"></b></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="reassignCancel">Cancel</button>
+        <button class="resolve-btn" id="reassignSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Reassign</button>
       </div>
     </div>
   </div>
@@ -300,16 +350,16 @@
   <div class="overlay" id="settingsOverlay">
     <div class="modal" style="width:min(420px, 92vw); max-height:88vh; overflow-y:auto;">
       <button class="modal-close" id="settingsClose">✕</button>
-      <h2 style="margin:0 0 4px 0; font-size:18px;">⚙️ Settings</h2>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Signed in as <b id="settingsUser"></b></div>
+      <h2 style="margin:0 0 4px 0; font-size:20px;">⚙️ Settings</h2>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:8px;">Signed in as <b id="settingsUser"></b></div>
 
-      <div class="section-title" style="margin-top:14px;">🎨 Appearance <span style="font-weight:400;color:var(--faint);font-size:11px;">(this browser only)</span></div>
+      <div class="section-title" style="margin-top:14px;">🎨 Appearance <span style="font-weight:400;color:var(--faint);font-size:13px;">(this browser only)</span></div>
       <div class="setting-row">
         <div>Light mode<small>Switch the dashboard to a light theme</small></div>
         <label class="switch"><input type="checkbox" id="settingLight"><span></span></label>
       </div>
 
-      <div class="section-title" style="margin-top:22px;">🔔 Notifications <span style="font-weight:400;color:var(--faint);font-size:11px;">(this browser only)</span></div>
+      <div class="section-title" style="margin-top:22px;">🔔 Notifications <span style="font-weight:400;color:var(--faint);font-size:13px;">(this browser only)</span></div>
       <div class="setting-row">
         <div>Alert sound<small>Play a beep for new alerts</small></div>
         <label class="switch"><input type="checkbox" id="settingSound"><span></span></label>
@@ -321,20 +371,20 @@
 
       <div id="settingsPwSection">
       <div class="section-title" style="margin-top:22px;">🔑 Change my password</div>
-      <div id="settingsPwError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin:8px 0;"></div>
-      <div id="settingsPwOk" style="display:none;color:var(--good);font-size:12px;margin:8px 0;">Password changed.</div>
+      <div id="settingsPwError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin:8px 0;"></div>
+      <div id="settingsPwOk" style="display:none;color:var(--good);font-size:14px;margin:8px 0;">Password changed.</div>
       <label class="ticket-form-label" style="margin-top:8px;">Current password</label>
       <input type="password" id="settingsCurPw" autocomplete="current-password" class="ticket-form-input" style="margin-bottom:12px;">
       <label class="ticket-form-label">New password</label>
       <input type="password" id="settingsNewPw" autocomplete="new-password" placeholder="At least 6 characters" class="ticket-form-input" style="margin-bottom:12px;">
       <label class="ticket-form-label">Repeat new password</label>
       <input type="password" id="settingsNewPw2" autocomplete="new-password" class="ticket-form-input" style="margin-bottom:14px;">
-      <button class="resolve-btn" id="settingsPwSubmit" style="margin-top:0;background:var(--accent);color:white;border-color:var(--accent);padding:8px 14px;font-size:13px;">Change password</button>
+      <button class="resolve-btn" id="settingsPwSubmit" style="margin-top:0;background:var(--accent);color:white;border-color:var(--accent);padding:8px 14px;font-size:15px;">Change password</button>
 
       </div>
 
       <div style="margin-top:22px;padding-top:14px;border-top:1px solid var(--border);">
-        <button class="resolve-btn" id="settingsLogout" style="margin-top:0;padding:8px 14px;font-size:13px;">Log out</button>
+        <button class="resolve-btn" id="settingsLogout" style="margin-top:0;padding:8px 14px;font-size:15px;">Log out</button>
       </div>
     </div>
   </div>
@@ -342,15 +392,15 @@
   <div class="overlay" id="addUserOverlay">
     <div class="modal" style="width:min(380px, 90vw);">
       <button class="modal-close" id="addUserClose">✕</button>
-      <h2 style="margin:0 0 14px 0; font-size:18px;">👤 Add User</h2>
-      <div id="addUserError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <h2 style="margin:0 0 14px 0; font-size:20px;">👤 Add User</h2>
+      <div id="addUserError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
       <label class="ticket-form-label">Username <span style="color:var(--danger);">*</span></label>
       <input type="text" id="addUserName" autocomplete="off" class="ticket-form-input" style="margin-bottom:14px;">
 
       <label class="ticket-form-label">Password <span style="color:var(--danger);">*</span></label>
       <input type="text" id="addUserPass" autocomplete="off" placeholder="At least 6 characters" class="ticket-form-input" style="margin-bottom:6px;">
-      <div style="font-size:11px;color:var(--faint);margin-bottom:20px;">Shown as you type so you can tell the person. They can't change it themselves — you reset it from here.</div>
+      <div style="font-size:13px;color:var(--faint);margin-bottom:20px;">Shown as you type so you can tell the person. They can't change it themselves — you reset it from here.</div>
 
 
       <div style="display:flex;gap:8px;justify-content:flex-end;">
@@ -363,13 +413,13 @@
   <div class="overlay" id="resetPwOverlay">
     <div class="modal" style="width:min(380px, 90vw);">
       <button class="modal-close" id="resetPwClose">✕</button>
-      <h2 style="margin:0 0 4px 0; font-size:18px;">🔑 Reset Password</h2>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;" id="resetPwLabel"></div>
-      <div id="resetPwError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <h2 style="margin:0 0 4px 0; font-size:20px;">🔑 Reset Password</h2>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:12px;" id="resetPwLabel"></div>
+      <div id="resetPwError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
       <label class="ticket-form-label">New password <span style="color:var(--danger);">*</span></label>
       <input type="text" id="resetPwInput" autocomplete="off" placeholder="At least 6 characters" class="ticket-form-input" style="margin-bottom:6px;">
-      <div style="font-size:11px;color:var(--faint);margin-bottom:20px;">This logs the person out everywhere; they'll sign in again with the new password.</div>
+      <div style="font-size:13px;color:var(--faint);margin-bottom:20px;">This logs the person out everywhere; they'll sign in again with the new password.</div>
 
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="resolve-btn" id="resetPwCancel">Cancel</button>
@@ -381,28 +431,27 @@
   <div class="overlay" id="maintOverlay">
     <div class="modal" style="width:min(400px, 90vw);">
       <button class="modal-close" id="maintClose">✕</button>
-      <h2 style="margin:0 0 4px 0; font-size:18px;" id="maintTitle">🔧 Mark Under Maintenance</h2>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;" id="maintDeviceLabel"></div>
+      <h2 style="margin:0 0 4px 0; font-size:20px;" id="maintTitle">🔧 Mark Under Maintenance</h2>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:12px;" id="maintDeviceLabel"></div>
 
-      <div id="maintError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <div id="maintError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
       <div id="maintOnFields">
         <label class="ticket-form-label">Reason for maintenance <span style="color:var(--danger);">*</span></label>
         <textarea id="maintReasonInput" rows="3" placeholder="e.g. Won't boot, keyboard not responding..." class="ticket-form-input" style="margin-bottom:6px;resize:vertical;"></textarea>
-        <div style="font-size:11px;color:var(--faint);margin-bottom:14px;">A Pending repair ticket is created automatically from this.</div>
+        <div style="font-size:13px;color:var(--faint);margin-bottom:14px;">A Pending repair ticket is created automatically from this.</div>
       </div>
 
       <div id="maintOffFields" style="display:none;">
         <label class="ticket-form-label">Final note (optional)</label>
         <textarea id="maintNoteInput" rows="3" placeholder="e.g. Replaced PSU, tested OK..." class="ticket-form-input" style="margin-bottom:14px;resize:vertical;"></textarea>
-        <label style="font-size:13px;color:var(--text-2);display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
+        <label style="font-size:15px;color:var(--text-2);display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
           <input type="checkbox" id="maintCompleteTickets" checked style="margin-top:3px;">
           <span>Mark this PC's open repair tickets as Completed</span>
         </label>
       </div>
 
-      <label class="ticket-form-label">Your Name <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="maintNameInput" placeholder="Required" class="ticket-form-input" style="margin-bottom:20px;" />
+      <div class="logged-as">Logged as <b class="logged-as-name"></b></div>
 
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="resolve-btn" id="maintCancel">Cancel</button>
@@ -414,46 +463,24 @@
   <div class="overlay" id="newTicketOverlay">
     <div class="modal" style="width:min(460px, 90vw); max-height:85vh; overflow-y:auto;">
       <button class="modal-close" id="newTicketClose">✕</button>
-      <h2 style="margin:0 0 16px 0; font-size:18px;">🛠️ New Repair Ticket</h2>
+      <h2 style="margin:0 0 16px 0; font-size:20px;">📋 Assign Task</h2>
 
-      <div id="newTicketError" style="display:none;color:var(--danger);font-size:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <div id="newTicketError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
       <label class="ticket-form-label">PC <span style="color:var(--danger);">*</span></label>
       <select id="ticketDeviceSelect" class="repair-select" style="width:100%;margin-bottom:14px;"></select>
 
-      <label class="ticket-form-label">Reported Problem <span style="color:var(--danger);">*</span></label>
-      <textarea id="ticketProblemInput" rows="2" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
+      <label class="ticket-form-label">Assign to <span style="color:var(--danger);">*</span></label>
+      <select id="ticketAssigneeSelect" class="repair-select" style="width:100%;margin-bottom:14px;"></select>
 
-      <label class="ticket-form-label">Actions Taken</label>
-      <textarea id="ticketActionsInput" rows="2" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
+      <label class="ticket-form-label">Task <span style="color:var(--danger);">*</span></label>
+      <textarea id="ticketProblemInput" rows="3" placeholder="What needs to be done? e.g. Keyboard keys not working, replace it" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
 
-      <label class="ticket-form-label">Part Type</label>
-      <input type="text" id="ticketPartTypeInput" placeholder="e.g. RAM, Keyboard, GPU" class="ticket-form-input" style="margin-bottom:14px;">
-
-      <div style="display:flex; gap:10px; margin-bottom:14px;">
-        <div style="flex:1;">
-          <label class="ticket-form-label">Model Before</label>
-          <input type="text" id="ticketModelBeforeInput" placeholder="Old part" class="ticket-form-input">
-        </div>
-        <div style="flex:1;">
-          <label class="ticket-form-label">Model After</label>
-          <input type="text" id="ticketModelAfterInput" placeholder="New part" class="ticket-form-input">
-        </div>
-      </div>
-
-      <label class="ticket-form-label">Repair Status</label>
-      <select id="ticketStatusSelect" class="repair-select" style="width:100%;margin-bottom:14px;">
-        <option value="Pending">Pending</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Completed">Completed</option>
-      </select>
-
-      <label class="ticket-form-label">Your Name <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="ticketTechInput" placeholder="Required" class="ticket-form-input" style="margin-bottom:20px;">
+      <div class="logged-as">Assigned by <b class="logged-as-name"></b></div>
 
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="resolve-btn" id="newTicketCancel">Cancel</button>
-        <button class="resolve-btn" id="newTicketSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Submit</button>
+        <button class="resolve-btn" id="newTicketSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Assign</button>
       </div>
     </div>
   </div>
@@ -553,12 +580,17 @@ function startSession(token, username, role, defaultPassword) {
   authToken = token;
   authUser = username;
   authRole = role || "user";
+  document.querySelectorAll(".logged-as-name").forEach(el => el.textContent = username);
   document.getElementById("usersTab").style.display = authRole === "admin" ? "" : "none";
+  document.getElementById("newTicketBtn").style.display = authRole === "admin" ? "" : "none";
+  applyRoleNotifUI();
+  if (authRole !== "admin") loadMyTasks();
   document.getElementById("defaultPwBanner").style.display = defaultPassword ? "block" : "none";
   storeSet(TOKEN_KEY, token);
   storeSet(USER_KEY, username);
   document.getElementById("loginScreen").classList.remove("open");
   connect();
+  announceWaitingTasks();
 }
 
 async function submitLogin() {
@@ -626,6 +658,7 @@ let sidebarOpen = false;
 let lastAlertTotal = 0;      // total (open issues + alerts) as of the last render
 let sidebarManualOverride = false; // true once the user has clicked the toggle, until the total changes again
 let currentAlertsCount = 0;  // kept in sync by renderNotificationSidebar()
+const myOpenTasks = new Map(); // technician's own unfinished tasks: id -> ticket
 
 function setSidebarOpen(open) {
   sidebarOpen = open;
@@ -643,7 +676,8 @@ sidebarToggleBtn.addEventListener("click", () => {
 // in which case we leave it alone until the total count actually changes
 // again (a fresh thing to notify about resets the override).
 function updateSidebarAutoState() {
-  const total = openIssues.length + currentAlertsCount;
+  const total = currentAlertsCount + (authRole === "admin" ? openIssues.length : myOpenTasks.size);
+  document.getElementById("notifSidebarCount").textContent = `(${total})`;
   sidebarToggleBadge.style.display = total > 0 ? "flex" : "none";
   sidebarToggleBadge.textContent = total;
   sidebarToggleBtn.classList.toggle("has-alerts", total > 0);
@@ -655,6 +689,51 @@ function updateSidebarAutoState() {
     setSidebarOpen(total > 0);
   }
   lastAlertTotal = total;
+}
+
+// ----------------- Technician drawer: My Assigned Tasks -----------------
+function applyRoleNotifUI() {
+  const admin = authRole === "admin";
+  document.getElementById("problemsSection").style.display = admin ? "" : "none";   // admin only
+  document.getElementById("techNotifSection").style.display = admin ? "none" : "";  // technicians only
+  updateSidebarAutoState();
+}
+
+function trackTask(t) {
+  if (t.assigned_to === authUser && t.repair_status !== "Completed") myOpenTasks.set(t.id, t);
+  else myOpenTasks.delete(t.id);
+  renderMyTasks();
+}
+
+async function loadMyTasks() {
+  try {
+    const resp = await apiFetch("/api/repair-tickets");
+    if (!resp.ok) return;
+    myOpenTasks.clear();
+    (await resp.json()).forEach(t => { if (t.assigned_to === authUser && t.repair_status !== "Completed") myOpenTasks.set(t.id, t); });
+    renderMyTasks();
+  } catch (e) {}
+}
+
+function renderMyTasks() {
+  if (authRole === "admin") return;
+  const listEl = document.getElementById("myTasksList");
+  const tasks = [...myOpenTasks.values()].sort((a, b) => a.timestamp - b.timestamp);
+  if (!tasks.length) {
+    listEl.innerHTML = `<div class="no-issues">No tasks assigned to you.</div>`;
+  } else {
+    listEl.innerHTML = tasks.map(t => `
+      <div class="task-notif-card" data-ticket-id="${t.id}">
+        <span class="notif-alert-host">${escapeHtml(t.hostname)}</span>
+        <span class="ticket-status ${statusClass(t.repair_status)}" style="float:right;">${escapeHtml(t.repair_status)}</span>
+        <div class="notif-alert-desc">${escapeHtml(t.reported_problem)}</div>
+        <div class="notif-alert-time">Assigned by ${escapeHtml(t.assigned_by || "admin")} — ${new Date(t.timestamp*1000).toLocaleString()}</div>
+      </div>`).join("");
+    listEl.querySelectorAll(".task-notif-card").forEach(el => {
+      el.addEventListener("click", () => { switchView("repair"); loadRepairTickets(); });
+    });
+  }
+  updateSidebarAutoState();
 }
 
 function renderIssues() {
@@ -716,12 +795,48 @@ function playAlertSound() {
   } catch (e) { /* Audio may be blocked until the user interacts with the page once — that's fine */ }
 }
 
-function showToast(title, body, kind = "alert") {
+function showToast(title, body, kind = "alert", opts = {}) {
   const toast = document.createElement("div");
   toast.className = `toast ${kind}`;
   toast.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
+  if (opts.onClick) {
+    toast.style.cursor = "pointer";
+    toast.addEventListener("click", () => { opts.onClick(); toast.remove(); });
+  }
   toastContainer.appendChild(toast);
-  setTimeout(() => toast.remove(), 6000);
+  setTimeout(() => toast.remove(), opts.duration || 6000);
+}
+
+// ----------------- Task assignment popups (addressed to the assigned technician) -----------------
+function seenTasksKey() { return "dtSeenTasks:" + authUser; }
+function getSeenTasks() { try { return new Set(JSON.parse(storeGet(seenTasksKey()) || "[]")); } catch (e) { return new Set(); } }
+function markTaskSeen(id) {
+  const seen = getSeenTasks(); seen.add(id);
+  storeSet(seenTasksKey(), JSON.stringify([...seen].slice(-200)));
+}
+
+// Always shown to the assignee, even if general pop-up alerts are switched off —
+// it's a personal assignment. Click it to jump to Repair Tracking.
+function announceTask(t) {
+  markTaskSeen(t.id);
+  const by = t.assigned_by && t.assigned_by !== authUser ? ` from ${escapeHtml(t.assigned_by)}` : "";
+  showToast(`📋 New task for you, ${escapeHtml(authUser)}${by}`,
+            `<b>${escapeHtml(t.hostname)}</b>: ${escapeHtml(t.reported_problem)}`,
+            "alert", { duration: 15000, onClick: () => { switchView("repair"); loadRepairTickets(); } });
+  playAlertSound();
+}
+
+// On login / reload: tell the technician about tasks assigned while they were away.
+async function announceWaitingTasks() {
+  try {
+    const resp = await apiFetch("/api/repair-tickets?status=Pending");
+    if (!resp.ok) return;
+    const seen = getSeenTasks();
+    const fresh = (await resp.json()).filter(t => t.assigned_to === authUser && t.assigned_by !== authUser && !seen.has(t.id));
+    fresh.slice(0, 3).forEach(announceTask);
+    fresh.slice(3).forEach(t => markTaskSeen(t.id));
+    if (fresh.length > 3) showToast(`📋 ${escapeHtml(authUser)}, ${fresh.length - 3} more tasks waiting`, "Open Repair Tracking to see them.", "alert", { duration: 15000, onClick: () => switchView("repair") });
+  } catch (e) {}
 }
 
 function notify(title, body, kind = "alert") {
@@ -874,7 +989,7 @@ function renderCard(payload) {
       <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance ? `<span class="maintenance-badge">🔧 Maintenance</span>` : ""}</h2>
       <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
     </div>
-    <div style="font-size:12px;color:var(--muted);">${payload.os || ""}</div>
+    <div style="font-size:14px;color:var(--muted);">${payload.os || ""}</div>
 
     <div class="stat"><span>CPU</span><span>${hw.cpu_percent ?? "-"}%</span></div>
     <div class="bar-bg"><div class="bar-fill" style="width:${hw.cpu_percent||0}%"></div></div>
@@ -983,7 +1098,7 @@ function renderModalContent(payload) {
       <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance ? `<span class="maintenance-badge">🔧 Maintenance</span>` : ""}</h2>
       <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
     </div>
-    <div style="font-size:13px;color:var(--muted);">${payload.os || ""} — ${payload.device_id}</div>
+    <div style="font-size:15px;color:var(--muted);">${payload.os || ""} — ${payload.device_id}</div>
 
     <button class="history-btn" id="maintenanceHistoryBtn" style="margin-top:10px; margin-right:8px;">📋 Maintenance History</button>
     <button class="history-btn" id="toggleMaintenanceBtn" style="margin-top:10px; ${payload.under_maintenance ? "border-color: rgba(61,220,132,0.4); color: var(--good);" : "border-color: rgba(255,165,61,0.4); color: var(--orange);"}">
@@ -1056,7 +1171,6 @@ function toggleMaintenance(deviceId, currentlyUnderMaintenance) {
   document.getElementById("maintReasonInput").value = "";
   document.getElementById("maintNoteInput").value = "";
   document.getElementById("maintCompleteTickets").checked = true;
-  document.getElementById("maintNameInput").value = "";
   hideMaintError();
   document.getElementById("maintOverlay").classList.add("open");
 }
@@ -1079,16 +1193,14 @@ function hideMaintError() {
 async function submitMaintForm() {
   if (!maintTarget) return;
   const { deviceId, turningOn } = maintTarget;
-  const name = document.getElementById("maintNameInput").value.trim();
   const reason = document.getElementById("maintReasonInput").value.trim();
   const note = document.getElementById("maintNoteInput").value.trim();
   const complete_tickets = document.getElementById("maintCompleteTickets").checked;
 
   if (turningOn && !reason) { showMaintError("Please enter the reason for maintenance."); return; }
-  if (!name) { showMaintError("Please enter your name."); return; }
   hideMaintError();
 
-  const body = { under_maintenance: turningOn, name };
+  const body = { under_maintenance: turningOn };
   if (turningOn) body.reason = reason;
   else { body.note = note; body.complete_tickets = complete_tickets; }
 
@@ -1120,101 +1232,264 @@ document.getElementById("maintOverlay").addEventListener("click", (e) => {
   if (e.target.id === "maintOverlay") closeMaintForm();
 });
 
-// ----------------- Floating "Log a Repair" form -----------------
+// ----------------- Searchable PC picker -----------------
+// Turns a <select> into a type-to-search box. The real <select> stays in the
+// page (hidden) and is kept in sync, so the rest of the code still reads .value.
+// Typing matches the PC name, or the room for 3+ character words; arrows + Enter or a click choose.
+function makeSearchable(selectEl) {
+  if (selectEl._combo) return selectEl._combo;
 
-function openRepairForm(preselectDeviceId) {
-  const sel = document.getElementById("repairDeviceSelect");
-  const devices = Object.values(lastPayload).sort((a, b) => naturalCompare(a.hostname || "", b.hostname || ""));
-  sel.innerHTML = devices.map(d => `<option value="${escapeHtml(d.device_id)}">${escapeHtml(d.hostname)}</option>`).join("");
-  if (preselectDeviceId) sel.value = preselectDeviceId;
-  document.getElementById("repairNoteInput").value = "";
-  document.getElementById("repairTechInput").value = "";
-  document.getElementById("repairUpdateBaseline").checked = false;
-  hideRepairFormError();
-  document.getElementById("repairOverlay").classList.add("open");
-  document.getElementById("repairNoteInput").focus();
-}
+  const wrap = document.createElement("div");
+  wrap.className = "combo";
+  wrap.style.marginBottom = selectEl.style.marginBottom;
+  selectEl.style.marginBottom = "0";
+  selectEl.parentNode.insertBefore(wrap, selectEl);
+  wrap.appendChild(selectEl);
+  selectEl.classList.add("combo-native");
 
-function closeRepairForm() {
-  document.getElementById("repairOverlay").classList.remove("open");
-  hideRepairFormError();
-}
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "ticket-form-input";
+  input.placeholder = "Search PCs by name or room…";
+  input.autocomplete = "off";
+  input.setAttribute("role", "combobox");
+  const list = document.createElement("div");
+  list.className = "combo-list";
+  wrap.appendChild(input);
+  wrap.appendChild(list);
 
-function showRepairFormError(message) {
-  const errEl = document.getElementById("repairFormError");
-  errEl.textContent = message;
-  errEl.style.display = "block";
-}
+  let items = [];   // {value, label, room, search}
+  let shown = [];   // items currently listed
+  let active = 0;
 
-function hideRepairFormError() {
-  const errEl = document.getElementById("repairFormError");
-  errEl.style.display = "none";
-  errEl.textContent = "";
-}
-
-function markRepairFieldInvalid(inputId, invalid) {
-  const el = document.getElementById(inputId);
-  el.style.borderColor = invalid ? "var(--danger)" : "var(--border)";
-}
-
-async function submitRepairForm() {
-  const note = document.getElementById("repairNoteInput").value.trim();
-  const name = document.getElementById("repairTechInput").value.trim();
-  const updateBaseline = document.getElementById("repairUpdateBaseline").checked;
-
-  markRepairFieldInvalid("repairNoteInput", !note);
-  markRepairFieldInvalid("repairTechInput", !name);
-
-  if (!document.getElementById("repairDeviceSelect").value) {
-    showRepairFormError("Please select a PC.");
-    return;
+  function readOptions() {
+    items = Array.from(selectEl.options).map(o => {
+      const room = (lastPayload[o.value] || {}).room || "";
+      return { value: o.value, label: o.textContent, room, name: o.textContent.toLowerCase(), roomLc: room.toLowerCase() };
+    });
   }
-  if (!note && !name) {
-    showRepairFormError("Please describe what was fixed and enter your name.");
-    return;
+  function selectedLabel() {
+    const o = selectEl.options[selectEl.selectedIndex];
+    return o ? o.textContent : "";
   }
-  if (!note) {
-    showRepairFormError("Please describe what was fixed or replaced.");
-    return;
+  function render(filter) {
+    const q = filter.trim().toLowerCase();
+    // Every word must match somewhere in the PC name; a word of 3+ characters
+    // (e.g. "202") may also match the room, so a lone "2" doesn't match via room 201/202.
+    // Best matches first: a word that starts a name part ("unit 2" -> "CC1 UNIT 2"
+    // before "CC1 UNIT 12") ranks above one that merely appears inside it.
+    const words = q.split(/\s+/).filter(Boolean);
+    const score = (it) => {
+      const parts = it.name.split(/[^a-z0-9]+/);
+      let total = 0;
+      for (const w of words) {
+        if (parts.some(p => p.startsWith(w))) total += 0;
+        else if (it.name.includes(w) || (w.length >= 3 && it.roomLc.includes(w))) total += 1;
+        else return -1; // a word matched nothing
+      }
+      return total;
+    };
+    shown = q
+      ? items.map(it => ({ it, sc: score(it) })).filter(x => x.sc >= 0).sort((a, b) => a.sc - b.sc).map(x => x.it) // sort is stable: name order kept within a rank
+      : items.slice();
+    if (!shown.length) {
+      list.innerHTML = '<div class="combo-empty">No PCs match.</div>';
+      active = -1;
+      return;
+    }
+    const cur = shown.findIndex(it => it.value === selectEl.value);
+    active = q ? 0 : Math.max(cur, 0);
+    list.innerHTML = shown.map((it, i) =>
+      `<div class="combo-item${i === active ? " active" : ""}" data-i="${i}">${escapeHtml(it.label)}${it.room ? `<small>${escapeHtml(it.room)}</small>` : ""}</div>`
+    ).join("");
+    const act = list.querySelector(".active");
+    if (act) act.scrollIntoView({ block: "nearest" });
   }
-  if (!name) {
-    showRepairFormError("Please enter your name.");
-    return;
+  function open() { readOptions(); wrap.classList.add("open"); render(input.value === selectedLabel() ? "" : input.value); }
+  function close() {
+    wrap.classList.remove("open");
+    input.value = selectedLabel();
+    if (document.activeElement === input) input.select(); // so typing again replaces the name instead of adding to it
   }
-  hideRepairFormError();
+  function choose(i) {
+    const it = shown[i];
+    if (!it) return;
+    selectEl.value = it.value;
+    selectEl.dispatchEvent(new Event("change"));
+    close();
+  }
+  function move(delta) {
+    if (!shown.length) return;
+    active = (active + delta + shown.length) % shown.length;
+    list.querySelectorAll(".combo-item").forEach((el, i) => el.classList.toggle("active", i === active));
+    const act = list.querySelector(".active");
+    if (act) act.scrollIntoView({ block: "nearest" });
+  }
 
-  const deviceId = document.getElementById("repairDeviceSelect").value;
-  const submitBtn = document.getElementById("repairFormSubmit");
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Submitting…";
+  input.addEventListener("focus", () => { input.select(); open(); });
+  // Clicking the box should open the list with the current name selected, so
+  // typing replaces it. Browsers drop the caret in on mouse-up and would undo
+  // that selection, so the default is suppressed in the two cases that matter.
+  let skipMouseUp = false;
+  input.addEventListener("mousedown", (e) => {
+    if (document.activeElement !== input) { skipMouseUp = true; return; } // focus handler opens + selects
+    if (!wrap.classList.contains("open")) { e.preventDefault(); open(); input.select(); }
+  });
+  input.addEventListener("mouseup", (e) => { if (skipMouseUp) { skipMouseUp = false; e.preventDefault(); } });
+  input.addEventListener("input", () => { if (!wrap.classList.contains("open")) readOptions(), wrap.classList.add("open"); render(input.value); });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); if (!wrap.classList.contains("open")) open(); else move(1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); move(-1); }
+    else if (e.key === "Enter") { if (wrap.classList.contains("open")) { e.preventDefault(); choose(active); } }
+    else if (e.key === "Escape" && wrap.classList.contains("open")) { e.stopPropagation(); close(); } // close the list, not the whole form
+    else if (e.key === "Tab") { if (wrap.classList.contains("open") && shown[active]) choose(active); else close(); }
+  });
+  input.addEventListener("blur", () => close());
+  // mousedown (not click) so the choice lands before the input loses focus
+  list.addEventListener("mousedown", (e) => {
+    const el = e.target.closest(".combo-item");
+    if (!el) return;
+    e.preventDefault();
+    choose(Number(el.dataset.i));
+  });
 
+  selectEl._combo = {
+    refresh() { readOptions(); wrap.classList.remove("open"); input.value = selectedLabel(); },
+    focus() { input.focus(); },
+  };
+  return selectEl._combo;
+}
+
+// ----------------- Reassign Task (admin, or the current assignee) -----------------
+let reassigningTicket = null;
+
+async function openReassignForm(ticketId) {
+  const t = lastLoadedTickets.find(x => x.id === ticketId);
+  if (!t) return;
+  reassigningTicket = t;
+  document.getElementById("reassignSummary").textContent = `${t.hostname} — ${t.reported_problem} (now: ${t.assigned_to || t.technician})`;
+  document.getElementById("reassignError").style.display = "none";
+  const sel = document.getElementById("reassignSelect");
+  sel.innerHTML = `<option value="">Loading…</option>`;
+  document.getElementById("reassignOverlay").classList.add("open");
   try {
-    const resp = await apiFetch(`/api/repair-log/${encodeURIComponent(deviceId)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ note, name, update_baseline: updateBaseline }),
+    const resp = await apiFetch("/api/technicians");
+    const names = (resp.ok ? await resp.json() : []).filter(n => n !== (t.assigned_to || t.technician));
+    sel.innerHTML = names.length ? names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("")
+                                 : `<option value="">No other technicians available</option>`;
+  } catch (e) { sel.innerHTML = `<option value="">Could not load technicians</option>`; }
+}
+
+function closeReassignForm() {
+  document.getElementById("reassignOverlay").classList.remove("open");
+  reassigningTicket = null;
+}
+
+async function submitReassignForm() {
+  if (!reassigningTicket) return;
+  const t = reassigningTicket;
+  const to = document.getElementById("reassignSelect").value;
+  const err = document.getElementById("reassignError");
+  if (!to) { err.textContent = "Choose a technician."; err.style.display = "block"; return; }
+  try {
+    const resp = await apiFetch(`/api/repair-tickets/${t.id}/reassign`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assigned_to: to }),
     });
     if (resp.ok) {
-      showToast("🛠️ Repair Logged", updateBaseline ? `${note} — baseline updated` : note, "connected");
-      repairGraceUntil[deviceId] = Date.now() + REPAIR_GRACE_MS;
-      renderNotificationSidebar(); // drop this device's alerts from the sidebar right away
-      if (openDeviceId === deviceId) loadRepairLog(deviceId);
-      closeRepairForm();
-    } else if (resp.status === 401) {
-      showRepairFormError("Not logged in — please log in again.");
-    } else if (resp.status === 400) {
-      const body = await resp.json().catch(() => ({}));
-      showRepairFormError(body.detail || "Missing required field.");
+      showToast("🔁 Task Reassigned", `${escapeHtml(t.hostname)} → ${escapeHtml(to)}`, "connected");
+      closeReassignForm(); loadRepairTickets();
     } else {
-      showRepairFormError("Could not log the repair — check the server connection.");
+      const body = await resp.json().catch(() => ({}));
+      err.textContent = body.detail || "Could not reassign."; err.style.display = "block";
+    }
+  } catch (e) { err.textContent = "Could not reach the server."; err.style.display = "block"; }
+}
+
+document.getElementById("reassignClose").addEventListener("click", closeReassignForm);
+document.getElementById("reassignCancel").addEventListener("click", closeReassignForm);
+document.getElementById("reassignSubmit").addEventListener("click", submitReassignForm);
+document.getElementById("reassignOverlay").addEventListener("click", (e) => { if (e.target.id === "reassignOverlay") closeReassignForm(); });
+
+// ----------------- Complete Task form (technician) -----------------
+let completingTicket = null;
+
+function openCompleteForm(ticketId) {
+  const t = lastLoadedTickets.find(x => x.id === ticketId);
+  if (!t) return;
+  completingTicket = t;
+  document.getElementById("completeSummary").textContent = `${t.hostname} — ${t.reported_problem}`;
+  document.getElementById("completeActionsInput").value = t.actions_taken || "";
+  document.getElementById("completePartInput").value = t.part_type || "";
+  document.getElementById("completeBeforeInput").value = t.model_before || "";
+  document.getElementById("completeAfterInput").value = t.model_after || "";
+  document.getElementById("completeUpdateBaseline").checked = false;
+  hideCompleteError();
+  document.getElementById("completeOverlay").classList.add("open");
+  document.getElementById("completeActionsInput").focus();
+}
+
+function closeCompleteForm() {
+  document.getElementById("completeOverlay").classList.remove("open");
+  completingTicket = null;
+}
+
+function showCompleteError(msg) {
+  const el = document.getElementById("completeError");
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+function hideCompleteError() {
+  document.getElementById("completeError").style.display = "none";
+}
+
+async function submitCompleteForm() {
+  if (!completingTicket) return;
+  const t = completingTicket;
+  const actions_taken = document.getElementById("completeActionsInput").value.trim();
+  if (!actions_taken) { showCompleteError("Please describe what you did."); return; }
+  hideCompleteError();
+
+  const btn = document.getElementById("completeSubmit");
+  btn.disabled = true;
+  btn.textContent = "Saving…";
+  try {
+    const resp = await apiFetch(`/api/repair-tickets/${t.id}/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        repair_status: "Completed",
+        actions_taken,
+        part_type: document.getElementById("completePartInput").value.trim(),
+        model_before: document.getElementById("completeBeforeInput").value.trim(),
+        model_after: document.getElementById("completeAfterInput").value.trim(),
+        update_baseline: document.getElementById("completeUpdateBaseline").checked,
+      }),
+    });
+    if (resp.ok) {
+      showToast("✅ Task Completed", `${t.hostname}: ${actions_taken}`, "connected");
+      repairGraceUntil[t.device_id] = Date.now() + REPAIR_GRACE_MS;
+      renderNotificationSidebar();
+      if (openDeviceId === t.device_id) loadRepairLog(t.device_id);
+      closeCompleteForm();
+      loadRepairTickets();
+    } else if (resp.status === 403) {
+      showCompleteError("This task is assigned to someone else.");
+    } else if (resp.status === 401) {
+      showCompleteError("Not logged in — please log in again.");
+    } else {
+      const body = await resp.json().catch(() => ({}));
+      showCompleteError(body.detail || "Could not save — check the server connection.");
     }
   } catch (e) {
-    showRepairFormError("Could not reach the server.");
+    showCompleteError("Could not reach the server.");
   } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Submit";
+    btn.disabled = false;
+    btn.textContent = "Mark Completed";
   }
 }
+
 
 async function resetBaseline(deviceId) {
   if (!confirm("This marks the CURRENT hardware/peripherals as the new expected baseline. Only do this if the change was intentional. Continue?")) {
@@ -1315,17 +1590,15 @@ overlay.addEventListener("click", (e) => {
   if (e.target === overlay) closeModal(); // click outside modal closes it
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { closeModal(); closeRepairForm(); closeNewTicketForm(); closeMaintForm(); closeAddUserForm(); closeResetPwForm(); closeSettings(); }
+  if (e.key === "Escape") { closeModal(); closeCompleteForm(); closeReassignForm(); closeNewTicketForm(); closeMaintForm(); closeAddUserForm(); closeResetPwForm(); closeSettings(); }
 });
 
-document.getElementById("repairFormClose").addEventListener("click", closeRepairForm);
-document.getElementById("repairFormCancel").addEventListener("click", closeRepairForm);
-document.getElementById("repairFormSubmit").addEventListener("click", submitRepairForm);
-document.getElementById("repairOverlay").addEventListener("click", (e) => {
-  if (e.target.id === "repairOverlay") closeRepairForm();
+document.getElementById("completeClose").addEventListener("click", closeCompleteForm);
+document.getElementById("completeCancel").addEventListener("click", closeCompleteForm);
+document.getElementById("completeSubmit").addEventListener("click", submitCompleteForm);
+document.getElementById("completeOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "completeOverlay") closeCompleteForm();
 });
-document.getElementById("repairNoteInput").addEventListener("input", () => markRepairFieldInvalid("repairNoteInput", false));
-document.getElementById("repairTechInput").addEventListener("input", () => markRepairFieldInvalid("repairTechInput", false));
 
 function applyStatusUpdate(deviceId, status) {
   const prev = lastPayload[deviceId];
@@ -1386,6 +1659,10 @@ function connect() {
       openIssues = openIssues.filter(i => i.id !== msg.data.id);
       renderIssues();
     } else if (msg.type === "repair_ticket") {
+      if (authRole !== "admin") trackTask(msg.data);
+      if (msg.data.repair_status === "Pending" && msg.data.assigned_to === authUser && msg.data.assigned_by && msg.data.assigned_by !== authUser) {
+        announceTask(msg.data);
+      }
       if (document.getElementById("repairView").style.display !== "none") {
         loadRepairTickets();
       }
@@ -1435,6 +1712,8 @@ function populateRepairDeviceFilter() {
   sel.value = current; // keep the previous selection if it's still a valid option
 }
 
+let myTasksOnly = false;
+
 async function loadRepairTickets() {
   const deviceId = document.getElementById("repairDeviceFilter").value;
   const status = document.getElementById("repairStatusFilter").value;
@@ -1454,10 +1733,11 @@ async function loadRepairTickets() {
     // Search is applied client-side across every text field a technician
     // might search by — PC name, the problem itself, what was done, the
     // part swapped, and who worked on it.
+    if (myTasksOnly) tickets = tickets.filter(t => t.assigned_to === authUser);
     if (search) {
       tickets = tickets.filter(t => [
         t.hostname, t.reported_problem, t.actions_taken,
-        t.part_type, t.model_before, t.model_after, t.technician,
+        t.part_type, t.model_before, t.model_after, t.technician, t.assigned_to, t.assigned_by,
       ].some(field => (field || "").toUpperCase().includes(search)));
     }
 
@@ -1481,7 +1761,10 @@ async function loadRepairTickets() {
     listEl.querySelectorAll(".ticket-mark-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation(); // don't also trigger the card's own click (which would navigate away)
-        updateTicketStatus(parseInt(btn.dataset.ticketId, 10), btn.dataset.nextStatus);
+        const id = parseInt(btn.dataset.ticketId, 10);
+        if (btn.dataset.act === "complete") openCompleteForm(id);
+        else if (btn.dataset.act === "reassign") openReassignForm(id);
+        else updateTicketStatus(id, "In Progress");
       });
     });
   } catch (e) {
@@ -1491,27 +1774,42 @@ async function loadRepairTickets() {
 }
 
 function renderTicketCard(t) {
-  const nextStatus = t.repair_status === "Pending" ? "In Progress"
-                    : t.repair_status === "In Progress" ? "Completed"
-                    : null;
+  const mine = t.assigned_to && t.assigned_to === authUser;
+  const canAct = mine || authRole === "admin";
   const partChange = (t.part_type || t.model_before || t.model_after) ? `
     <div class="ticket-part-change">🔧 <b>${escapeHtml(t.part_type || "Part")}</b>: ${escapeHtml(t.model_before || "—")} → ${escapeHtml(t.model_after || "—")}</div>
   ` : "";
+  let buttons = "";
+  const reassignBtn = canAct && t.repair_status !== "Completed"
+    ? `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="reassign">Reassign…</button>` : "";
+  if (canAct && t.repair_status === "Pending") {
+    buttons = `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="start">Start</button>
+               <button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="complete">Complete…</button>`;
+  } else if (canAct && t.repair_status === "In Progress") {
+    buttons = `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="complete">Complete…</button>`;
+  }
+  const who = t.assigned_by && t.assigned_by !== t.assigned_to
+    ? `Assigned to <b>${escapeHtml(t.assigned_to || t.technician)}</b> by ${escapeHtml(t.assigned_by)}`
+    : `Technician: ${escapeHtml(t.technician)}`;
+  const moved = t.reassigned_from ? ` <span style="color:var(--muted);">(reassigned from ${escapeHtml(t.reassigned_from)})</span>` : "";
+  const done = t.completed_at
+    ? `<div class="ticket-date">Completed ${new Date(t.completed_at*1000).toLocaleString()}${t.completed_by ? " by " + escapeHtml(t.completed_by) : ""}</div>` : "";
   return `
     <div class="ticket-card" data-device-id="${escapeHtml(t.device_id)}">
       <div class="ticket-header">
         <div>
           <div class="ticket-host">${escapeHtml(t.hostname)}</div>
-          <div class="ticket-date">${new Date(t.timestamp*1000).toLocaleString()}</div>
+          <div class="ticket-date">Assigned ${new Date(t.timestamp*1000).toLocaleString()}</div>
+          ${done}
         </div>
         <span class="ticket-status ${statusClass(t.repair_status)}">${escapeHtml(t.repair_status)}</span>
       </div>
-      <div class="ticket-field"><b>Reported Problem:</b> ${escapeHtml(t.reported_problem)}</div>
-      ${t.actions_taken ? `<div class="ticket-field"><b>Actions Taken:</b> ${escapeHtml(t.actions_taken)}</div>` : ""}
+      <div class="ticket-field"><b>Task:</b> ${escapeHtml(t.reported_problem)}</div>
+      ${t.actions_taken ? `<div class="ticket-field"><b>Work Done:</b> ${escapeHtml(t.actions_taken)}</div>` : ""}
       ${partChange}
       <div class="ticket-footer">
-        <span>Technician: ${escapeHtml(t.technician)}</span>
-        ${nextStatus ? `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-next-status="${nextStatus}">Mark ${nextStatus}</button>` : ""}
+        <span>${who}${moved}</span>
+        <span>${buttons}${reassignBtn}</span>
       </div>
     </div>
   `;
@@ -1540,12 +1838,13 @@ function generateTicketReport() {
     alert("No tickets to export for the current filter — adjust the filters above first.");
     return;
   }
-  const headers = ["Date", "PC", "Reported Problem", "Actions Taken", "Part Type", "Model Before", "Model After", "Status", "Technician"];
+  const headers = ["Assigned", "PC", "Task", "Work Done", "Part Type", "Model Before", "Model After", "Status", "Assigned To", "Assigned By", "Completed"];
   const rows = lastLoadedTickets.map(t => [
     new Date(t.timestamp * 1000).toLocaleString(),
     t.hostname, t.reported_problem, t.actions_taken || "",
     t.part_type || "", t.model_before || "", t.model_after || "",
-    t.repair_status, t.technician,
+    t.repair_status, t.assigned_to || t.technician, t.assigned_by || "",
+    t.completed_at ? new Date(t.completed_at * 1000).toLocaleString() : "",
   ]);
   const csvEscape = (v) => `"${String(v).replace(/"/g, '""')}"`;
   const csv = [headers, ...rows].map(row => row.map(csvEscape).join(",")).join("\n");
@@ -1562,23 +1861,37 @@ document.getElementById("repairDeviceFilter").addEventListener("change", loadRep
 document.getElementById("repairStatusFilter").addEventListener("change", loadRepairTickets);
 document.getElementById("repairSearchInput").addEventListener("input", loadRepairTickets);
 document.getElementById("generateReportBtn").addEventListener("click", generateTicketReport);
+document.getElementById("myTasksBtn").addEventListener("click", () => {
+  myTasksOnly = !myTasksOnly;
+  const b = document.getElementById("myTasksBtn");
+  b.setAttribute("aria-pressed", myTasksOnly);
+  b.classList.toggle("active", myTasksOnly);
+  loadRepairTickets();
+});
 
 // ----------------- New Repair Ticket form -----------------
-function openNewTicketForm(preselectDeviceId) {
+async function openNewTicketForm(preselectDeviceId) {
   const sel = document.getElementById("ticketDeviceSelect");
   const devices = Object.values(lastPayload).sort((a, b) => naturalCompare(a.hostname || "", b.hostname || ""));
   sel.innerHTML = devices.map(d => `<option value="${escapeHtml(d.device_id)}">${escapeHtml(d.hostname)}</option>`).join("");
   if (preselectDeviceId) sel.value = preselectDeviceId;
+  makeSearchable(sel).refresh();
 
+  const who = document.getElementById("ticketAssigneeSelect");
+  who.innerHTML = `<option value="">Loading…</option>`;
   document.getElementById("ticketProblemInput").value = "";
-  document.getElementById("ticketActionsInput").value = "";
-  document.getElementById("ticketPartTypeInput").value = "";
-  document.getElementById("ticketModelBeforeInput").value = "";
-  document.getElementById("ticketModelAfterInput").value = "";
-  document.getElementById("ticketStatusSelect").value = "Pending";
-  document.getElementById("ticketTechInput").value = "";
   hideNewTicketError();
   document.getElementById("newTicketOverlay").classList.add("open");
+  sel._combo.focus(); // start typing a PC name right away
+  try {
+    const resp = await apiFetch("/api/users");
+    const users = resp.ok ? await resp.json() : [];
+    who.innerHTML = users.length
+      ? users.map(u => `<option value="${escapeHtml(u.username)}">${escapeHtml(u.username)}</option>`).join("")
+      : `<option value="">No technician accounts yet — add one in Users</option>`;
+  } catch (e) {
+    who.innerHTML = `<option value="">Could not load technicians</option>`;
+  }
 }
 
 function closeNewTicketForm() {
@@ -1598,27 +1911,22 @@ function hideNewTicketError() {
 
 async function submitNewTicketForm() {
   const deviceId = document.getElementById("ticketDeviceSelect").value;
+  const assigned_to = document.getElementById("ticketAssigneeSelect").value;
   const reported_problem = document.getElementById("ticketProblemInput").value.trim();
-  const actions_taken = document.getElementById("ticketActionsInput").value.trim();
-  const part_type = document.getElementById("ticketPartTypeInput").value.trim();
-  const model_before = document.getElementById("ticketModelBeforeInput").value.trim();
-  const model_after = document.getElementById("ticketModelAfterInput").value.trim();
-  const repair_status = document.getElementById("ticketStatusSelect").value;
-  const technician = document.getElementById("ticketTechInput").value.trim();
 
   if (!deviceId) { showNewTicketError("Please select a PC."); return; }
-  if (!reported_problem) { showNewTicketError("Please describe the reported problem."); return; }
-  if (!technician) { showNewTicketError("Please enter your name."); return; }
+  if (!assigned_to) { showNewTicketError("Please choose a technician."); return; }
+  if (!reported_problem) { showNewTicketError("Please describe the task."); return; }
   hideNewTicketError();
 
   try {
     const resp = await apiFetch(`/api/repair-tickets/${encodeURIComponent(deviceId)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician }),
+      body: JSON.stringify({ reported_problem, assigned_to }),
     });
     if (resp.ok) {
-      showToast("🛠️ Ticket Created", reported_problem, "connected");
+      showToast("📋 Task Assigned", `${assigned_to}: ${reported_problem}`, "connected");
       closeNewTicketForm();
       loadRepairTickets();
     } else if (resp.status === 401) {
@@ -1634,7 +1942,6 @@ async function submitNewTicketForm() {
   }
 }
 
-document.getElementById("logRepairBtn").addEventListener("click", () => openRepairForm());
 document.getElementById("newTicketBtn").addEventListener("click", () => openNewTicketForm());
 document.getElementById("newTicketClose").addEventListener("click", closeNewTicketForm);
 document.getElementById("newTicketCancel").addEventListener("click", closeNewTicketForm);

@@ -33,6 +33,9 @@ MIN_PASSWORD_LENGTH = 6
 DEFAULT_ADMIN = ("admin", "admin123")   # created on first run if there are no accounts — change it after logging in
 SECRET_PATH = Path(__file__).parent / "secret.key"   # signs login tokens; created on first run
 DB_PATH = Path(__file__).parent / "reports.db"
+REPORT_RETENTION_DAYS = 7                      # reports older than this are archived to CSV, then deleted
+ARCHIVE_DIR = Path(__file__).parent / "archive"  # one CSV per day: reports-YYYY-MM-DD.csv
+PRUNE_EVERY_SECONDS = 3600
 
 STALE_THRESHOLD_SECONDS = 15      # ~3x the agent's default 5s report interval — flips to "unresponsive"
 CRASHED_THRESHOLD_SECONDS = 45    # ~9x the report interval — escalates to "crashed"
@@ -108,6 +111,23 @@ def init_db():
             timestamp REAL
         )
     """)
+    # Speeds up "latest report per PC" and per-PC history as the table grows.
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_reports_device ON reports(device_id, id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_reports_time ON reports(timestamp)")
+    # Assigned-task columns (added later, so migrate older databases in place).
+    existing = {r[1] for r in conn.execute("PRAGMA table_info(repair_tickets)").fetchall()}
+    for col, typ in (("assigned_to", "TEXT"), ("assigned_by", "TEXT"), ("completed_at", "REAL"), ("completed_by", "TEXT"), ("reassigned_from", "TEXT")):
+        if col not in existing:
+            conn.execute(f"ALTER TABLE repair_tickets ADD COLUMN {col} {typ}")
+    # Keyboard/Mouse used to be saved in baselines; they now have their own live check.
+    for did, comps in conn.execute("SELECT device_id, components FROM baselines").fetchall():
+        try:
+            data = json.loads(comps)
+        except Exception:
+            continue
+        kept = [c for c in data if c.get("type") not in ("Keyboard", "Mouse")]
+        if len(kept) != len(data):
+            conn.execute("UPDATE baselines SET components = ? WHERE device_id = ?", (json.dumps(kept), did))
     conn.commit()
     conn.close()
 
@@ -119,15 +139,19 @@ init_db()
 # and a status that can be updated over time) -----------------
 REPAIR_STATUSES = ("Pending", "In Progress", "Completed")
 
+TICKET_COLS = ("id, device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, "
+               "repair_status, technician, timestamp, assigned_to, assigned_by, completed_at, completed_by, reassigned_from")
+
 def save_repair_ticket(device_id: str, hostname: str, reported_problem: str, actions_taken: str,
                         part_type: str, model_before: str, model_after: str,
-                        repair_status: str, technician: str, timestamp: float) -> int:
+                        repair_status: str, technician: str, timestamp: float,
+                        assigned_to: str = None, assigned_by: str = None) -> int:
     conn = sqlite3.connect(DB_PATH)
     cur = conn.execute(
         """INSERT INTO repair_tickets
-           (device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician, timestamp)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician, timestamp),
+           (device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician, timestamp, assigned_to, assigned_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician, timestamp, assigned_to, assigned_by),
     )
     conn.commit()
     ticket_id = cur.lastrowid
@@ -139,11 +163,13 @@ def _ticket_row_to_dict(r) -> dict:
         "id": r[0], "device_id": r[1], "hostname": r[2], "reported_problem": r[3],
         "actions_taken": r[4], "part_type": r[5], "model_before": r[6], "model_after": r[7],
         "repair_status": r[8], "technician": r[9], "timestamp": r[10],
+        "assigned_to": r[11], "assigned_by": r[12], "completed_at": r[13], "completed_by": r[14],
+        "reassigned_from": r[15],
     }
 
 def get_repair_tickets(device_id: str = None, status: str = None) -> list:
     conn = sqlite3.connect(DB_PATH)
-    query = "SELECT id, device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician, timestamp FROM repair_tickets"
+    query = f"SELECT {TICKET_COLS} FROM repair_tickets"
     clauses, params = [], []
     if device_id:
         clauses.append("device_id = ?")
@@ -160,12 +186,28 @@ def get_repair_tickets(device_id: str = None, status: str = None) -> list:
 
 def get_repair_ticket(ticket_id: int):
     conn = sqlite3.connect(DB_PATH)
-    row = conn.execute(
-        "SELECT id, device_id, hostname, reported_problem, actions_taken, part_type, model_before, model_after, repair_status, technician, timestamp FROM repair_tickets WHERE id = ?",
-        (ticket_id,),
-    ).fetchone()
+    row = conn.execute(f"SELECT {TICKET_COLS} FROM repair_tickets WHERE id = ?", (ticket_id,)).fetchone()
     conn.close()
     return _ticket_row_to_dict(row) if row else None
+
+def finish_repair_ticket(ticket_id: int, status: str, by: str, actions_taken=None, part_type=None,
+                         model_before=None, model_after=None):
+    """Apply a technician's update. Completing stamps completed_at / completed_by;
+    moving back out of Completed clears them."""
+    conn = sqlite3.connect(DB_PATH)
+    sets, params = ["repair_status = ?"], [status]
+    for col, val in (("actions_taken", actions_taken), ("part_type", part_type),
+                     ("model_before", model_before), ("model_after", model_after)):
+        if val is not None:
+            sets.append(f"{col} = ?"); params.append(val)
+    if status == "Completed":
+        sets += ["completed_at = ?", "completed_by = ?"]; params += [time.time(), by]
+    else:
+        sets += ["completed_at = NULL", "completed_by = NULL"]
+    params.append(ticket_id)
+    conn.execute(f"UPDATE repair_tickets SET {', '.join(sets)} WHERE id = ?", params)
+    conn.commit()
+    conn.close()
 
 def update_repair_ticket_status(ticket_id: int, status: str):
     conn = sqlite3.connect(DB_PATH)
@@ -173,7 +215,7 @@ def update_repair_ticket_status(ticket_id: int, status: str):
     conn.commit()
     conn.close()
 
-def complete_open_tickets(device_id: str, note: str) -> list:
+def complete_open_tickets(device_id: str, note: str, by: str = None) -> list:
     """Mark every Pending / In Progress ticket for a device as Completed.
     If a note is given it is appended to the ticket's actions_taken."""
     conn = sqlite3.connect(DB_PATH)
@@ -184,7 +226,8 @@ def complete_open_tickets(device_id: str, note: str) -> list:
     ids = []
     for tid, actions in rows:
         new_actions = "\n".join(x for x in (actions, note) if x)
-        conn.execute("UPDATE repair_tickets SET repair_status = 'Completed', actions_taken = ? WHERE id = ?", (new_actions, tid))
+        conn.execute("UPDATE repair_tickets SET repair_status = 'Completed', actions_taken = ?, completed_at = ?, completed_by = ? WHERE id = ?",
+                     (new_actions, time.time(), by, tid))
         ids.append(tid)
     conn.commit()
     conn.close()
@@ -215,11 +258,69 @@ def save_report(payload: dict):
     conn.commit()
     conn.close()
 
+ARCHIVE_COLUMNS = ["time", "device_id", "hostname", "room", "system_unit", "os", "cpu_percent", "ram_percent", "disk_percent"]
+
+def prune_old_reports(retention_days: int = REPORT_RETENTION_DAYS) -> int:
+    """Write reports older than retention_days to daily CSV files, then delete them.
+    Each PC's newest report is always kept (the dashboard needs it). Runs in a
+    worker thread so it never blocks incoming reports. Returns rows archived."""
+    import csv
+    cutoff = time.time() - retention_days * 86400
+    ARCHIVE_DIR.mkdir(exist_ok=True)
+    total = 0
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    try:
+        while True:
+            rows = conn.execute(
+                """SELECT id, device_id, hostname, os, timestamp, payload FROM reports
+                   WHERE timestamp < ? AND id NOT IN (SELECT MAX(id) FROM reports GROUP BY device_id)
+                   ORDER BY id LIMIT 5000""", (cutoff,)).fetchall()
+            if not rows:
+                break
+            by_day = {}
+            for rid, dev, host, os_, ts, payload in rows:
+                try:
+                    p = json.loads(payload)
+                except Exception:
+                    p = {}
+                hw = p.get("hardware") or {}
+                day = time.strftime("%Y-%m-%d", time.localtime(ts or 0))
+                by_day.setdefault(day, []).append([
+                    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts or 0)), dev, host,
+                    p.get("room", ""), p.get("system_unit", ""), os_,
+                    hw.get("cpu_percent", ""), hw.get("ram_percent", ""), hw.get("disk_percent", ""),
+                ])
+            for day, out in by_day.items():
+                path = ARCHIVE_DIR / f"reports-{day}.csv"
+                new_file = not path.exists()
+                with open(path, "a", newline="", encoding="utf-8") as f:
+                    w = csv.writer(f)
+                    if new_file:
+                        w.writerow(ARCHIVE_COLUMNS)
+                    w.writerows(out)
+            # Only delete once the CSV rows are safely written.
+            conn.executemany("DELETE FROM reports WHERE id = ?", [(r[0],) for r in rows])
+            conn.commit()
+            total += len(rows)
+    finally:
+        conn.close()
+    return total
+
+async def prune_loop():
+    while True:
+        try:
+            n = await asyncio.to_thread(prune_old_reports)
+            if n:
+                print(f"[prune] archived and removed {n} reports older than {REPORT_RETENTION_DAYS} days -> {ARCHIVE_DIR}")
+        except Exception as e:
+            print(f"[prune] failed: {e}")
+        await asyncio.sleep(PRUNE_EVERY_SECONDS)
+
 def get_latest_per_device():
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute("""
-        SELECT payload FROM reports r
-        WHERE id = (SELECT MAX(id) FROM reports WHERE device_id = r.device_id)
+        SELECT payload FROM reports
+        WHERE id IN (SELECT MAX(id) FROM reports GROUP BY device_id)
     """).fetchall()
     conn.close()
     devices = [json.loads(r[0]) for r in rows]
@@ -238,11 +339,16 @@ def get_latest_per_device():
     return devices
 
 # ----------------- BASELINE (expected internal + peripheral components) -----------------
+# Keyboard and Mouse are watched by the dedicated live check (peripheral_flags /
+# the agent's KEYBOARD_ID and MOUSE_ID), so they are NOT part of the saved baseline.
+LIVE_CHECKED_TYPES = {"Keyboard", "Mouse"}
+
 def combined_components(payload: dict) -> list:
-    """Internal parts (RAM/CPU/GPU/drives) + peripherals (keyboard/mouse/USB/etc)
-    treated as one set for baseline comparison, so a missing keyboard or mouse
-    is caught the same way a missing RAM stick is."""
-    return (payload.get("internal") or []) + (payload.get("devices") or [])
+    """Internal parts (RAM/CPU/GPU/drives) + other peripherals (USB/etc) treated as
+    one set for baseline comparison. Keyboard and Mouse are left out — they have
+    their own live check."""
+    parts = (payload.get("internal") or []) + (payload.get("devices") or [])
+    return [c for c in parts if c.get("type") not in LIVE_CHECKED_TYPES]
 
 def component_key(comp: dict) -> str:
     """Identity key for a component. RAM is keyed by physical slot (so a pulled
@@ -273,7 +379,8 @@ def compute_missing(device_id: str, current_components: list) -> list:
     if not baseline:
         return []
     current_keys = {component_key(c) for c in current_components}
-    return [b for b in baseline if component_key(b) not in current_keys]
+    # Older saved baselines may still contain keyboard/mouse entries — ignore them.
+    return [b for b in baseline if b.get("type") not in LIVE_CHECKED_TYPES and component_key(b) not in current_keys]
 
 def compute_peripheral_flags(current_devices: list) -> dict:
     """Quick live presence check for the peripherals people care about most —
@@ -424,6 +531,7 @@ async def watch_for_crashes():
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(watch_for_crashes())
+    asyncio.create_task(prune_loop())
 
 
 # ----------------- AUTH (dashboard login -> signed token) -----------------
@@ -620,7 +728,7 @@ async def receive_report(request: Request):
     payload["status"] = "online"
 
     # Auto-capture a baseline the very first time we ever see this device
-    # (covers internal parts AND peripherals like keyboard/mouse)
+    # (internal parts and other peripherals; keyboard/mouse have their own live check)
     combined = combined_components(payload)
     if get_baseline(device_id) is None and combined:
         save_baseline(device_id, combined)
@@ -680,15 +788,12 @@ async def log_repair(device_id: str, request: Request):
     viewer) can add an entry. Reuses the same device_events table/history as
     connect/disconnect events, tagged with its own event_type so the
     dashboard can style it distinctly."""
-    current_user(request)
+    name = require_admin(request)   # technicians record work by completing an assigned task instead
 
     body = await request.json()
     note = body.get("note", "").strip()
-    name = body.get("name", "").strip()
     if not note:
         raise HTTPException(status_code=400, detail="note is required")
-    if not name:
-        raise HTTPException(status_code=400, detail="name is required")
 
     devices = get_latest_per_device()
     match = next((d for d in devices if d["device_id"] == device_id), None)
@@ -715,15 +820,12 @@ async def set_maintenance_route(device_id: str, request: Request):
     """Technician-only: mark a PC as under maintenance (or clear that flag).
     Persisted server-side so every dashboard viewer sees the same state,
     rather than each browser tracking it independently."""
-    current_user(request)
+    name = current_user(request)   # the logged-in account — never a name typed by the client
 
     body = await request.json()
     flag = bool(body.get("under_maintenance"))
-    name = body.get("name", "").strip()
     reason = body.get("reason", "").strip()
     note = body.get("note", "").strip()
-    if not name:
-        raise HTTPException(status_code=400, detail="name is required")
     # Turning maintenance ON must say why — that reason becomes a ticket.
     if flag and not reason:
         raise HTTPException(status_code=400, detail="reason is required when marking a PC under maintenance")
@@ -738,13 +840,13 @@ async def set_maintenance_route(device_id: str, request: Request):
     ticket = None
     completed_ids = []
     if flag:
-        ticket_id = save_repair_ticket(device_id, hostname, reason, "", "", "", "", "Pending", name, timestamp)
+        ticket_id = save_repair_ticket(device_id, hostname, reason, "", "", "", "", "Pending", name, timestamp, assigned_to=name, assigned_by=name)
         ticket = get_repair_ticket(ticket_id)
         await manager.broadcast({"type": "repair_ticket", "data": ticket})
     else:
         # Back in service: close this PC's open tickets (optional note appended).
         if body.get("complete_tickets", True):
-            completed_ids = complete_open_tickets(device_id, note)
+            completed_ids = complete_open_tickets(device_id, note, name)
             for tid in completed_ids:
                 await manager.broadcast({"type": "repair_ticket", "data": get_repair_ticket(tid)})
 
@@ -756,26 +858,21 @@ async def set_maintenance_route(device_id: str, request: Request):
 
 @app.post("/api/repair-tickets/{device_id}")
 async def create_repair_ticket(device_id: str, request: Request):
-    """Technician-only: open a structured repair ticket for a device —
-    reported problem, actions taken, part replaced (with before/after model),
-    and a status. Separate from the lightweight /api/repair-log note."""
-    current_user(request)
+    """Admin-only: assign a repair task for a PC to a technician. The technician
+    later starts it and completes it with what they did."""
+    admin = require_admin(request)
 
     body = await request.json()
     reported_problem = body.get("reported_problem", "").strip()
-    actions_taken = body.get("actions_taken", "").strip()
-    part_type = body.get("part_type", "").strip()
-    model_before = body.get("model_before", "").strip()
-    model_after = body.get("model_after", "").strip()
-    repair_status = body.get("repair_status", "Pending").strip()
-    technician = body.get("technician", "").strip()
+    assigned_to = body.get("assigned_to", "").strip()
 
     if not reported_problem:
         raise HTTPException(status_code=400, detail="reported_problem is required")
-    if not technician:
-        raise HTTPException(status_code=400, detail="technician is required")
-    if repair_status not in REPAIR_STATUSES:
-        raise HTTPException(status_code=400, detail=f"repair_status must be one of {REPAIR_STATUSES}")
+    if not assigned_to:
+        raise HTTPException(status_code=400, detail="assigned_to is required")
+    techs = {u["username"] for u in list_users()}   # non-admin accounts only
+    if assigned_to not in techs:
+        raise HTTPException(status_code=400, detail="assigned_to must be an existing technician account")
 
     devices = get_latest_per_device()
     match = next((d for d in devices if d["device_id"] == device_id), None)
@@ -783,8 +880,8 @@ async def create_repair_ticket(device_id: str, request: Request):
     timestamp = time.time()
 
     ticket_id = save_repair_ticket(
-        device_id, hostname, reported_problem, actions_taken,
-        part_type, model_before, model_after, repair_status, technician, timestamp,
+        device_id, hostname, reported_problem, "", "", "", "",
+        "Pending", assigned_to, timestamp, assigned_to=assigned_to, assigned_by=admin,
     )
     ticket = get_repair_ticket(ticket_id)
     await manager.broadcast({"type": "repair_ticket", "data": ticket})
@@ -803,7 +900,10 @@ async def list_repair_tickets_for_device(device_id: str, status: str = None, use
 
 @app.post("/api/repair-tickets/{ticket_id}/status")
 async def update_repair_ticket_status_route(ticket_id: int, request: Request):
-    current_user(request)
+    """Only the technician the task is assigned to (or the admin) may update it.
+    Completing requires a note of what was done; optional part details and an
+    option to save the PC's current components as its new baseline."""
+    user = current_user(request)
 
     body = await request.json()
     status = body.get("repair_status", "").strip()
@@ -813,9 +913,68 @@ async def update_repair_ticket_status_route(ticket_id: int, request: Request):
     ticket = get_repair_ticket(ticket_id)
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
+    if get_role(user) != "admin" and ticket["assigned_to"] != user:
+        raise HTTPException(status_code=403, detail="This task is assigned to someone else")
 
-    update_repair_ticket_status(ticket_id, status)
-    ticket["repair_status"] = status
+    def opt(k):
+        v = body.get(k)
+        return v.strip() if isinstance(v, str) else None
+    actions = opt("actions_taken")
+    if status == "Completed" and not (actions or ticket["actions_taken"]):
+        raise HTTPException(status_code=400, detail="actions_taken is required to complete a task")
+
+    finish_repair_ticket(ticket_id, status, user, actions, opt("part_type"), opt("model_before"), opt("model_after"))
+
+    if status == "Completed":
+        # Same PC history entry the old "Log a Repair" made, so history still shows it.
+        done = actions or ticket["actions_taken"]
+        ts = time.time()
+        log_device_event(ticket["device_id"], ticket["hostname"], "repaired", {"type": user, "name": done}, ts)
+        await manager.broadcast({"type": "device_event", "data": {
+            "device_id": ticket["device_id"], "hostname": ticket["hostname"], "event_type": "repaired",
+            "component_type": user, "component_name": done, "timestamp": ts}})
+        if body.get("update_baseline"):
+            match = next((d for d in get_latest_per_device() if d["device_id"] == ticket["device_id"]), None)
+            if match:
+                save_baseline(ticket["device_id"], combined_components(match))
+
+    ticket = get_repair_ticket(ticket_id)
+    await manager.broadcast({"type": "repair_ticket", "data": ticket})
+    return {"status": "ok"}
+
+@app.get("/api/technicians")
+async def list_technicians(user: str = Depends(current_user)):
+    """Names only (no roles/dates) so any technician can hand a task to another."""
+    return [u["username"] for u in list_users()]
+
+@app.post("/api/repair-tickets/{ticket_id}/reassign")
+async def reassign_repair_ticket(ticket_id: int, request: Request):
+    """The admin, or the technician the task is currently assigned to, can hand an
+    unfinished task to another technician (e.g. when the assignee can't work).
+    It goes back to Pending for the new person."""
+    user = current_user(request)
+    body = await request.json()
+    new_tech = body.get("assigned_to", "").strip()
+
+    ticket = get_repair_ticket(ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    if get_role(user) != "admin" and ticket["assigned_to"] != user:
+        raise HTTPException(status_code=403, detail="This task is assigned to someone else")
+    if ticket["repair_status"] == "Completed":
+        raise HTTPException(status_code=400, detail="A completed task can't be reassigned")
+    if new_tech not in {u["username"] for u in list_users()}:
+        raise HTTPException(status_code=400, detail="assigned_to must be an existing technician account")
+    if new_tech == ticket["assigned_to"]:
+        raise HTTPException(status_code=400, detail="Task is already assigned to that technician")
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("""UPDATE repair_tickets SET assigned_to = ?, technician = ?, assigned_by = ?, reassigned_from = ?,
+                    repair_status = 'Pending', timestamp = ? WHERE id = ?""",
+                 (new_tech, new_tech, user, ticket["assigned_to"], time.time(), ticket_id))
+    conn.commit()
+    conn.close()
+    ticket = get_repair_ticket(ticket_id)
     await manager.broadcast({"type": "repair_ticket", "data": ticket})
     return {"status": "ok"}
 
@@ -858,7 +1017,7 @@ async def list_issues(include_resolved: bool = False, user: str = Depends(curren
 
 @app.post("/api/issues/{issue_id}/resolve")
 async def resolve_issue_route(issue_id: int, request: Request):
-    current_user(request)
+    require_admin(request)   # reported problems are handled by the admin, who turns them into tasks
     resolve_issue(issue_id)
     await manager.broadcast({"type": "issue_resolved", "data": {"id": issue_id}})
     return {"status": "ok"}
