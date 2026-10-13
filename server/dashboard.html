@@ -1003,8 +1003,8 @@ function renderCard(payload) {
     <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
 
     <div class="peripheral-row">
-      <span class="peripheral-chip ${pf.has_keyboard ? "present" : "absent"}">${pf.has_keyboard ? "✓" : "✕"} Keyboard</span>
-      <span class="peripheral-chip ${pf.has_mouse ? "present" : "absent"}">${pf.has_mouse ? "✓" : "✕"} Mouse</span>
+      <span class="peripheral-chip ${pf.has_keyboard && status === "online" ? "present" : "absent"}">${pf.has_keyboard && status === "online" ? "✓" : "✕"} Keyboard</span>
+      <span class="peripheral-chip ${pf.has_mouse && status === "online" ? "present" : "absent"}">${pf.has_mouse && status === "online" ? "✓" : "✕"} Mouse</span>
     </div>
 
     ${missing.length ? `<div class="missing-pill">⚠️ ${missing.length} component${missing.length > 1 ? "s" : ""} missing</div>` : ""}
@@ -1117,8 +1117,8 @@ function renderModalContent(payload) {
     ${hw.battery_percent != null ? `<div class="stat"><span>Battery</span><span>${hw.battery_percent}%</span></div>` : ""}
 
     <div class="peripheral-row">
-      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_keyboard ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_keyboard ? "✓" : "✕"} Keyboard</span>
-      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_mouse ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_mouse ? "✓" : "✕"} Mouse</span>
+      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_keyboard && status === "online" ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_keyboard && status === "online" ? "✓" : "✕"} Keyboard</span>
+      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_mouse && status === "online" ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_mouse && status === "online" ? "✓" : "✕"} Mouse</span>
     </div>
 
     ${missingHtml}
@@ -1362,7 +1362,7 @@ function makeSearchable(selectEl) {
   return selectEl._combo;
 }
 
-// ----------------- Reassign Task (admin, or the current assignee) -----------------
+// ----------------- Reassign Task (admin only) -----------------
 let reassigningTicket = null;
 
 async function openReassignForm(ticketId) {
@@ -1794,7 +1794,7 @@ function renderTicketCard(t) {
     <div class="ticket-part-change">🔧 <b>${escapeHtml(t.part_type || "Part")}</b>: ${escapeHtml(t.model_before || "—")} → ${escapeHtml(t.model_after || "—")}</div>
   ` : "";
   let buttons = "";
-  const reassignBtn = (canAct && t.repair_status !== "Completed"
+  const reassignBtn = (authRole === "admin" && t.repair_status !== "Completed"
     ? `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="reassign">Reassign…</button>` : "")
     + (authRole === "admin" && t.repair_status !== "Completed"
     ? `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="edit">Edit…</button>` : "")

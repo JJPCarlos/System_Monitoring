@@ -1,2 +1,3 @@
 config.toml
 agent.log
+learned_devices.json

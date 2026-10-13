@@ -997,24 +997,22 @@ async def delete_repair_ticket(ticket_id: int, request: Request):
     return {"status": "ok"}
 
 @app.get("/api/technicians")
-async def list_technicians(user: str = Depends(current_user)):
-    """Names only (no roles/dates) so any technician can hand a task to another."""
+async def list_technicians(request: Request):
+    """Technician names for the admin's Reassign picker."""
+    require_admin(request)
     return [u["username"] for u in list_users()]
 
 @app.post("/api/repair-tickets/{ticket_id}/reassign")
 async def reassign_repair_ticket(ticket_id: int, request: Request):
-    """The admin, or the technician the task is currently assigned to, can hand an
-    unfinished task to another technician (e.g. when the assignee can't work).
-    It goes back to Pending for the new person."""
-    user = current_user(request)
+    """Admin-only: hand an unfinished task to another technician (e.g. when the
+    assignee can't work). It goes back to Pending for the new person."""
+    user = require_admin(request)
     body = await request.json()
     new_tech = body.get("assigned_to", "").strip()
 
     ticket = get_repair_ticket(ticket_id)
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
-    if get_role(user) != "admin" and ticket["assigned_to"] != user:
-        raise HTTPException(status_code=403, detail="This task is assigned to someone else")
     if ticket["repair_status"] == "Completed":
         raise HTTPException(status_code=400, detail="A completed task can't be reassigned")
     if new_tech not in {u["username"] for u in list_users()}:
