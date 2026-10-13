@@ -668,7 +668,10 @@ def forget_from_tray(icon=None, item=None):
 def main():
     global tray_icon
     hide_console()
-    win32api.SetConsoleCtrlHandler(console_ctrl_handler, True)
+    try:
+        win32api.SetConsoleCtrlHandler(console_ctrl_handler, True)
+    except Exception as e:
+        print(f"[WARN] Could not register the shutdown handler: {e}")
 
     print(f"Starting agent for device: {DEVICE_ID}")
 
@@ -683,7 +686,14 @@ def main():
         pystray.MenuItem("Quit", quit_app),
     )
     tray_icon = pystray.Icon("device_tracker", make_tray_image(), "Device Tracker Agent", menu)
-    tray_icon.run()
+    try:
+        tray_icon.run()
+    except Exception as e:
+        # No desktop to show a tray icon on (e.g. started at boot, before anyone logs in).
+        # Keep reporting without it instead of exiting.
+        print(f"[WARN] Tray icon unavailable ({e}) — continuing without it")
+        while True:
+            time.sleep(3600)
 
 
 if __name__ == "__main__":

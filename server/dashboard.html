@@ -851,12 +851,12 @@ function naturalCompare(a, b) {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
 }
 
-// One grid: online PCs first, then everything else (offline / unresponsive /
-// crashed). Within each of those two groups, PCs are in natural name order
-// ("PC 2" before "PC 10").
+// One grid, ordered Online, Unresponsive, Crashed, then Offline. Within each
+// status, PCs are in natural name order ("PC 2" before "PC 10").
+const STATUS_ORDER = ["online", "unresponsive", "crashed", "offline"];
 function relayoutGrid() {
   const cardEls = Array.from(deviceGrid.children);
-  const rank = (el) => (el.dataset.status === "online" ? 0 : 1);
+  const rank = (el) => { const r = STATUS_ORDER.indexOf(el.dataset.status); return r === -1 ? STATUS_ORDER.length : r; };
   cardEls.sort((a, b) =>
     rank(a) - rank(b) || naturalCompare(a.dataset.hostname || "", b.dataset.hostname || ""));
   cardEls.forEach(el => deviceGrid.appendChild(el)); // re-appending in sorted order moves them into place
@@ -1003,8 +1003,8 @@ function renderCard(payload) {
     <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
 
     <div class="peripheral-row">
-      <span class="peripheral-chip ${pf.has_keyboard && status === "online" ? "present" : "absent"}">${pf.has_keyboard && status === "online" ? "✓" : "✕"} Keyboard</span>
-      <span class="peripheral-chip ${pf.has_mouse && status === "online" ? "present" : "absent"}">${pf.has_mouse && status === "online" ? "✓" : "✕"} Mouse</span>
+      <span class="peripheral-chip ${pf.has_keyboard && status !== "offline" ? "present" : "absent"}">${pf.has_keyboard && status !== "offline" ? "✓" : "✕"} Keyboard</span>
+      <span class="peripheral-chip ${pf.has_mouse && status !== "offline" ? "present" : "absent"}">${pf.has_mouse && status !== "offline" ? "✓" : "✕"} Mouse</span>
     </div>
 
     ${missing.length ? `<div class="missing-pill">⚠️ ${missing.length} component${missing.length > 1 ? "s" : ""} missing</div>` : ""}
@@ -1117,8 +1117,8 @@ function renderModalContent(payload) {
     ${hw.battery_percent != null ? `<div class="stat"><span>Battery</span><span>${hw.battery_percent}%</span></div>` : ""}
 
     <div class="peripheral-row">
-      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_keyboard && status === "online" ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_keyboard && status === "online" ? "✓" : "✕"} Keyboard</span>
-      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_mouse && status === "online" ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_mouse && status === "online" ? "✓" : "✕"} Mouse</span>
+      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_keyboard && status !== "offline" ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_keyboard && status !== "offline" ? "✓" : "✕"} Keyboard</span>
+      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_mouse && status !== "offline" ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_mouse && status !== "offline" ? "✓" : "✕"} Mouse</span>
     </div>
 
     ${missingHtml}
