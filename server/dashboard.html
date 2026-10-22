@@ -9,12 +9,14 @@
     --bg: #0f1115; --surface: #1a1d24; --surface-2: #22252c; --border: #2a2e37; --border-2: #3a3f4a;
     --text: #e6e6e6; --text-2: #cfd3da; --muted: #b4bac5; --faint: #8f97a6; --offline: #8a8f98;
     --highlight: var(--accent); --accent: #4f8cff; --danger: #ff5c5c; --good: #3ddc84; --warn: #ffd23d; --orange: #ffa53d; --danger-soft: #ffb3b3;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;   /* chart series (validated on this surface) */
   }
   :root[data-theme="light"] {
     color-scheme: light;
     --bg: #f4f6fa; --surface: #ffffff; --surface-2: #eef1f6; --border: #d5dae3; --border-2: #bfc7d4;
     --text: #1b1f27; --text-2: #363e4d; --muted: #424c5e; --faint: #566072; --offline: #697386;
     --highlight: #111418; --accent: #2563d9; --danger: #d32f2f; --good: #178a4a; --warn: #a37400; --orange: #bd5f00; --danger-soft: #b42323;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
   }
   body { font-family: system-ui, sans-serif; font-weight: 500; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
   h1 { font-weight: 600; }
@@ -63,8 +65,9 @@
   .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-2); border-radius: 20px; padding: 6px 14px; font-size: 15px; cursor: pointer; }
   .filter-btn:hover { border-color: var(--highlight); }
   .filter-btn.active { background: var(--highlight); border-color: var(--highlight); color: white; }
-  .main-nav { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; padding-bottom: 0; }
-  .nav-tab { background: none; border: none; color: var(--muted); font-size: 16px; font-weight: 500; padding: 12px 18px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .main-nav { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; padding-bottom: 0; overflow-x: auto; scrollbar-width: thin; }
+  .nav-tab { white-space: nowrap; flex-shrink: 0; background: none; border: none; color: var(--muted); font-size: 16px; font-weight: 500; padding: 12px 18px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  @media (max-width: 760px) { .main-nav { margin-top: 44px; } }   /* clear the fixed Notifications / Settings buttons */
   .nav-tab:hover { color: var(--text); }
   .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
@@ -90,6 +93,126 @@
   .user-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
   .user-actions .resolve-btn { margin-top: 0; }
   .danger-btn:hover { background: var(--danger) !important; border-color: var(--danger) !important; color: var(--bg) !important; }
+
+  /* ---- Inventory ---- */
+  #itemOverlay, #stockOverlay { z-index: 300; }
+  .inv-badge { display: inline-block; min-width: 18px; text-align: center; background: var(--danger); color: white; font-size: 12px; font-weight: 700; border-radius: 10px; padding: 1px 6px; margin-left: 6px; }
+  .inv-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; }
+  .inv-main { flex: 1 1 260px; min-width: 0; }
+  .inv-name { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+  .inv-cat { font-size: 13px; border-radius: 10px; padding: 2px 9px; border: 1px solid var(--border-2); color: var(--muted); margin-left: 8px; white-space: nowrap; }
+  .inv-notes { font-size: 14px; color: var(--faint); margin-top: 3px; overflow-wrap: anywhere; }
+  .inv-qty { font-size: 18px; font-weight: 700; color: var(--text); min-width: 90px; text-align: right; }
+  .inv-qty.out { color: var(--danger); font-size: 15px; }
+  .inv-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .inv-actions .ticket-mark-btn + .ticket-mark-btn { margin-left: 0; }
+  .prop-pick { max-height: 260px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); margin-bottom: 10px; }
+  .prop-pick-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 15px; }
+  .prop-pick-row:last-child { border-bottom: none; }
+  .prop-pick-row label { flex: 1; display: flex; align-items: center; gap: 10px; cursor: pointer; min-width: 0; overflow-wrap: anywhere; }
+  .prop-pick-row.disabled { opacity: 0.5; }
+  .prop-pick-row input[type=checkbox] { width: 18px; height: 18px; flex-shrink: 0; }
+  .prop-pick-row input[type=number] { width: 72px; padding: 6px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-size: 15px; }
+  .prop-pick-row input[type=number]:disabled { opacity: 0.4; }
+  .prop-pick-stock { font-size: 13px; color: var(--faint); white-space: nowrap; }
+  .log-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  .log-table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 640px; }
+  .log-table th { text-align: left; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); }
+  .log-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
+  .log-table tr:last-child td { border-bottom: none; }
+  .log-table td.num, .log-table th.num { text-align: right; white-space: nowrap; }
+  .log-table td.when { color: var(--faint); white-space: nowrap; font-size: 14px; }
+  .log-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: baseline; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 15px; }
+  .log-change.plus { color: var(--good); font-weight: 700; }
+  .log-change.minus { color: var(--danger); font-weight: 700; }
+  #useOverlay, #roomsOverlay { z-index: 300; }
+  .search-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .search-row .search-input { margin-top: 0; flex: 1 1 240px; }
+  .search-row #manageRoomsBtn { margin: 0 0 0 auto; }
+  .room-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .room-row:last-child { border-bottom: none; }
+  .room-row .grow { flex: 1; min-width: 0; }
+  .room-row b { font-size: 15px; overflow-wrap: anywhere; }
+  .room-row small { display: block; color: var(--faint); font-size: 13px; margin-top: 2px; overflow-wrap: anywhere; }
+  .reason-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .reason-chips .filter-btn { font-size: 14px; padding: 4px 12px; }
+  .spec-chip { font-size: 12px; font-weight: 700; border-radius: 10px; padding: 2px 8px; margin-left: 6px; white-space: nowrap; background: var(--surface-2); border: 1px solid var(--border-2); color: var(--text-2); }
+  .stock-reveal { animation: stockReveal 0.18s ease-out; }
+  @keyframes stockReveal { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+  /* ---- Dashboard (landing page) ---- */
+  .dash-sub { font-size: 15px; color: var(--muted); margin: -8px 0 18px 0; }
+  .dash-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .dash-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; text-align: left; color: var(--text); font: inherit; }
+  .dash-tile:hover, .dash-tile:focus-visible { border-color: var(--accent); outline: none; }
+  .dash-tile .lbl { font-size: 14px; color: var(--muted); }
+  .dash-tile .val { font-size: 28px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .dash-tile .val small { font-size: 15px; font-weight: 500; color: var(--faint); }
+  .dash-tile .val.bad { color: var(--danger); } .dash-tile .val.warn { color: var(--warn); }
+  .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-width: 0; margin-bottom: 16px; }
+  .dash-grid .dash-card { margin-bottom: 0; }
+  .dash-card h2 { font-size: 17px; margin: 0; display: flex; align-items: center; gap: 8px; }
+  .dash-card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .dash-card-head .grow { flex: 1; }
+  .dash-list { max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .dash-item { display: block; width: 100%; text-align: left; font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; cursor: pointer; }
+  .dash-item:hover, .dash-item:focus-visible { border-color: var(--accent); outline: none; }
+  .dash-item .t { font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+  .dash-item .d { font-size: 14px; color: var(--text-2); margin-top: 2px; overflow-wrap: anywhere; }
+  .dash-item .w { font-size: 13px; color: var(--faint); margin-top: 3px; }
+  .dash-item.bad { border-left: 3px solid var(--danger); } .dash-item.warn { border-left: 3px solid var(--warn); } .dash-item.info { border-left: 3px solid var(--accent); }
+  .dash-link { background: none; border: none; color: var(--accent); font: inherit; font-size: 14px; cursor: pointer; padding: 2px 4px; }
+  .month-nav { display: flex; align-items: center; gap: 6px; }
+  .month-nav b { min-width: 130px; text-align: center; font-size: 15px; }
+  .month-nav button { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; width: 32px; height: 30px; cursor: pointer; font-size: 15px; }
+  .month-nav button:disabled { opacity: 0.35; cursor: default; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--text-2); margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; }
+  .legend i.box { height: 10px; width: 10px; border-radius: 3px; }
+  .chart-wrap { position: relative; }
+  .chart-wrap svg { display: block; width: 100%; overflow: visible; }
+  .chart-wrap .axis { fill: var(--faint); font-size: 12px; font-family: system-ui, sans-serif; }
+  .chart-wrap .grid { stroke: var(--border); stroke-width: 1; }
+  .chart-wrap .base { stroke: var(--border-2); stroke-width: 1; }
+  .chart-tip { position: absolute; pointer-events: none; z-index: 10; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--text); box-shadow: 0 6px 18px rgba(0,0,0,0.3); white-space: nowrap; display: none; }
+  .chart-tip .row { display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+  .chart-tip .row i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+  .chart-tip b { font-variant-numeric: tabular-nums; margin-left: 12px; }
+  .chart-note { font-size: 13px; color: var(--faint); margin-top: 8px; }
+  .dash-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .dash-table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .dash-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  .dash-table .num { text-align: right; white-space: nowrap; }
+  .dash-chip { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+  .dash-chip.pending { background: rgba(255,210,61,0.15); color: var(--warn); }
+  .dash-chip.in-progress { background: rgba(79,140,255,0.15); color: var(--accent); }
+  .inv-row.picked { border-color: var(--accent); }
+  .inv-pick { display: flex; align-items: center; gap: 8px; }
+  .inv-pick input[type=checkbox] { width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; }
+  .inv-pick input[type=checkbox]:disabled { cursor: not-allowed; }
+  .inv-pick input[type=number] { width: 70px; padding: 6px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-size: 15px; }
+  .inv-pick input[type=number]:disabled { opacity: 0.35; }
+  .inv-price { font-size: 14px; color: var(--muted); margin-top: 3px; }
+  .inv-qty.low { color: var(--warn); }
+  .inv-low-chip { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 10px; padding: 2px 8px; margin-left: 8px; background: rgba(255,210,61,0.15); color: var(--warn); white-space: nowrap; }
+  .inv-low-chip.out { background: rgba(255,92,92,0.15); color: var(--danger); }
+  .filter-btn.warn { border-color: var(--warn); color: var(--warn); }
+  .filter-btn.warn.active { background: var(--warn); color: #222; }
+  .use-bar { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto; padding: 4px 6px 4px 12px; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); font-size: 15px; }
+  .use-bar .resolve-btn { margin-top: 0; }
+  .use-lines { width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 10px; }
+  .use-lines td { padding: 6px 4px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .use-lines td.num { text-align: right; white-space: nowrap; }
+  .use-lines tr.total td { border-bottom: none; font-weight: 700; }
+  .log-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .log-tools .search-input { flex: 1 1 240px; margin-top: 0; }
+  .pc-totals { margin: 0 0 12px 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); padding: 8px 14px; font-size: 15px; }
+  .pc-totals summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+  .pc-totals table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  .pc-totals td { padding: 5px 4px; border-top: 1px solid var(--border); }
+  .pc-totals td.num { text-align: right; white-space: nowrap; }
 
   .ticket-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s; }
   .ticket-card:hover { border-color: var(--highlight); }
@@ -221,8 +344,10 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <div class="main-nav" id="mainNav">
-    <button class="nav-tab active" data-view="monitoring">🖥️ Monitoring System</button>
+    <button class="nav-tab active" data-view="dashboard" id="dashboardTab">📊 Dashboard</button>
+    <button class="nav-tab" data-view="monitoring">🖥️ Monitoring System</button>
     <button class="nav-tab" data-view="repair">🛠️ Repair Tracking</button>
+    <button class="nav-tab" data-view="inventory" id="inventoryTab">📦 Inventory</button>
     <button class="nav-tab" data-view="users" id="usersTab" style="display:none;">👥 Users</button>
   </div>
 
@@ -246,10 +371,65 @@
 
   <div class="default-pw-banner" id="defaultPwBanner">⚠️ This account still uses the default password (admin123). Click here to change it.</div>
 
-  <div id="monitoringView" class="nav-view">
+  <div id="dashboardView" class="nav-view">
+    <h1>📊 Dashboard</h1>
+    <div class="dash-sub" id="dashSub"></div>
+
+    <div class="dash-tiles">
+      <button class="dash-tile" data-go="monitoring"><div class="lbl">🖥️ PCs online</div><div class="val" id="tileOnline">–</div></button>
+      <button class="dash-tile" data-go="notifs"><div class="lbl">🔔 Needs attention</div><div class="val" id="tileAttention">–</div></button>
+      <button class="dash-tile" data-go="tasks"><div class="lbl" id="tileTasksLbl">📋 Open tasks</div><div class="val" id="tileTasks">–</div></button>
+      <button class="dash-tile" data-go="low"><div class="lbl">⚠️ Low-stock items</div><div class="val" id="tileLow">–</div></button>
+      <button class="dash-tile" data-go="purchases"><div class="lbl">💸 Spent on stock (all time)</div><div class="val" id="tileSpent">–</div></button>
+    </div>
+
+    <div class="dash-grid">
+      <section class="dash-card" id="dashNotifCard">
+        <div class="dash-card-head"><h2>🔔 Notifications <span class="section-count" id="dashNotifCount"></span></h2></div>
+        <div class="dash-list" id="dashNotifList"><div class="no-issues">Loading…</div></div>
+      </section>
+      <section class="dash-card" id="dashTaskCard">
+        <div class="dash-card-head"><h2 id="dashTaskTitle">📋 Assigned tasks <span class="section-count" id="dashTaskCount"></span></h2><span class="grow"></span>
+          <button class="dash-link" id="dashTasksAll">Repair Tracking →</button></div>
+        <div class="dash-list" id="dashTaskList"><div class="no-issues">Loading…</div></div>
+      </section>
+    </div>
+
+    <section class="dash-card">
+      <div class="dash-card-head">
+        <h2>📈 Daily report</h2><span class="grow"></span>
+        <div class="month-nav">
+          <button id="dashPrev" aria-label="Previous month">◀</button>
+          <b id="dashMonth"></b>
+          <button id="dashNext" aria-label="Next month">▶</button>
+        </div>
+        <button class="history-btn" id="dashTableBtn" aria-pressed="false" style="margin-top:0;">▦ Table</button>
+      </div>
+      <div class="legend" id="dashLegend"></div>
+      <div class="chart-wrap" id="dashChart"></div>
+      <div class="chart-note" id="dashIncidentNote"></div>
+      <div id="dashTable" style="display:none;overflow-x:auto;"></div>
+    </section>
+
+    <section class="dash-card">
+      <div class="dash-card-head"><h2>💸 Spent on stock</h2><span class="grow"></span><span id="dashSpentText" style="font-size:14px;color:var(--muted);"></span></div>
+      <div class="chart-wrap" id="dashSpendChart"></div>
+      <div class="chart-note">Counts money only when stock is added (new items and restocks), at the price paid for that batch.</div>
+    </section>
+
+    <section class="dash-card" id="dashPurchCard">
+      <div class="dash-card-head"><h2>🧾 Recent purchases</h2><span class="grow"></span><button class="dash-link" id="dashPurchAll">All additions →</button></div>
+      <div id="dashPurchases" style="overflow-x:auto;"><div class="no-issues">Loading…</div></div>
+    </section>
+  </div>
+
+  <div id="monitoringView" class="nav-view" style="display:none;">
     <h1>🖥️ Device Tracker — Live Dashboard</h1>
 
-    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search PCs by name…">
+    <div class="search-row">
+      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search PCs by name…">
+      <button class="history-btn" id="manageRoomsBtn" style="display:none;" title="Add, rename or remove rooms">🏫 Manage rooms</button>
+    </div>
 
     <div class="filter-bar" id="filterBar"></div>
     <div class="filter-bar" id="statusFilterBar" style="margin-top:8px;"></div>
@@ -290,6 +470,50 @@
     <div id="repairTicketsList" class="repair-tickets-list"><div class="no-issues">Loading…</div></div>
   </div>
 
+  <div id="inventoryView" class="nav-view" style="display:none;">
+    <h1>📦 Inventory</h1>
+    <div class="filter-bar" style="margin-top:0;">
+      <button class="filter-btn active" data-invpane="stock">Stock</button>
+      <button class="filter-btn" data-invpane="deductions">➖ Deductions</button>
+      <button class="filter-btn" data-invpane="additions">➕ Additions</button>
+    </div>
+
+    <div id="invStockPane">
+      <input type="text" id="invSearch" class="search-input" placeholder="🔍 Search by item, category or note…">
+      <div class="repair-controls">
+        <select id="invCategoryFilter" class="repair-select"><option value="">All categories</option></select>
+        <button class="filter-btn warn" id="invLowBtn" aria-pressed="false" style="display:none;">⚠️ Low stock</button>
+        <button class="history-btn" id="invAddBtn" style="margin-top:0;">+ Add Item</button>
+        <button class="history-btn" id="invExportBtn" style="margin-top:0;">⬇️ Export CSV</button>
+        <div class="use-bar" id="useBar" style="display:none;">
+          <span id="useBarText"></span>
+          <button class="resolve-btn" id="useBarClear" style="margin-top:0;">Clear</button>
+          <button class="resolve-btn" id="useBarGo" style="margin-top:0;background:var(--accent);color:white;border-color:var(--accent);">🧰 Use on a PC…</button>
+        </div>
+      </div>
+      <div style="font-size:14px;color:var(--faint);margin:10px 0 10px 0;">Tick items and set how many, then “Use on a PC…” to take them out of stock.</div>
+      <div id="invList" class="repair-tickets-list"><div class="no-issues">Loading…</div></div>
+    </div>
+
+    <div id="invLogPane" style="display:none;">
+      <div id="logIntro" style="font-size:15px;color:var(--muted);margin-top:14px;"></div>
+      <div class="log-tools">
+        <input type="text" id="logSearch" class="search-input" placeholder="🔍 Search by item, PC, task, person or reason…">
+        <select id="logPeriod" class="repair-select" aria-label="Period">
+          <option value="all">All time</option>
+          <option value="today">Today</option>
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="month">This month</option>
+          <option value="lastmonth">Last month</option>
+          <option value="year">This year</option>
+        </select>
+        <button class="history-btn" id="logExportBtn" style="margin-top:0;">⬇️ Export CSV</button>
+      </div>
+      <div id="logList" style="margin-top:14px;"><div class="no-issues">Loading…</div></div>
+    </div>
+  </div>
+
   <div class="overlay" id="overlay">
     <div class="modal" id="modal"></div>
   </div>
@@ -305,8 +529,16 @@
       <label class="ticket-form-label">What did you do? <span style="color:var(--danger);">*</span></label>
       <textarea id="completeActionsInput" rows="3" placeholder="e.g. Replaced keyboard, reseated RAM…" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
 
+      <label style="font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer;font-weight:600;">
+        <input type="checkbox" id="completePartReplaced">
+        <span>🔧 A part was replaced</span>
+      </label>
+
+      <div id="completePartSection" style="display:none;">
       <label class="ticket-form-label">Part Type</label>
-      <input type="text" id="completePartInput" placeholder="e.g. RAM, Keyboard, GPU" class="ticket-form-input" style="margin-bottom:14px;">
+      <input type="text" id="completePartInput" list="completePartList" autocomplete="off" placeholder="Pick from this PC's parts, or type e.g. RAM, GPU" class="ticket-form-input" style="margin-bottom:4px;">
+      <datalist id="completePartList"></datalist>
+      <div id="completePartHint" style="font-size:13px;color:var(--muted);min-height:18px;margin-bottom:10px;"></div>
 
       <div style="display:flex; gap:10px; margin-bottom:14px;">
         <div style="flex:1;">
@@ -321,8 +553,19 @@
 
       <label style="font-size:15px;color:var(--text-2);display:flex;align-items:flex-start;gap:8px;margin-bottom:16px;cursor:pointer;">
         <input type="checkbox" id="completeUpdateBaseline" style="margin-top:3px;">
-        <span>Also save the current internal components as the new expected baseline (use this if you installed/swapped hardware)</span>
+        <span>Also save the current internal components as the new expected baseline (ticked automatically when a part is replaced — untick to skip)</span>
       </label>
+      </div>
+
+      <label style="font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer;font-weight:600;">
+        <input type="checkbox" id="completeUsedInv">
+        <span>📦 Parts were used from the inventory</span>
+      </label>
+      <div id="completeInvSection" style="display:none;">
+        <input type="text" id="completeInvSearch" class="ticket-form-input" placeholder="🔍 Search the inventory…" autocomplete="off" style="margin-bottom:8px;">
+        <div class="prop-pick" id="completeInvPick"></div>
+        <div id="completeInvSummary" style="font-size:14px;color:var(--text-2);margin-bottom:14px;min-height:20px;"></div>
+      </div>
 
       <div class="logged-as">Completed by <b class="logged-as-name"></b></div>
 
@@ -462,6 +705,146 @@
     </div>
   </div>
 
+  <div class="overlay" id="itemOverlay">
+    <div class="modal" style="width:min(460px, 90vw); max-height:85vh; overflow-y:auto;">
+      <button class="modal-close" id="itemClose">✕</button>
+      <h2 id="itemTitle" style="margin:0 0 16px 0; font-size:20px;">📦 Add Item</h2>
+      <div id="itemError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <label class="ticket-form-label">Name <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="itemName" maxlength="120" placeholder="e.g. Kingston 8GB DDR4" class="ticket-form-input" style="margin-bottom:14px;">
+      <label class="ticket-form-label">Category</label>
+      <input type="text" id="itemCategory" list="itemCategoryList" maxlength="60" autocomplete="off" placeholder="e.g. RAM, Cables, Consumables" class="ticket-form-input" style="margin-bottom:14px;">
+      <datalist id="itemCategoryList"></datalist>
+      <div id="itemBoardWrap" class="stock-reveal" style="display:none;">
+        <label class="ticket-form-label">🧩 Board type <span style="color:var(--danger);">*</span></label>
+        <div class="reason-chips" id="itemPlatformChips" role="group" aria-label="Board type">
+          <button type="button" class="filter-btn" data-val="Intel">Intel</button>
+          <button type="button" class="filter-btn" data-val="AMD">AMD</button>
+        </div>
+        <label class="ticket-form-label" style="margin-top:6px;">🧠 Compatible RAM <span style="color:var(--danger);">*</span></label>
+        <div class="reason-chips" id="itemRamChips" role="group" aria-label="Compatible RAM type" style="margin-bottom:14px;">
+          <button type="button" class="filter-btn" data-val="DDR2">DDR2</button>
+          <button type="button" class="filter-btn" data-val="DDR3">DDR3</button>
+          <button type="button" class="filter-btn" data-val="DDR4">DDR4</button>
+          <button type="button" class="filter-btn" data-val="DDR5">DDR5</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div style="flex:1;" id="itemQtyWrap">
+          <label class="ticket-form-label">Starting quantity</label>
+          <input type="number" id="itemQty" min="0" step="1" value="0" class="ticket-form-input">
+        </div>
+        <div style="flex:1;">
+          <label class="ticket-form-label">Price each (₱)</label>
+          <input type="text" id="itemPrice" inputmode="decimal" placeholder="0.00" class="ticket-form-input">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-bottom:4px;">
+        <div style="flex:1;">
+          <label class="ticket-form-label">Low-stock warning at</label>
+          <input type="number" id="itemMin" min="0" step="1" placeholder="0 = off" class="ticket-form-input">
+        </div>
+        <div style="flex:1;"></div>
+      </div>
+      <div style="font-size:13px;color:var(--faint);margin-bottom:14px;">Flagged when stock drops to this number or below.</div>
+      <label class="ticket-form-label">Notes</label>
+      <input type="text" id="itemNotes" maxlength="300" placeholder="Optional" class="ticket-form-input" style="margin-bottom:16px;">
+      <div class="logged-as">By <b class="logged-as-name"></b></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="itemCancel">Cancel</button>
+        <button class="resolve-btn" id="itemSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="stockOverlay">
+    <div class="modal" style="width:min(420px, 90vw); max-height:85vh; overflow-y:auto;">
+      <button class="modal-close" id="stockClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:20px;">📦 Adjust stock</h2>
+      <div id="stockSummary" style="font-size:15px;color:var(--muted);margin:0 0 14px 0;"></div>
+      <div id="stockError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <label class="ticket-form-label">New total in stock</label>
+      <div style="display:flex; gap:8px; margin-bottom:14px; align-items:center;">
+        <button class="resolve-btn" id="stockMinus" style="margin-top:0;font-size:18px;padding:4px 14px;">−</button>
+        <input type="number" id="stockNew" min="0" step="1" class="ticket-form-input" style="text-align:center;">
+        <button class="resolve-btn" id="stockPlus" style="margin-top:0;font-size:18px;padding:4px 14px;">+</button>
+      </div>
+      <div id="stockChangeNote" style="font-size:14px;color:var(--faint);margin:-4px 0 14px 0;">Change the total to add or remove stock.</div>
+      <div id="stockPriceWrap" class="stock-reveal" style="display:none;">
+        <label class="ticket-form-label">➕ How much per unit for this batch? (₱) <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="stockPrice" inputmode="decimal" placeholder="0.00" class="ticket-form-input" style="margin-bottom:4px;">
+        <div id="stockPriceHint" style="font-size:13px;color:var(--faint);margin-bottom:14px;"></div>
+      </div>
+      <div id="stockReasonWrap" class="stock-reveal" style="display:none;">
+        <label class="ticket-form-label">➖ Why is stock going down? <span style="color:var(--danger);">*</span></label>
+        <div class="reason-chips" id="stockReasonChips">
+          <button type="button" class="filter-btn" data-reason="Damaged / defective">Damaged / defective</button>
+          <button type="button" class="filter-btn" data-reason="Lost / missing">Lost / missing</button>
+          <button type="button" class="filter-btn" data-reason="Count correction">Count correction</button>
+          <button type="button" class="filter-btn" data-reason="Returned to supplier">Returned to supplier</button>
+          <button type="button" class="filter-btn" data-reason="Lent out">Lent out</button>
+        </div>
+        <input type="text" id="stockReason" maxlength="200" placeholder="Pick one above or type the reason" class="ticket-form-input" style="margin-bottom:4px;">
+        <div style="font-size:13px;color:var(--faint);margin-bottom:14px;">Used on a PC? Use the tick boxes and “Use on a PC…” instead, so it's linked to the PC and its cost.</div>
+      </div>
+      <div class="logged-as">By <b class="logged-as-name"></b></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="stockCancel">Cancel</button>
+        <button class="resolve-btn" id="stockSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="useOverlay">
+    <div class="modal" style="width:min(520px, 92vw); max-height:88vh; overflow-y:auto;">
+      <button class="modal-close" id="useClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:20px;">🧰 Use on a PC</h2>
+      <div style="font-size:15px;color:var(--muted);margin:0 0 14px 0;">These are taken out of stock right away and recorded in the Deductions log with their cost.</div>
+      <div id="useError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+
+      <label class="ticket-form-label">PC <span style="color:var(--danger);">*</span></label>
+      <select id="useDevice" class="repair-select" style="width:100%;margin-bottom:14px;"></select>
+
+      <label class="ticket-form-label">Task (optional)</label>
+      <select id="useTask" class="repair-select" style="width:100%;margin-bottom:14px;"><option value="">No task</option></select>
+
+      <label class="ticket-form-label">Parts</label>
+      <table class="use-lines" id="useLines"></table>
+
+      <label class="ticket-form-label">Note (optional)</label>
+      <input type="text" id="useNote" maxlength="200" placeholder="e.g. Replaced faulty stick, spare cable" class="ticket-form-input" style="margin-bottom:14px;">
+
+      <div class="logged-as">By <b class="logged-as-name"></b></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="useCancel">Cancel</button>
+        <button class="resolve-btn" id="useSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Take out of stock</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="roomsOverlay">
+    <div class="modal" style="width:min(480px, 92vw); max-height:88vh; overflow-y:auto;">
+      <button class="modal-close" id="roomsClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:20px;">🏫 Rooms</h2>
+      <div style="font-size:15px;color:var(--muted);margin:0 0 12px 0;">Each room is a filter button on Monitoring System. It shows the PCs whose <code>ROOM</code> in config.toml matches.</div>
+      <div id="roomsList"></div>
+
+      <div style="border-top:1px solid var(--border);margin:14px 0 12px 0;"></div>
+      <div style="font-weight:600;font-size:16px;margin-bottom:10px;" id="roomFormTitle">➕ Add a room</div>
+      <div id="roomError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <label class="ticket-form-label">Button name <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="roomLabel" maxlength="40" placeholder="e.g. Computer Center 3" class="ticket-form-input" style="margin-bottom:14px;">
+      <label class="ticket-form-label">Room to look for <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="roomValue" maxlength="40" placeholder="e.g. 203" class="ticket-form-input" style="margin-bottom:4px;">
+      <div style="font-size:13px;color:var(--faint);margin-bottom:8px;">Must match <code>ROOM</code> in each PC's config.toml as a whole word or number. For example, 203 matches "203" and "Room 203", but not "2031".</div>
+      <div id="roomPreview" style="font-size:14px;color:var(--text-2);margin-bottom:14px;min-height:20px;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="resolve-btn" id="roomCancelEdit" style="display:none;">Cancel edit</button>
+        <button class="resolve-btn" id="roomSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Add room</button>
+      </div>
+    </div>
+  </div>
+
   <div class="overlay" id="newTicketOverlay">
     <div class="modal" style="width:min(460px, 90vw); max-height:85vh; overflow-y:auto;">
       <button class="modal-close" id="newTicketClose">✕</button>
@@ -496,6 +879,8 @@ const toastContainer = document.getElementById("toastContainer");
 const issuesListEl = document.getElementById("issuesList");
 const cards = {};       // device_id -> card element
 const lastPayload = {}; // device_id -> last full payload
+let invItems = [], invLog = [], invPane = "stock", invLogKind = "deduction";
+let editingItemId = null, stockItemId = null;
 const lastMissingCount = {}; // device_id -> number of missing components on the previous update
 let openDeviceId = null; // which device's modal is currently open, if any
 let soundEnabled = true;
@@ -586,11 +971,15 @@ function startSession(token, username, role, defaultPassword) {
   document.getElementById("usersTab").style.display = authRole === "admin" ? "" : "none";
   document.getElementById("newTicketBtn").style.display = authRole === "admin" ? "" : "none";
   applyRoleNotifUI();
+  applyInventoryRoleUI();
   if (authRole !== "admin") loadMyTasks();
   document.getElementById("defaultPwBanner").style.display = defaultPassword ? "block" : "none";
   storeSet(TOKEN_KEY, token);
   storeSet(USER_KEY, username);
   document.getElementById("loginScreen").classList.remove("open");
+  switchView("dashboard");
+  loadDashboard();
+  loadRooms();
   connect();
   announceWaitingTasks();
 }
@@ -678,6 +1067,7 @@ sidebarToggleBtn.addEventListener("click", () => {
 // in which case we leave it alone until the total count actually changes
 // again (a fresh thing to notify about resets the override).
 function updateSidebarAutoState() {
+  scheduleDashLive();
   const total = currentAlertsCount + (authRole === "admin" ? openIssues.length : myOpenTasks.size);
   document.getElementById("notifSidebarCount").textContent = `(${total})`;
   sidebarToggleBadge.style.display = total > 0 ? "flex" : "none";
@@ -863,12 +1253,12 @@ function relayoutGrid() {
 }
 
 // ----------------- Group filter buttons -----------------
-// Edit this list to add/rename groups — each becomes a button. "room" is
-// matched against the ROOM value in each PC's agent config.toml, as a whole
-// number/word: "201" matches ROOM = "201" and ROOM = "Room 201", but not "2012".
-// A PC whose ROOM matches none of these only shows up under "All".
+// Room filter buttons. They come from the server (admin edits them with "⚙️ Rooms…"); this
+// list is only shown until that loads. "room" is matched against the ROOM value in each PC's
+// agent config.toml, as a whole number/word: "201" matches ROOM = "201" and ROOM = "Room 201",
+// but not "2012". A PC whose ROOM matches none of these only shows up under "All".
 // (Under Maintenance is in the status row below, not here.)
-const FILTER_GROUPS = [
+let FILTER_GROUPS = [
   { label: "Computer Center 1", room: "201" },
   { label: "Computer Center 2", room: "202" },
 ];
@@ -890,9 +1280,10 @@ function renderFilterBar() {
   const bar = document.getElementById("filterBar");
   const groups = [{ label: "All", room: "" }, ...FILTER_GROUPS];
   bar.innerHTML = groups.map(g => `
-    <button class="filter-btn${g.room === activeFilter ? " active" : ""}" data-room="${g.room}">${g.label}</button>
+    <button class="filter-btn${g.room === activeFilter ? " active" : ""}" data-room="${escapeHtml(g.room)}">${escapeHtml(g.label)}</button>
   `).join("");
-  bar.querySelectorAll(".filter-btn").forEach(btn => {
+  document.getElementById("manageRoomsBtn").style.display = authRole === "admin" ? "" : "none";
+  bar.querySelectorAll(".filter-btn[data-room]").forEach(btn => {
     btn.addEventListener("click", () => {
       activeFilter = btn.dataset.room;
       renderFilterBar();
@@ -999,8 +1390,8 @@ function renderCard(payload) {
     <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB</span></div>
     <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
 
-    <div class="stat"><span>Disk</span><span>${hw.disk_percent ?? "-"}% used</span></div>
-    <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
+    <div class="stat"><span>Disk</span><span>${payload.disk_low ? "💾 " : ""}${hw.disk_percent ?? "-"}% used</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%${payload.disk_low ? ";background:var(--warn)" : ""}"></div></div>
 
     <div class="peripheral-row">
       <span class="peripheral-chip ${pf.has_keyboard && status !== "offline" ? "present" : "absent"}">${pf.has_keyboard && status !== "offline" ? "✓" : "✕"} Keyboard</span>
@@ -1024,35 +1415,7 @@ function renderCard(payload) {
 // Rebuilt from lastPayload (every device's most recent report) each time any
 // device updates, so it's always showing current state, not a stale snapshot.
 function renderNotificationSidebar() {
-  const alerts = [];
-  const now = Date.now();
-
-  Object.values(lastPayload).forEach(p => {
-    if (repairGraceUntil[p.device_id] && now < repairGraceUntil[p.device_id]) return; // just logged a repair — give it a moment
-
-    const pf = p.peripheral_flags || {};
-    if (pf.has_keyboard === false) {
-      alerts.push({
-        device_id: p.device_id, hostname: p.hostname,
-        desc: "⌨️ No keyboard detected", timestamp: p.timestamp,
-      });
-    }
-    if (pf.has_mouse === false) {
-      alerts.push({
-        device_id: p.device_id, hostname: p.hostname,
-        desc: "🖱️ No mouse detected", timestamp: p.timestamp,
-      });
-    }
-    (p.missing_components || []).forEach(m => {
-      alerts.push({
-        device_id: p.device_id, hostname: p.hostname,
-        desc: `⚠️ Missing: ${m.type} — ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}`,
-        timestamp: p.timestamp,
-      });
-    });
-  });
-
-  alerts.sort((a, b) => b.timestamp - a.timestamp);
+  const alerts = computeAlerts();
 
   const listEl = document.getElementById("notifSidebarList");
   const countEl = document.getElementById("notifSidebarCount");
@@ -1113,7 +1476,7 @@ function renderModalContent(payload) {
     <div class="stat"><span>RAM</span><span>${hw.ram_used_gb ?? "-"} / ${hw.ram_total_gb ?? "-"} GB (${hw.ram_percent ?? "-"}%)</span></div>
     <div class="bar-bg"><div class="bar-fill" style="width:${hw.ram_percent||0}%"></div></div>
     <div class="stat"><span>Disk</span><span>${hw.disk_free_gb ?? "-"} GB free (${hw.disk_percent ?? "-"}% used)</span></div>
-    <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%"></div></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%${payload.disk_low ? ";background:var(--warn)" : ""}"></div></div>
     ${hw.battery_percent != null ? `<div class="stat"><span>Battery</span><span>${hw.battery_percent}%</span></div>` : ""}
 
     <div class="peripheral-row">
@@ -1416,6 +1779,158 @@ document.getElementById("reassignOverlay").addEventListener("click", (e) => { if
 // ----------------- Complete Task form (technician) -----------------
 let completingTicket = null;
 
+// Parts the PC reported in its last report, used to fill "Model Before" automatically.
+let partOptions = [];          // [{label, type, name}]
+let beforeAutoFilled = false;  // true while Model Before holds an auto-filled value
+
+function buildPartOptions(deviceId) {
+  const p = lastPayload[deviceId] || {};
+  const raw = [...(p.internal || []), ...(p.devices || [])].filter(c => c && c.name);
+  const count = {};
+  raw.forEach(c => { count[c.type] = (count[c.type] || 0) + 1; });
+  const seen = {};
+  partOptions = raw.map(c => {
+    let label = c.type;
+    if (count[c.type] > 1) {
+      const extra = c.slot ? `slot ${c.slot}` : (c.size_gb ? `${c.size_gb} GB` : c.name);
+      label = `${c.type} (${extra})`;
+    }
+    seen[label] = (seen[label] || 0) + 1;
+    if (seen[label] > 1) label += ` #${seen[label]}`;
+    return { label, type: c.type, name: c.name };
+  });
+  const dl = document.getElementById("completePartList");
+  dl.innerHTML = "";
+  partOptions.forEach(o => {
+    const opt = document.createElement("option");
+    opt.value = o.label;
+    opt.label = o.name;
+    dl.appendChild(opt);
+  });
+}
+
+// Called when Part Type changes: fill Model Before if exactly one part matches.
+function autoFillModelBefore() {
+  const partEl = document.getElementById("completePartInput");
+  const beforeEl = document.getElementById("completeBeforeInput");
+  const hint = document.getElementById("completePartHint");
+  const v = partEl.value.trim().toLowerCase();
+  // never overwrite something the technician typed themselves
+  if (beforeEl.value.trim() && !beforeAutoFilled) { hint.textContent = ""; return; }
+  const clear = () => { if (beforeAutoFilled) { beforeEl.value = ""; beforeAutoFilled = false; } };
+  if (!v) { clear(); hint.textContent = ""; return; }
+  let hits = partOptions.filter(o => o.label.toLowerCase() === v);
+  if (!hits.length) hits = partOptions.filter(o => o.label.toLowerCase().includes(v) || o.type.toLowerCase().includes(v));
+  if (hits.length === 1) {
+    beforeEl.value = hits[0].name;
+    beforeAutoFilled = true;
+    hint.textContent = "Model Before filled from the PC's last report.";
+  } else if (hits.length > 1) {
+    clear();
+    hint.textContent = `${hits.length} parts match — pick one from the list.`;
+  } else {
+    clear();
+    hint.textContent = "Not in this PC's last report — type the old model yourself.";
+  }
+}
+
+// A part is being replaced -> also save the new hardware as the expected baseline, so the
+// old part doesn't show as "missing". Ticked automatically; the technician can untick it,
+// and once they touch the box themselves it is left alone.
+let baselineTouched = false;
+function partReplaced() { return document.getElementById("completePartReplaced").checked; }
+function syncPartSection() {
+  document.getElementById("completePartSection").style.display = partReplaced() ? "" : "none";
+}
+document.getElementById("completePartReplaced").addEventListener("change", () => {
+  syncPartSection();
+  if (partReplaced()) document.getElementById("completePartInput").focus();
+});
+document.getElementById("completeUpdateBaseline").addEventListener("change", () => { baselineTouched = true; });
+function syncBaselineTick() {
+  if (baselineTouched) return;
+  document.getElementById("completeUpdateBaseline").checked = !!document.getElementById("completePartInput").value.trim();
+}
+document.getElementById("completePartInput").addEventListener("input", () => { autoFillModelBefore(); syncBaselineTick(); });
+document.getElementById("completeBeforeInput").addEventListener("input", () => { beforeAutoFilled = false; });
+
+// Parts taken from the inventory while completing the task: ticked here, deducted by the
+// server together with the completion (if any is short, nothing is saved).
+const completeInvSel = new Map(); // item_id -> quantity
+function completeInvOn() { return document.getElementById("completeUsedInv").checked; }
+document.getElementById("completeUsedInv").addEventListener("change", () => {
+  const on = completeInvOn();
+  document.getElementById("completeInvSection").style.display = on ? "" : "none";
+  if (on) {
+    document.getElementById("completeInvPick").innerHTML = `<div class="no-issues" style="padding:10px;">Loading…</div>`;
+    loadInventory(); // re-renders the pick list when it arrives
+    document.getElementById("completeInvSearch").focus();
+  }
+});
+function renderCompleteInvPick() {
+  for (const [id, qty] of completeInvSel) {
+    const it = invItems.find(x => x.id === id);
+    if (!it || it.quantity === 0) completeInvSel.delete(id);
+    else if (qty > it.quantity) completeInvSel.set(id, it.quantity);
+  }
+  const q = document.getElementById("completeInvSearch").value;
+  const rows = invItems.filter(i => invMatch(q, [i.name, i.category, i.notes]));
+  const el = document.getElementById("completeInvPick");
+  if (!invItems.length) el.innerHTML = `<div class="no-issues" style="padding:10px;">The inventory is empty.</div>`;
+  else if (!rows.length) el.innerHTML = `<div class="no-issues" style="padding:10px;">No items match.</div>`;
+  else el.innerHTML = rows.map(i => {
+    const out = i.quantity === 0;
+    const on = completeInvSel.has(i.id) && !out;
+    return `
+    <div class="prop-pick-row ${out ? "disabled" : ""}">
+      <label><input type="checkbox" data-id="${i.id}" ${on ? "checked" : ""} ${out ? "disabled" : ""}>
+        <span>${escapeHtml(i.name)}${i.unit_price ? ` <span style="color:var(--faint);font-size:13px;">${peso(i.unit_price)}</span>` : ""}</span></label>
+      <span class="prop-pick-stock">${out ? "out of stock" : i.quantity + " in stock"}</span>
+      <input type="number" data-qty="${i.id}" min="1" max="${i.quantity}" step="1" value="${on ? completeInvSel.get(i.id) : 1}" ${on ? "" : "disabled"} aria-label="Quantity of ${escapeHtml(i.name)}">
+    </div>`;
+  }).join("");
+  renderCompleteInvSummary();
+}
+function renderCompleteInvSummary() {
+  const parts = [];
+  let total = 0;
+  for (const [id, qty] of completeInvSel) {
+    const it = invItems.find(x => x.id === id);
+    if (it) { parts.push(`${qty} × ${escapeHtml(it.name)}`); total += qty * it.unit_price; }
+  }
+  document.getElementById("completeInvSummary").innerHTML = parts.length
+    ? `<b>Will be taken out of stock:</b> ${parts.join(", ")} — <b>${peso(total)}</b>` : `<span style="color:var(--faint);">Nothing ticked yet.</span>`;
+}
+function clampCompleteInvQty(qe) {
+  const id = parseInt(qe.dataset.qty, 10);
+  const it = invItems.find(x => x.id === id);
+  let n = parseInt(qe.value, 10);
+  if (isNaN(n) || n < 1) n = 1;
+  if (it && n > it.quantity) n = it.quantity;
+  qe.value = n;
+  if (completeInvSel.has(id)) completeInvSel.set(id, n);
+  renderCompleteInvSummary();
+}
+document.getElementById("completeInvPick").addEventListener("change", (e) => {
+  const cb = e.target.closest("input[type=checkbox]");
+  if (cb) {
+    const id = parseInt(cb.dataset.id, 10);
+    const qtyEl = document.querySelector(`#completeInvPick input[data-qty="${id}"]`);
+    if (cb.checked) { completeInvSel.set(id, 1); qtyEl.value = 1; qtyEl.disabled = false; qtyEl.focus(); qtyEl.select(); }
+    else { completeInvSel.delete(id); qtyEl.disabled = true; }
+    renderCompleteInvSummary();
+    return;
+  }
+  const qe = e.target.closest("input[data-qty]");
+  if (qe) clampCompleteInvQty(qe);
+});
+document.getElementById("completeInvPick").addEventListener("input", (e) => {
+  const qe = e.target.closest("input[data-qty]");
+  if (qe && qe.value.trim() !== "") clampCompleteInvQty(qe);
+});
+document.getElementById("completeInvSearch").addEventListener("input", renderCompleteInvPick);
+document.getElementById("completeInvSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
+
 function openCompleteForm(ticketId) {
   const t = lastLoadedTickets.find(x => x.id === ticketId);
   if (!t) return;
@@ -1425,7 +1940,17 @@ function openCompleteForm(ticketId) {
   document.getElementById("completePartInput").value = t.part_type || "";
   document.getElementById("completeBeforeInput").value = t.model_before || "";
   document.getElementById("completeAfterInput").value = t.model_after || "";
-  document.getElementById("completeUpdateBaseline").checked = false;
+  baselineTouched = false;
+  document.getElementById("completeUpdateBaseline").checked = !!(t.part_type || "").trim();
+  buildPartOptions(t.device_id);
+  document.getElementById("completePartReplaced").checked = !!(t.part_type || t.model_before || t.model_after);
+  syncPartSection();
+  beforeAutoFilled = false;
+  document.getElementById("completePartHint").textContent = "";
+  completeInvSel.clear();
+  document.getElementById("completeUsedInv").checked = false;
+  document.getElementById("completeInvSection").style.display = "none";
+  document.getElementById("completeInvSearch").value = "";
   hideCompleteError();
   document.getElementById("completeOverlay").classList.add("open");
   document.getElementById("completeActionsInput").focus();
@@ -1451,6 +1976,8 @@ async function submitCompleteForm() {
   const t = completingTicket;
   const actions_taken = document.getElementById("completeActionsInput").value.trim();
   if (!actions_taken) { showCompleteError("Please describe what you did."); return; }
+  const useInv = completeInvOn();
+  if (useInv && !completeInvSel.size) { showCompleteError("Tick the inventory parts you used, or untick “Parts were used from the inventory”."); return; }
   hideCompleteError();
 
   const btn = document.getElementById("completeSubmit");
@@ -1463,14 +1990,18 @@ async function submitCompleteForm() {
       body: JSON.stringify({
         repair_status: "Completed",
         actions_taken,
-        part_type: document.getElementById("completePartInput").value.trim(),
-        model_before: document.getElementById("completeBeforeInput").value.trim(),
-        model_after: document.getElementById("completeAfterInput").value.trim(),
-        update_baseline: document.getElementById("completeUpdateBaseline").checked,
+        part_type: partReplaced() ? document.getElementById("completePartInput").value.trim() : "",
+        model_before: partReplaced() ? document.getElementById("completeBeforeInput").value.trim() : "",
+        model_after: partReplaced() ? document.getElementById("completeAfterInput").value.trim() : "",
+        update_baseline: partReplaced() && document.getElementById("completeUpdateBaseline").checked,
+        inventory_items: useInv ? [...completeInvSel].map(([item_id, quantity]) => ({ item_id, quantity })) : [],
       }),
     });
     if (resp.ok) {
-      showToast("✅ Task Completed", `${t.hostname}: ${actions_taken}`, "connected");
+      const r = await resp.json().catch(() => ({}));
+      const inv = r.inventory;
+      showToast("✅ Task Completed", `${escapeHtml(t.hostname)}: ${escapeHtml(actions_taken)}` +
+        (inv ? `<br>📦 Taken out of stock: ${inv.items.map(l => `${l.quantity} × ${escapeHtml(l.name)}`).join(", ")} — ${peso(inv.total_cost)}` : ""), "connected");
       repairGraceUntil[t.device_id] = Date.now() + REPAIR_GRACE_MS;
       renderNotificationSidebar();
       if (openDeviceId === t.device_id) loadRepairLog(t.device_id);
@@ -1483,6 +2014,7 @@ async function submitCompleteForm() {
     } else {
       const body = await resp.json().catch(() => ({}));
       showCompleteError(body.detail || "Could not save — check the server connection.");
+      if (useInv) loadInventory(); // show the real stock if someone else just took some
     }
   } catch (e) {
     showCompleteError("Could not reach the server.");
@@ -1592,7 +2124,7 @@ overlay.addEventListener("click", (e) => {
   if (e.target === overlay) closeModal(); // click outside modal closes it
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { closeModal(); closeCompleteForm(); closeReassignForm(); closeNewTicketForm(); closeMaintForm(); closeAddUserForm(); closeResetPwForm(); closeSettings(); }
+  if (e.key === "Escape") { closeModal(); closeCompleteForm(); closeReassignForm(); closeNewTicketForm(); closeMaintForm(); closeAddUserForm(); closeResetPwForm(); closeSettings(); closeItemForm(); closeStockForm(); closeUseForm(); closeRoomsForm(); }
 });
 
 document.getElementById("completeClose").addEventListener("click", closeCompleteForm);
@@ -1603,6 +2135,7 @@ document.getElementById("completeOverlay").addEventListener("click", (e) => {
 });
 
 function applyStatusUpdate(deviceId, status) {
+  scheduleDashLive();
   const prev = lastPayload[deviceId];
   if (prev) {
     const wasStatus = prev.status;
@@ -1639,6 +2172,7 @@ function connect() {
 
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
+    if (["repair_ticket", "repair_ticket_deleted", "issue", "issue_resolved"].includes(msg.type)) scheduleDashData();
     if (msg.type === "snapshot") {
       msg.data.forEach(d => {
         lastMissingCount[d.device_id] = (d.missing_components || []).length;
@@ -1648,6 +2182,15 @@ function connect() {
       renderCard(msg.data);
     } else if (msg.type === "status") {
       applyStatusUpdate(msg.data.device_id, msg.data.status);
+    } else if (msg.type === "rooms_changed") {
+      setRooms(msg.data);
+    } else if (msg.type === "disk_alert") {
+      const a = msg.data;
+      if (toastsEnabled) showToast(`💾 Disk almost full: ${escapeHtml(a.hostname)}`,
+        `C: drive is ${a.disk_percent}% used${a.disk_free_gb != null ? ` — only ${a.disk_free_gb} GB free` : ""}.`,
+        "alert", { duration: 15000, onClick: () => openModal(a.device_id) });
+      playAlertSound();
+      scheduleDashData();
     } else if (msg.type === "device_event") {
       handleDeviceEvent(msg.data);
     } else if (msg.type === "issues_snapshot") {
@@ -1678,6 +2221,8 @@ function connect() {
       if (document.getElementById("repairView").style.display !== "none") {
         loadRepairTickets();
       }
+    } else if (msg.type === "inventory_changed") {
+      handleInventoryMessage(msg);
     } else if (msg.type === "maintenance") {
       const prev = lastPayload[msg.data.device_id];
       if (prev) {
@@ -2211,12 +2756,1008 @@ document.getElementById("settingsPwSubmit").addEventListener("click", submitSett
   document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") submitSettingsPassword(); }));
 document.getElementById("settingsLogout").addEventListener("click", logout);
 
+// ----------------- Inventory: stock and stock log -----------------
+// Everyone logged in can add items, adjust stock, and take parts out for a PC ("Use on a PC").
+function invMatch(search, fields) {
+  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const hay = fields.map(f => String(f ?? "").toLowerCase()).join(" \n ");
+  return words.every(w => hay.includes(w));
+}
+function invWhen(ts) { return ts ? new Date(ts * 1000).toLocaleString() : ""; }
+function invShowError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = "block"; }
+function invHideError(id) { document.getElementById(id).style.display = "none"; }
+async function invErrorText(resp, fallback) {
+  if (resp.status === 401) return "Not logged in — please log in again.";
+  const body = await resp.json().catch(() => ({}));
+  return (typeof body.detail === "string" && body.detail) || fallback;
+}
+
+function setInvPane(name) {
+  invPane = name;
+  document.querySelectorAll("[data-invpane]").forEach(b => b.classList.toggle("active", b.dataset.invpane === name));
+  document.getElementById("invStockPane").style.display = name === "stock" ? "" : "none";
+  document.getElementById("invLogPane").style.display = (name === "deductions" || name === "additions") ? "" : "none";
+  if (name === "stock") loadInventory();
+  else {
+    invLogKind = name === "additions" ? "addition" : "deduction";
+    document.getElementById("logSearch").value = "";
+    document.getElementById("logIntro").textContent = invLogKind === "deduction"
+      ? "Every time stock was taken out — which PC and task it went to, how many, and who took it."
+      : "Every time stock was put in — new items and restocks — with what it was worth and who added it.";
+    loadInvLog();
+  }
+}
+document.querySelectorAll("[data-invpane]").forEach(b => b.addEventListener("click", () => setInvPane(b.dataset.invpane)));
+
+function applyInventoryRoleUI() {}   // nothing role-specific left on the Inventory tab (only admin sees Delete, set per row)
+function inventoryViewVisible() { return document.getElementById("inventoryView").style.display !== "none"; }
+
+// ---- Stock list ----
+async function loadInventory() {
+  try {
+    const resp = await apiFetch("/api/inventory");
+    if (!resp.ok) throw new Error();
+    invItems = await resp.json();
+  } catch (e) {
+    document.getElementById("invList").innerHTML = `<div style="color:var(--danger);">Could not load the inventory.</div>`;
+    return;
+  }
+  const sel = document.getElementById("invCategoryFilter");
+  const keep = sel.value;
+  const cats = [...new Set(invItems.map(i => i.category).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  sel.innerHTML = `<option value="">All categories</option>` + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  sel.value = cats.includes(keep) ? keep : "";
+  document.getElementById("itemCategoryList").innerHTML = cats.map(c => `<option value="${escapeHtml(c)}"></option>`).join("");
+  renderInventory();
+  if (document.getElementById("useOverlay").classList.contains("open")) renderUseLines();
+  if (document.getElementById("completeOverlay").classList.contains("open") && completeInvOn()) renderCompleteInvPick();
+}
+
+const pesoFmt = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
+function peso(n) { return pesoFmt.format(n || 0); }
+function unitText(i) { return i.unit ? " " + escapeHtml(i.unit) : ""; }
+
+// Tick boxes on the stock list: item_id -> quantity. Kept while searching/filtering, so you can
+// search for one part, tick it, search for the next, and so on.
+const useSel = new Map();
+let invLowOnly = false;
+
+function renderInventory() {
+  // drop ticks for items that were deleted or ran out, and cap quantities at what's in stock
+  for (const [id, qty] of useSel) {
+    const it = invItems.find(x => x.id === id);
+    if (!it || it.quantity === 0) useSel.delete(id);
+    else if (qty > it.quantity) useSel.set(id, it.quantity);
+  }
+  const lowCount = invItems.filter(i => i.low).length;
+  const lowBtn = document.getElementById("invLowBtn");
+  lowBtn.style.display = lowCount || invLowOnly ? "" : "none";
+  lowBtn.textContent = `⚠️ Low stock (${lowCount})`;
+  lowBtn.classList.toggle("active", invLowOnly);
+  lowBtn.setAttribute("aria-pressed", invLowOnly);
+
+  const q = document.getElementById("invSearch").value;
+  const cat = document.getElementById("invCategoryFilter").value;
+  const rows = invItems.filter(i => (!cat || i.category === cat) && (!invLowOnly || i.low) && invMatch(q, [i.name, i.category, i.notes, i.board_platform, i.ram_type]));
+  const el = document.getElementById("invList");
+  renderUseBar();
+  if (!invItems.length) { el.innerHTML = `<div class="no-issues">The inventory is empty. Use “+ Add Item” to start.</div>`; return; }
+  if (!rows.length) { el.innerHTML = `<div class="no-issues">${invLowOnly ? "Nothing is low on stock." : "No items match your search."}</div>`; return; }
+  const admin = authRole === "admin";
+  el.innerHTML = rows.map(i => {
+    const out = i.quantity === 0;
+    const on = useSel.has(i.id);
+    const chip = i.low ? `<span class="inv-low-chip ${out ? "out" : ""}">${out ? "Out" : "Low"}</span>` : "";
+    return `
+    <div class="inv-row ${on ? "picked" : ""}" data-id="${i.id}">
+      <div class="inv-pick">
+        <input type="checkbox" data-pick="${i.id}" ${on ? "checked" : ""} ${out ? "disabled" : ""} aria-label="Use ${escapeHtml(i.name)}" title="${out ? "Out of stock" : "Tick to use on a PC"}">
+      </div>
+      <div class="inv-main">
+        <div><span class="inv-name">${escapeHtml(i.name)}</span>${i.category ? `<span class="inv-cat">${escapeHtml(i.category)}</span>` : ""}${i.board_platform ? `<span class="spec-chip">${escapeHtml(i.board_platform)}</span>` : ""}${i.ram_type ? `<span class="spec-chip">${escapeHtml(i.ram_type)}</span>` : ""}${chip}</div>
+        <div class="inv-price">${i.unit_price ? `${peso(i.unit_price)} each` : "No price set"}${i.min_qty ? ` · warn at ${i.min_qty}` : ""}</div>
+        ${i.notes ? `<div class="inv-notes">${escapeHtml(i.notes)}</div>` : ""}
+      </div>
+      <div class="inv-qty ${out ? "out" : (i.low ? "low" : "")}">${out ? "Out of stock" : i.quantity + " in stock"}</div>
+      <div class="inv-pick">
+        <input type="number" data-useqty="${i.id}" min="1" max="${i.quantity}" step="1" value="${on ? useSel.get(i.id) : 1}" ${on ? "" : "disabled"} aria-label="How many ${escapeHtml(i.name)} to use">
+      </div>
+      <div class="inv-actions">
+        <button class="ticket-mark-btn" data-act="stock" data-id="${i.id}">Adjust stock…</button>
+        <button class="ticket-mark-btn" data-act="edit" data-id="${i.id}">Edit…</button>
+        ${admin ? `<button class="ticket-mark-btn ticket-del-btn" data-act="delete" data-id="${i.id}">Delete</button>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderUseBar() {
+  const bar = document.getElementById("useBar");
+  if (!useSel.size) { bar.style.display = "none"; return; }
+  let units = 0, cost = 0;
+  for (const [id, qty] of useSel) {
+    const it = invItems.find(x => x.id === id);
+    if (it) { units += qty; cost += qty * it.unit_price; }
+  }
+  document.getElementById("useBarText").innerHTML =
+    `<b>${useSel.size}</b> ${useSel.size === 1 ? "item" : "items"} ticked (${units} ${units === 1 ? "unit" : "units"}) — <b>${peso(cost)}</b>`;
+  bar.style.display = "";
+}
+
+function clampUseQty(qe) {
+  const id = parseInt(qe.dataset.useqty, 10);
+  const it = invItems.find(x => x.id === id);
+  let n = parseInt(qe.value, 10);
+  if (isNaN(n) || n < 1) n = 1;
+  if (it && n > it.quantity) n = it.quantity;
+  qe.value = n;
+  if (useSel.has(id)) useSel.set(id, n);
+  renderUseBar();
+}
+
+document.getElementById("invSearch").addEventListener("input", renderInventory);
+document.getElementById("invCategoryFilter").addEventListener("change", renderInventory);
+document.getElementById("invLowBtn").addEventListener("click", () => { invLowOnly = !invLowOnly; renderInventory(); });
+document.getElementById("invList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-act]");
+  if (!btn) return;
+  const id = parseInt(btn.dataset.id, 10);
+  if (btn.dataset.act === "stock") openStockForm(id);
+  else if (btn.dataset.act === "edit") openItemForm(id);
+  else if (btn.dataset.act === "delete") deleteItem(id);
+});
+document.getElementById("invList").addEventListener("change", (e) => {
+  const cb = e.target.closest("input[data-pick]");
+  if (cb) {
+    const id = parseInt(cb.dataset.pick, 10);
+    const qtyEl = document.querySelector(`#invList input[data-useqty="${id}"]`);
+    if (cb.checked) { useSel.set(id, 1); qtyEl.value = 1; qtyEl.disabled = false; qtyEl.focus(); qtyEl.select(); }
+    else { useSel.delete(id); qtyEl.disabled = true; }
+    cb.closest(".inv-row").classList.toggle("picked", cb.checked);
+    renderUseBar();
+    return;
+  }
+  const qe = e.target.closest("input[data-useqty]");
+  if (qe) clampUseQty(qe);
+});
+document.getElementById("invList").addEventListener("input", (e) => {
+  const qe = e.target.closest("input[data-useqty]");
+  if (qe && qe.value.trim() !== "") clampUseQty(qe);
+});
+document.getElementById("invList").addEventListener("keydown", (e) => {
+  // Enter in a quantity box goes straight to "Use on a PC…"
+  if (e.key === "Enter" && e.target.matches("input[data-useqty]")) { e.preventDefault(); clampUseQty(e.target); openUseForm(); }
+});
+document.getElementById("useBarClear").addEventListener("click", () => { useSel.clear(); renderInventory(); });
+document.getElementById("useBarGo").addEventListener("click", openUseForm);
+
+// ---- Use ticked items on a PC ----
+let useTickets = [];
+async function openUseForm() {
+  if (!useSel.size) return;
+  invHideError("useError");
+  document.getElementById("useNote").value = "";
+  const sel = document.getElementById("useDevice");
+  const devices = Object.values(lastPayload).sort((a, b) => naturalCompare(a.hostname || "", b.hostname || ""));
+  sel.innerHTML = `<option value="">— pick a PC —</option>` +
+    devices.map(d => `<option value="${escapeHtml(d.device_id)}">${escapeHtml(d.hostname)}</option>`).join("");
+  sel.value = "";
+  makeSearchable(sel).refresh();
+  renderUseLines();
+  document.getElementById("useTask").innerHTML = `<option value="">No task</option>`;
+  document.getElementById("useOverlay").classList.add("open");
+  sel._combo.focus();
+  try {
+    const resp = await apiFetch("/api/repair-tickets");
+    useTickets = resp.ok ? (await resp.json()).filter(t => t.repair_status !== "Completed") : [];
+  } catch (e) { useTickets = []; }
+  fillUseTasks();
+}
+function fillUseTasks() {
+  const dev = document.getElementById("useDevice").value;
+  const mine = useTickets.filter(t => t.device_id === dev);
+  const taskSel = document.getElementById("useTask");
+  taskSel.innerHTML = `<option value="">No task</option>` +
+    mine.map(t => `<option value="${t.id}">${escapeHtml(t.reported_problem)} (${escapeHtml(t.assigned_to || t.technician || "")}, ${escapeHtml(t.repair_status)})</option>`).join("");
+  // one open task for this PC -> it's almost certainly the one
+  if (mine.length === 1) taskSel.value = String(mine[0].id);
+}
+function renderUseLines() {
+  let total = 0;
+  const lines = [];
+  for (const [id, qty] of useSel) {
+    const it = invItems.find(x => x.id === id);
+    if (!it) continue;
+    const cost = qty * it.unit_price;
+    total += cost;
+    lines.push(`<tr><td>${qty} × ${escapeHtml(it.name)}<br><small style="color:var(--faint);">${it.unit_price ? peso(it.unit_price) + " each" : "no price set"} · ${it.quantity - qty} left after</small></td><td class="num">${peso(cost)}</td></tr>`);
+  }
+  document.getElementById("useLines").innerHTML = lines.join("") + `<tr class="total"><td>Total</td><td class="num">${peso(total)}</td></tr>`;
+}
+function closeUseForm() { document.getElementById("useOverlay").classList.remove("open"); }
+async function submitUseForm() {
+  const device_id = document.getElementById("useDevice").value;
+  if (!device_id) { invShowError("useError", "Pick the PC the parts are for."); return; }
+  if (!useSel.size) { invShowError("useError", "Nothing is ticked."); return; }
+  invHideError("useError");
+  const task = document.getElementById("useTask").value;
+  const btn = document.getElementById("useSubmit"); btn.disabled = true;
+  try {
+    const resp = await apiFetch("/api/inventory/use", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_id, ticket_id: task ? parseInt(task, 10) : null, note: document.getElementById("useNote").value.trim(),
+        items: [...useSel].map(([item_id, quantity]) => ({ item_id, quantity })) }) });
+    if (resp.ok) {
+      const r = await resp.json();
+      closeUseForm();
+      useSel.clear();
+      showToast("🧰 Taken out of stock", `${r.items.map(l => `${l.quantity} × ${escapeHtml(l.name)}`).join(", ")} on <b>${escapeHtml(r.hostname)}</b> — ${peso(r.total_cost)}`, "connected");
+      loadInventory();
+    } else { invShowError("useError", await invErrorText(resp, "Could not take the parts out of stock.")); loadInventory().then(renderUseLines); }
+  } catch (e) { invShowError("useError", "Could not reach the server."); }
+  finally { btn.disabled = false; }
+}
+document.getElementById("useDevice").addEventListener("change", fillUseTasks);
+document.getElementById("useClose").addEventListener("click", closeUseForm);
+document.getElementById("useCancel").addEventListener("click", closeUseForm);
+document.getElementById("useSubmit").addEventListener("click", submitUseForm);
+document.getElementById("useOverlay").addEventListener("click", (e) => { if (e.target.id === "useOverlay") closeUseForm(); });
+document.getElementById("useNote").addEventListener("keydown", (e) => { if (e.key === "Enter") submitUseForm(); });
+
+// ---- CSV export (fetched with the login token, then saved) ----
+async function downloadInventoryCsv(what, range) {
+  const params = new URLSearchParams({ what });
+  if (range && range.since) params.set("since", range.since);
+  if (range && range.until) params.set("until", range.until);
+  try {
+    const resp = await apiFetch(`/api/inventory/export?${params}`);
+    if (!resp.ok) { showToast("Could not export", escapeHtml(await invErrorText(resp, "Something went wrong.")), "alert"); return; }
+    const blob = await resp.blob();
+    const m = /filename="([^"]+)"/.exec(resp.headers.get("Content-Disposition") || "");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = m ? m[1] : `inventory-${what}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) { if (e.message !== "unauthorized") showToast("Could not export", "Could not reach the server.", "alert"); }
+}
+document.getElementById("invExportBtn").addEventListener("click", () => downloadInventoryCsv("stock"));
+
+async function deleteItem(id) {
+  const it = invItems.find(x => x.id === id);
+  if (!it || !confirm(`Delete “${it.name}” from the inventory?\n\nThe stock log keeps its name.`)) return;
+  const resp = await apiFetch(`/api/inventory/${id}`, { method: "DELETE" });
+  if (resp.ok) { showToast("🗑️ Item deleted", escapeHtml(it.name), "connected"); loadInventory(); }
+  else showToast("Could not delete", escapeHtml(await invErrorText(resp, "Something went wrong.")), "alert");
+}
+
+// ---- Add / edit item ----
+// Motherboards get two extra choices: Intel/AMD and which RAM generation they take.
+function isMotherboard(cat) { return ["motherboard", "motherboards", "mobo", "mainboard"].includes((cat || "").trim().toLowerCase()); }
+function chipValue(groupId) { const b = document.querySelector(`#${groupId} .active`); return b ? b.dataset.val : ""; }
+function setChip(groupId, val) {
+  document.querySelectorAll(`#${groupId} [data-val]`).forEach(b => {
+    const on = b.dataset.val === val;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-pressed", on);
+  });
+}
+function syncBoardFields() {
+  const wrap = document.getElementById("itemBoardWrap");
+  const show = isMotherboard(document.getElementById("itemCategory").value);
+  if ((wrap.style.display !== "none") !== show) wrap.style.display = show ? "" : "none";
+}
+["itemPlatformChips", "itemRamChips"].forEach(g => document.getElementById(g).addEventListener("click", (e) => {
+  const b = e.target.closest("[data-val]");
+  if (!b) return;
+  setChip(g, b.dataset.val);
+  invHideError("itemError");
+}));
+document.getElementById("itemCategory").addEventListener("input", syncBoardFields);
+document.getElementById("itemCategory").addEventListener("change", syncBoardFields);
+
+function openItemForm(id) {
+  editingItemId = id || null;
+  const it = id ? invItems.find(x => x.id === id) : null;
+  document.getElementById("itemTitle").textContent = it ? "✏️ Edit Item" : "📦 Add Item";
+  document.getElementById("itemName").value = it ? it.name : "";
+  document.getElementById("itemCategory").value = it ? it.category : "";
+  document.getElementById("itemNotes").value = it ? it.notes : "";
+  document.getElementById("itemPrice").value = it && it.unit_price ? it.unit_price.toFixed(2) : "";
+  document.getElementById("itemMin").value = it && it.min_qty ? it.min_qty : "";
+  document.getElementById("itemQty").value = 0;
+  document.getElementById("itemQtyWrap").style.display = it ? "none" : "";
+  setChip("itemPlatformChips", it ? it.board_platform : "");
+  setChip("itemRamChips", it ? it.ram_type : "");
+  syncBoardFields();
+  invHideError("itemError");
+  document.getElementById("itemOverlay").classList.add("open");
+  document.getElementById("itemName").focus();
+}
+function closeItemForm() { document.getElementById("itemOverlay").classList.remove("open"); editingItemId = null; }
+async function submitItemForm() {
+  const name = document.getElementById("itemName").value.trim();
+  if (!name) { invShowError("itemError", "Please enter a name."); return; }
+  const price = document.getElementById("itemPrice").value.trim().replace(/[₱,\s]/g, "");
+  if (price !== "" && !/^\d+(\.\d{1,2})?$/.test(price)) { invShowError("itemError", "Price must be an amount like 450 or 450.50."); return; }
+  const min = document.getElementById("itemMin").value.trim();
+  if (min !== "" && !/^\d+$/.test(min)) { invShowError("itemError", "Low-stock warning must be a whole number, 0 or more."); return; }
+  const category = document.getElementById("itemCategory").value.trim();
+  const board = isMotherboard(category);
+  if (board && !chipValue("itemPlatformChips")) { invShowError("itemError", "Pick whether the motherboard is Intel or AMD."); return; }
+  if (board && !chipValue("itemRamChips")) { invShowError("itemError", "Pick which RAM type the motherboard takes."); return; }
+  const body = { name, category,
+                 board_platform: board ? chipValue("itemPlatformChips") : "", ram_type: board ? chipValue("itemRamChips") : "",
+                 notes: document.getElementById("itemNotes").value.trim(),
+                 unit_price: price === "" ? 0 : price, min_qty: min === "" ? 0 : parseInt(min, 10) };
+  let url = "/api/inventory";
+  if (editingItemId) url = `/api/inventory/${editingItemId}/edit`;
+  else {
+    const q = document.getElementById("itemQty").value.trim();
+    if (q !== "" && !/^\d+$/.test(q)) { invShowError("itemError", "Quantity must be a whole number, 0 or more."); return; }
+    body.quantity = q === "" ? 0 : parseInt(q, 10);
+  }
+  const btn = document.getElementById("itemSubmit"); btn.disabled = true;
+  try {
+    const resp = await apiFetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (resp.ok) { const wasEdit = !!editingItemId; closeItemForm(); showToast(wasEdit ? "✏️ Item updated" : "📦 Item added", escapeHtml(name), "connected"); loadInventory(); }
+    else invShowError("itemError", await invErrorText(resp, "Could not save the item."));
+  } catch (e) { invShowError("itemError", "Could not reach the server."); }
+  finally { btn.disabled = false; }
+}
+document.getElementById("invAddBtn").addEventListener("click", () => openItemForm(null));
+document.getElementById("itemClose").addEventListener("click", closeItemForm);
+document.getElementById("itemCancel").addEventListener("click", closeItemForm);
+document.getElementById("itemSubmit").addEventListener("click", submitItemForm);
+document.getElementById("itemOverlay").addEventListener("click", (e) => { if (e.target.id === "itemOverlay") closeItemForm(); });
+["itemName", "itemCategory", "itemQty", "itemPrice", "itemMin", "itemNotes"].forEach(id =>
+  document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") submitItemForm(); }));
+
+// ---- Adjust stock by hand ----
+function openStockForm(id) {
+  const it = invItems.find(x => x.id === id);
+  if (!it) return;
+  stockItemId = id;
+  document.getElementById("stockSummary").textContent = `${it.name} — now ${it.quantity}${it.unit ? " " + it.unit : ""}`;
+  document.getElementById("stockNew").value = it.quantity;
+  document.getElementById("stockReason").value = "";
+  document.getElementById("stockPrice").value = it.unit_price ? it.unit_price.toFixed(2) : "";
+  syncStockPrice();
+  invHideError("stockError");
+  document.getElementById("stockOverlay").classList.add("open");
+  const f = document.getElementById("stockNew"); f.focus(); f.select();
+}
+function closeStockForm() { document.getElementById("stockOverlay").classList.remove("open"); stockItemId = null; }
+function nudgeStock(d) {
+  const f = document.getElementById("stockNew");
+  const cur = /^\d+$/.test(f.value.trim()) ? parseInt(f.value, 10) : 0;
+  f.value = Math.max(0, cur + d);
+  invHideError("stockError");
+  syncStockPrice();
+}
+// Going up = a purchase: ask how much this batch cost per unit (it can differ from last time).
+// Going down = ask why. No change = ask nothing.
+function stockDelta() {
+  const it = invItems.find(x => x.id === stockItemId);
+  const raw = document.getElementById("stockNew").value.trim();
+  return it && /^\d+$/.test(raw) ? parseInt(raw, 10) - it.quantity : 0;
+}
+function syncStockPrice() {
+  const it = invItems.find(x => x.id === stockItemId);
+  const d = stockDelta();
+  const u = it && it.unit ? " " + it.unit : "";
+  const priceWrap = document.getElementById("stockPriceWrap"), reasonWrap = document.getElementById("stockReasonWrap");
+  const showPrice = d > 0, showReason = d < 0;
+  if ((priceWrap.style.display !== "none") !== showPrice) priceWrap.style.display = showPrice ? "" : "none";
+  if ((reasonWrap.style.display !== "none") !== showReason) reasonWrap.style.display = showReason ? "" : "none";
+  document.getElementById("stockChangeNote").textContent =
+    d > 0 ? `Adding ${d}${u}.` : d < 0 ? `Removing ${-d}${u}.` : "Change the total to add or remove stock.";
+  if (d > 0) {
+    const pr = parseFloat(document.getElementById("stockPrice").value.replace(/[₱,\s]/g, ""));
+    document.getElementById("stockPriceHint").textContent =
+      isNaN(pr) ? "Enter what you paid per unit." : `${d} × ${peso(pr)} = ${peso(d * pr)} spent. This becomes the item's price.`;
+  }
+  const r = document.getElementById("stockReason").value.trim();
+  document.querySelectorAll("#stockReasonChips [data-reason]").forEach(b => b.classList.toggle("active", b.dataset.reason === r));
+}
+document.getElementById("stockReasonChips").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-reason]");
+  if (!b) return;
+  document.getElementById("stockReason").value = b.dataset.reason;
+  invHideError("stockError");
+  syncStockPrice();
+  document.getElementById("stockSubmit").focus();
+});
+document.getElementById("stockReason").addEventListener("input", () => { invHideError("stockError"); syncStockPrice(); });
+document.getElementById("stockNew").addEventListener("input", () => { invHideError("stockError"); syncStockPrice(); });
+document.getElementById("stockPrice").addEventListener("input", () => { invHideError("stockError"); syncStockPrice(); });
+async function submitStockForm() {
+  const raw = document.getElementById("stockNew").value.trim();
+  if (!/^\d+$/.test(raw)) { invShowError("stockError", "Enter the new total as a whole number, 0 or more."); return; }
+  const d = stockDelta();
+  if (d === 0) { invShowError("stockError", "The total is the same as now — change it to add or remove stock."); return; }
+  const price = document.getElementById("stockPrice").value.trim().replace(/[₱,\s]/g, "");
+  const reason = document.getElementById("stockReason").value.trim();
+  const adding = d > 0;
+  if (adding && price === "") { invShowError("stockError", "Enter how much you paid per unit for this batch."); document.getElementById("stockPrice").focus(); return; }
+  if (adding && !/^\d+(\.\d{1,2})?$/.test(price)) { invShowError("stockError", "Price must be an amount like 450 or 450.50."); return; }
+  if (!adding && !reason) { invShowError("stockError", "Say why the stock is going down."); document.getElementById("stockReason").focus(); return; }
+  const btn = document.getElementById("stockSubmit"); btn.disabled = true;
+  try {
+    const resp = await apiFetch(`/api/inventory/${stockItemId}/stock`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ set: parseInt(raw, 10), reason: adding ? "Restock" : reason,
+        unit_price: adding ? price : null }) });
+    if (resp.ok) { closeStockForm(); showToast(adding ? "📈 Stock added" : "📉 Stock removed",
+      adding ? `${d} added — ${peso(d * parseFloat(price))} spent.` : `${-d} removed: ${escapeHtml(reason)}`, "connected"); loadInventory(); if (invPane === "deductions" || invPane === "additions") loadInvLog(); }
+    else invShowError("stockError", await invErrorText(resp, "Could not update the stock."));
+  } catch (e) { invShowError("stockError", "Could not reach the server."); }
+  finally { btn.disabled = false; }
+}
+document.getElementById("stockMinus").addEventListener("click", () => nudgeStock(-1));
+document.getElementById("stockPlus").addEventListener("click", () => nudgeStock(1));
+document.getElementById("stockClose").addEventListener("click", closeStockForm);
+document.getElementById("stockCancel").addEventListener("click", closeStockForm);
+document.getElementById("stockSubmit").addEventListener("click", submitStockForm);
+document.getElementById("stockOverlay").addEventListener("click", (e) => { if (e.target.id === "stockOverlay") closeStockForm(); });
+["stockNew", "stockPrice", "stockReason"].forEach(id =>
+  document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") submitStockForm(); }));
+
+// ---- Stock log ----
+const LOG_LIMIT = 2000;
+let pcTotalsOpen = false;
+
+// The period picker -> {since, until} in unix seconds (0 = no limit).
+function logRange() {
+  const v = document.getElementById("logPeriod").value;
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  const s = (d) => Math.floor(d.getTime() / 1000);
+  if (v === "today") return { since: s(new Date(y, m, now.getDate())), until: 0 };
+  if (v === "7" || v === "30") return { since: Math.floor(Date.now() / 1000) - parseInt(v, 10) * 86400, until: 0 };
+  if (v === "month") return { since: s(new Date(y, m, 1)), until: 0 };
+  if (v === "lastmonth") return { since: s(new Date(y, m - 1, 1)), until: s(new Date(y, m, 1)) };
+  if (v === "year") return { since: s(new Date(y, 0, 1)), until: 0 };
+  return { since: 0, until: 0 };
+}
+
+async function loadInvLog() {
+  const kind = invLogKind;
+  const r = logRange();
+  const params = new URLSearchParams({ kind, limit: LOG_LIMIT });
+  if (r.since) params.set("since", r.since);
+  if (r.until) params.set("until", r.until);
+  try {
+    const resp = await apiFetch(`/api/inventory/log?${params}`);
+    if (!resp.ok) throw new Error();
+    const rows = await resp.json();
+    if (kind !== invLogKind) return; // the tab changed while this was loading
+    invLog = rows;
+  } catch (e) { document.getElementById("logList").innerHTML = `<div style="color:var(--danger);">Could not load the log.</div>`; return; }
+  renderInvLog();
+}
+function renderInvLog() {
+  const q = document.getElementById("logSearch").value;
+  const out = invLogKind === "deduction";
+  const rows = invLog.filter(l => invMatch(q, [l.item_name, l.by, l.reason, l.hostname, l.task, invWhen(l.timestamp)]));
+  const el = document.getElementById("logList");
+  const periodText = document.getElementById("logPeriod").selectedOptions[0].textContent.toLowerCase();
+  if (!rows.length) {
+    el.innerHTML = `<div class="no-issues">${invLog.length ? "Nothing matches your search." : (out ? "No deductions" : "No additions") + (periodText === "all time" ? " yet." : ` for ${periodText}.`)}</div>`;
+    return;
+  }
+  const units = rows.reduce((n, l) => n + Math.abs(l.change), 0);
+  const cost = rows.reduce((n, l) => n + (l.cost || 0), 0);
+  const unpriced = rows.filter(l => l.cost == null).length;
+  const capped = invLog.length >= LOG_LIMIT
+    ? `<div style="font-size:13px;color:var(--warn);margin-bottom:8px;">Showing the newest ${LOG_LIMIT} only — totals cover those. Use Export CSV for everything in this period.</div>` : "";
+
+  // Where the parts went: units per PC (deductions only — no money here; spending is counted on Additions)
+  let byPc = "";
+  if (out) {
+    const g = new Map();
+    for (const l of rows) {
+      const k = l.hostname || "";
+      const t = g.get(k) || { units: 0, cost: 0, n: 0 };
+      t.units += Math.abs(l.change); t.cost += l.cost || 0; t.n += 1;
+      g.set(k, t);
+    }
+    const list = [...g].sort((a, b) => b[1].units - a[1].units || naturalCompare(a[0], b[0]));
+    byPc = `
+    <details class="pc-totals" id="pcTotals" ${pcTotalsOpen ? "open" : ""}>
+      <summary>🖥️ Totals by PC (${list.filter(([k]) => k).length} ${list.filter(([k]) => k).length === 1 ? "PC" : "PCs"})</summary>
+      <table>${list.map(([k, t]) => `
+        <tr><td>${k ? `<b>${escapeHtml(k)}</b>` : `<span style="color:var(--faint);">Not linked to a PC (manual adjustments)</span>`}</td>
+            <td class="num"><b>${t.units} ${t.units === 1 ? "unit" : "units"}</b></td></tr>`).join("")}
+      </table>
+    </details>`;
+  }
+
+  el.innerHTML = `
+    ${capped}
+    <div style="font-size:14px;color:var(--muted);margin-bottom:8px;">${rows.length} ${rows.length === 1 ? "entry" : "entries"} — ${units} ${units === 1 ? "unit" : "units"} ${out ? "taken out" : "put in"}${out ? "" : ` — <b style="color:var(--text);">${peso(cost)}</b>${unpriced ? ` (${unpriced} older ${unpriced === 1 ? "entry has" : "entries have"} no price)` : ""}`}${q.trim() ? " — matching your search" : ""}</div>
+    ${byPc}
+    <div class="log-wrap"><table class="log-table" style="min-width:${out ? 760 : 820}px;">
+      <thead><tr><th>Date &amp; time</th><th>Item</th><th class="num">${out ? "Used" : "Added"}</th><th class="num">Left</th>${out ? "" : `<th class="num">Price each</th><th class="num">Cost</th>`}${out ? "<th>Used on</th>" : ""}<th>By</th><th>Note</th></tr></thead>
+      <tbody>${rows.map(l => `
+        <tr>
+          <td class="when">${escapeHtml(invWhen(l.timestamp))}</td>
+          <td><b>${escapeHtml(l.item_name)}</b></td>
+          <td class="num"><span class="log-change ${out ? "minus" : "plus"}">${out ? "−" : "+"}${Math.abs(l.change)}</span></td>
+          <td class="num">${l.qty_after}</td>
+          ${out ? "" : `<td class="num">${l.unit_price == null ? "—" : peso(l.unit_price)}</td>
+          <td class="num">${l.cost == null ? "—" : `<b>${peso(l.cost)}</b>`}</td>`}
+          ${out ? `<td>${l.hostname ? `<b>${escapeHtml(l.hostname)}</b>${l.task ? `<br><small style="color:var(--faint);">${escapeHtml(l.task)}</small>` : ""}` : `<span style="color:var(--faint);">—</span>`}</td>` : ""}
+          <td>${escapeHtml(l.by)}</td>
+          <td>${escapeHtml(l.reason || "")}</td>
+        </tr>`).join("")}</tbody>
+    </table></div>`;
+  const det = document.getElementById("pcTotals");
+  if (det) det.addEventListener("toggle", () => { pcTotalsOpen = det.open; });
+}
+document.getElementById("logSearch").addEventListener("input", renderInvLog);
+document.getElementById("logPeriod").addEventListener("change", loadInvLog);
+document.getElementById("logExportBtn").addEventListener("click", () =>
+  downloadInventoryCsv(invLogKind === "addition" ? "additions" : "deductions", logRange()));
+
+// ---- Live updates (WebSocket) ----
+function handleInventoryMessage(msg) {
+  scheduleDashData();
+  if (msg.type === "inventory_changed") {
+    const formOpen = ["useOverlay", "completeOverlay"].some(id => document.getElementById(id).classList.contains("open"));
+    if ((inventoryViewVisible() && invPane === "stock") || formOpen) loadInventory();
+    if (inventoryViewVisible() && (invPane === "deductions" || invPane === "additions")) loadInvLog();
+    for (const it of msg.low_items || []) {
+      notify(it.quantity === 0 ? `⚠️ Out of stock: ${escapeHtml(it.name)}` : `⚠️ Low stock: ${escapeHtml(it.name)}`,
+        `${it.quantity}${it.unit ? " " + escapeHtml(it.unit) : ""} left (warning level ${it.min_qty}).`, "alert");
+    }
+  }
+}
+
+// ----------------- Dashboard (landing page) -----------------
+// Tiles, notifications and tasks come from what the page already knows (live PC reports,
+// open problem reports) plus a few API calls; the month graph comes from /api/dashboard/month.
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DASH_SERIES = [
+  { key: "assigned",  name: "Tasks assigned",    color: "var(--s1)" },
+  { key: "completed", name: "Tasks completed",   color: "var(--s2)" },
+  { key: "problems",  name: "Problems reported", color: "var(--s3)" },
+  { key: "incidents", name: "PC incidents",      color: "var(--s4)" },
+];
+let dashMonth = (() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; })();
+let dashData = null, dashTasks = [], dashInv = [], dashTable = false;
+function dashboardVisible() { return document.getElementById("dashboardView").style.display !== "none"; }
+
+// Live parts (PC alerts, problem reports): re-render soon after any change, at most ~3x a second.
+let dashLiveTimer = null;
+function scheduleDashLive() {
+  if (dashLiveTimer || !dashboardVisible()) return;
+  dashLiveTimer = setTimeout(() => { dashLiveTimer = null; renderDashLive(); }, 300);
+}
+// Server data (tasks, stock, graph): reload a second after a relevant change.
+let dashDataTimer = null;
+function scheduleDashData() {
+  if (!dashboardVisible()) return;
+  clearTimeout(dashDataTimer);
+  dashDataTimer = setTimeout(loadDashboard, 1000);
+}
+
+async function loadDashboard() {
+  const h = new Date().getHours();
+  document.getElementById("dashSub").textContent =
+    `${h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"}, ${authUser}. ${new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`;
+  const admin = authRole === "admin";
+  document.getElementById("dashTaskTitle").firstChild.textContent = admin ? "📋 Open tasks " : "📋 My assigned tasks ";
+  document.getElementById("tileTasksLbl").textContent = admin ? "📋 Open tasks" : "📋 My open tasks";
+  const jobs = [
+    apiFetch("/api/repair-tickets").then(r => r.ok ? r.json() : []).then(all => {
+      dashTasks = all.filter(t => t.repair_status !== "Completed" && (admin || t.assigned_to === authUser));
+    }).catch(() => {}),
+    apiFetch("/api/inventory").then(r => r.ok ? r.json() : []).then(items => { dashInv = items; }).catch(() => {}),
+    loadDashMonth(),
+  ];
+  await Promise.all(jobs);
+  renderDashLive();
+  renderDashTasks();
+}
+
+function dashRange() {
+  const s = new Date(dashMonth.y, dashMonth.m, 1), u = new Date(dashMonth.y, dashMonth.m + 1, 1);
+  return { since: Math.floor(s / 1000), until: Math.floor(u / 1000) };
+}
+async function loadDashMonth() {
+  const r = dashRange();
+  const want = `${dashMonth.y}-${dashMonth.m}`;
+  try {
+    const resp = await apiFetch(`/api/dashboard/month?since=${r.since}&until=${r.until}`);
+    if (!resp.ok) throw new Error();
+    const data = await resp.json();
+    if (want !== `${dashMonth.y}-${dashMonth.m}`) return; // month changed while loading
+    dashData = data;
+  } catch (e) {
+    if (e.message === "unauthorized") return;
+    document.getElementById("dashChart").innerHTML = `<div style="color:var(--danger);">Could not load the daily report.</div>`;
+    return;
+  }
+  renderDashMonth();
+}
+
+// ---- Tiles + notifications ----
+function computeAlerts() {
+  const alerts = [];
+  const now = Date.now();
+  Object.values(lastPayload).forEach(p => {
+    if (repairGraceUntil[p.device_id] && now < repairGraceUntil[p.device_id]) return; // just logged a repair — give it a moment
+    const pf = p.peripheral_flags || {};
+    if (pf.has_keyboard === false) alerts.push({ device_id: p.device_id, hostname: p.hostname, desc: "⌨️ No keyboard detected", timestamp: p.timestamp });
+    if (pf.has_mouse === false) alerts.push({ device_id: p.device_id, hostname: p.hostname, desc: "🖱️ No mouse detected", timestamp: p.timestamp });
+    if (p.disk_low) {
+      const hw = p.hardware || {};
+      alerts.push({ device_id: p.device_id, hostname: p.hostname,
+        desc: `💾 Disk almost full: ${hw.disk_percent}% used${hw.disk_free_gb != null ? ` (${hw.disk_free_gb} GB free)` : ""}`, timestamp: p.timestamp });
+    }
+    (p.missing_components || []).forEach(m => alerts.push({
+      device_id: p.device_id, hostname: p.hostname,
+      desc: `⚠️ Missing: ${m.type} — ${m.name}${m.slot ? ` (slot ${m.slot})` : ""}`, timestamp: p.timestamp,
+    }));
+  });
+  return alerts.sort((a, b) => b.timestamp - a.timestamp);
+}
+
+function renderDashLive() {
+  if (!dashboardVisible()) return;
+  const pcs = Object.values(lastPayload);
+  const online = pcs.filter(p => (p.status || "online") === "online").length;
+  document.getElementById("tileOnline").innerHTML = `${online} <small>of ${pcs.length}</small>`;
+
+  const items = [];
+  openIssues.forEach(i => items.push({ cls: "bad", t: `🆘 ${escapeHtml(i.room)} / ${escapeHtml(i.system_unit)}`, d: escapeHtml(i.description),
+    w: `Reported by ${escapeHtml(i.reported_by)} · ${new Date(i.timestamp * 1000).toLocaleString()}`, go: "issues", ts: i.timestamp }));
+  pcs.filter(p => p.status === "crashed" || p.status === "unresponsive").forEach(p => items.push({
+    cls: p.status === "crashed" ? "bad" : "warn", t: escapeHtml(p.hostname),
+    d: p.status === "crashed" ? "💥 Crashed — stopped reporting without shutting down" : "⏳ Not responding",
+    w: p.timestamp ? `Last report ${new Date(p.timestamp * 1000).toLocaleString()}` : "", go: "pc:" + p.device_id, ts: p.timestamp || 0 }));
+  computeAlerts().forEach(a => items.push({ cls: "warn", t: escapeHtml(a.hostname), d: escapeHtml(a.desc),
+    w: a.timestamp ? new Date(a.timestamp * 1000).toLocaleString() : "", go: "pc:" + a.device_id, ts: a.timestamp || 0 }));
+  const low = dashInv.filter(i => i.low);
+  low.forEach(i => items.push({ cls: "warn", t: `📦 ${i.quantity === 0 ? "Out of stock" : "Low stock"}: ${escapeHtml(i.name)}`,
+    d: `${i.quantity}${i.unit ? " " + escapeHtml(i.unit) : ""} left · warning at ${i.min_qty}`, w: "", go: "low", ts: 0 }));
+  const pcIssues = items.filter(x => x.go !== "low").length;
+  document.getElementById("tileAttention").textContent = pcIssues;
+  document.getElementById("tileAttention").className = "val" + (pcIssues ? " bad" : "");
+  document.getElementById("tileLow").textContent = low.length;
+  document.getElementById("tileLow").className = "val" + (low.length ? " warn" : "");
+  document.getElementById("dashNotifCount").textContent = `(${items.length})`;
+  document.getElementById("dashNotifList").innerHTML = items.length
+    ? items.map(x => `<button class="dash-item ${x.cls}" data-go="${escapeHtml(x.go)}"><div class="t">${x.t}</div>${x.d ? `<div class="d">${x.d}</div>` : ""}${x.w ? `<div class="w">${x.w}</div>` : ""}</button>`).join("")
+    : `<div class="no-issues">All clear — nothing needs attention.</div>`;
+}
+
+function renderDashTasks() {
+  const admin = authRole === "admin";
+  document.getElementById("tileTasks").textContent = dashTasks.length;
+  document.getElementById("dashTaskCount").textContent = `(${dashTasks.length})`;
+  const rows = dashTasks.slice().sort((a, b) => (a.repair_status === "In Progress" ? 0 : 1) - (b.repair_status === "In Progress" ? 0 : 1) || a.timestamp - b.timestamp);
+  document.getElementById("dashTaskList").innerHTML = rows.length ? rows.map(t => `
+    <button class="dash-item ${t.repair_status === "In Progress" ? "info" : "warn"}" data-go="pc-tasks:${escapeHtml(t.device_id)}">
+      <div class="t" style="display:flex;justify-content:space-between;gap:8px;"><span>${escapeHtml(t.hostname)}</span>
+        <span class="dash-chip ${t.repair_status === "In Progress" ? "in-progress" : "pending"}">${escapeHtml(t.repair_status)}</span></div>
+      <div class="d">${escapeHtml(t.reported_problem)}</div>
+      <div class="w">${admin ? `Assigned to <b>${escapeHtml(t.assigned_to || t.technician || "")}</b> · ` : ""}${new Date(t.timestamp * 1000).toLocaleString()}</div>
+    </button>`).join("")
+    : `<div class="no-issues">${admin ? "No open tasks." : "No tasks assigned to you right now."}</div>`;
+}
+
+function dashGo(go) {
+  if (go === "monitoring") { switchView("monitoring"); }
+  else if (go === "notifs") { document.getElementById("dashNotifCard").scrollIntoView({ behavior: "smooth", block: "start" }); }
+  else if (go === "tasks") { document.getElementById("dashTaskCard").scrollIntoView({ behavior: "smooth", block: "start" }); }
+  else if (go === "purchases") { document.getElementById("dashPurchCard").scrollIntoView({ behavior: "smooth", block: "start" }); }
+  else if (go === "issues") { sidebarManualOverride = true; setSidebarOpen(true); }
+  else if (go === "low") { switchView("inventory"); invLowOnly = true; setInvPane("stock"); }
+  else if (go.startsWith("pc-tasks:")) { showMaintenanceHistory(go.slice(9)); }
+  else if (go.startsWith("pc:")) { openModal(go.slice(3)); }
+}
+document.getElementById("dashboardView").addEventListener("click", (e) => {
+  const el = e.target.closest("[data-go]");
+  if (el) dashGo(el.dataset.go);
+});
+document.getElementById("dashTasksAll").addEventListener("click", () => { switchView("repair"); populateRepairDeviceFilter(); loadRepairTickets(); });
+document.getElementById("dashPurchAll").addEventListener("click", () => { switchView("inventory"); document.getElementById("logPeriod").value = "all"; setInvPane("additions"); });
+
+// ---- Month graph ----
+// A round top for the y-axis plus how many gridline steps keep every label round
+// (e.g. 50k in 5 steps of 10k, not 4 steps of 12.5k).
+function niceMax(v) {
+  if (v <= 4) return { max: 4, ticks: 4 };
+  const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p;
+  const top = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
+  return { max: top * p, ticks: top === 1 || top === 2 ? 4 : 5 };
+}
+function pesoShort(v) {
+  if (v >= 1e6) return "₱" + (v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "") + "M";
+  if (v >= 1e3) return "₱" + (v / 1e3).toFixed(v >= 1e4 ? 0 : 1).replace(/\.0$/, "") + "k";
+  return "₱" + Math.round(v);
+}
+// How many days of the shown month have happened (later days aren't drawn as zero).
+function dashDaysSoFar(days) {
+  const now = new Date();
+  if (dashMonth.y === now.getFullYear() && dashMonth.m === now.getMonth()) return now.getDate();
+  return new Date(dashMonth.y, dashMonth.m, 1) > now ? 0 : days;
+}
+
+// Shared SVG frame: y grid + labels, x day labels. Returns geometry helpers.
+function chartFrame(el, days, nice, yFmt, height) {
+  const yMax = nice.max, ticks = nice.ticks;
+  const W = Math.max(300, el.clientWidth || 600), H = height;
+  const m = { l: 44, r: 10, t: 10, b: 26 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b, step = iw / days;
+  const x = (i) => m.l + step * (i + 0.5);
+  const y = (v) => m.t + ih - (v / yMax) * ih;
+  let g = "";
+  for (let k = 0; k <= ticks; k++) {
+    const v = yMax * k / ticks, yy = y(v);
+    g += `<line class="${k ? "grid" : "base"}" x1="${m.l}" x2="${W - m.r}" y1="${yy}" y2="${yy}"/>`;
+    g += `<text class="axis" x="${m.l - 6}" y="${yy + 4}" text-anchor="end">${yFmt(v)}</text>`;
+  }
+  const every = step >= 22 ? 1 : step >= 11 ? 2 : 5;
+  for (let i = 0; i < days; i++) {
+    if (i === 0 || (i + 1) % every === 0) g += `<text class="axis" x="${x(i)}" y="${H - 8}" text-anchor="middle">${i + 1}</text>`;
+  }
+  return { W, H, m, iw, ih, step, x, y, grid: g };
+}
+
+function attachHover(el, f, days, tipHtml, onDay) {
+  const tip = document.createElement("div");
+  tip.className = "chart-tip";
+  el.appendChild(tip);
+  const svg = el.querySelector("svg");
+  const show = (i) => {
+    if (i < 0 || i >= days) { tip.style.display = "none"; onDay(-1); return; }
+    tip.innerHTML = tipHtml(i);
+    tip.style.display = "block";
+    const px = f.x(i) / f.W * el.clientWidth;
+    const left = px + 14 + tip.offsetWidth > el.clientWidth ? px - 14 - tip.offsetWidth : px + 14;
+    tip.style.left = Math.max(0, left) + "px";
+    tip.style.top = "6px";
+    onDay(i);
+  };
+  const dayAt = (clientX) => {
+    const r = svg.getBoundingClientRect();
+    const sx = (clientX - r.left) / r.width * f.W;
+    return Math.floor((sx - f.m.l) / f.step);
+  };
+  svg.addEventListener("mousemove", (e) => show(dayAt(e.clientX)));
+  svg.addEventListener("mouseleave", () => show(-1));
+  // keyboard: focus the chart, arrows move the day
+  let kd = -1;
+  svg.setAttribute("tabindex", "0");
+  svg.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") { kd = Math.min(days - 1, kd + 1); show(kd); e.preventDefault(); }
+    else if (e.key === "ArrowLeft") { kd = Math.max(0, kd < 0 ? 0 : kd - 1); show(kd); e.preventDefault(); }
+    else if (e.key === "Escape") { kd = -1; show(-1); }
+  });
+  svg.addEventListener("blur", () => { kd = -1; show(-1); });
+}
+
+function dayLabel(i) { return `${MONTHS[dashMonth.m].slice(0, 3)} ${i + 1}`; }
+
+function renderDashMonth() {
+  const d = dashData;
+  if (!d) return;
+  const now = new Date();
+  document.getElementById("dashMonth").textContent = `${MONTHS[dashMonth.m]} ${dashMonth.y}`;
+  document.getElementById("dashNext").disabled = dashMonth.y > now.getFullYear() || (dashMonth.y === now.getFullYear() && dashMonth.m >= now.getMonth());
+  const shown = dashDaysSoFar(d.days);
+  const total = (k) => d[k].slice(0, shown).reduce((a, b) => a + b, 0);
+  document.getElementById("dashLegend").innerHTML = DASH_SERIES.map(s =>
+    `<span><i style="background:${s.color}"></i>${s.name} <b style="color:var(--text);">${total(s.key)}</b></span>`).join("");
+
+  // Activity: four count lines, one y-axis
+  const el = document.getElementById("dashChart");
+  const yMax = niceMax(Math.max(1, ...DASH_SERIES.flatMap(s => d[s.key].slice(0, shown))));
+  const f = chartFrame(el, d.days, yMax, (v) => Number.isInteger(v) ? v : v.toFixed(1), 260);
+  let lines = "";
+  DASH_SERIES.forEach(s => {
+    const pts = d[s.key].slice(0, shown).map((v, i) => `${f.x(i).toFixed(1)},${f.y(v).toFixed(1)}`);
+    if (pts.length > 1) lines += `<polyline fill="none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" style="stroke:${s.color}" points="${pts.join(" ")}"/>`;
+    else if (pts.length === 1) lines += `<circle r="4" cx="${pts[0].split(",")[0]}" cy="${pts[0].split(",")[1]}" style="fill:${s.color}"/>`;
+  });
+  el.innerHTML = `<svg viewBox="0 0 ${f.W} ${f.H}" height="${f.H}" role="img" aria-label="Daily activity for ${MONTHS[dashMonth.m]} ${dashMonth.y}. Use the Table button for the numbers.">
+    ${f.grid}<line id="dashCross" class="base" y1="${f.m.t}" y2="${f.m.t + f.ih}" style="display:none;stroke-dasharray:3 3"/>${lines}<g id="dashDots"></g></svg>`;
+  if (!shown) el.insertAdjacentHTML("beforeend", `<div class="chart-note">This month hasn't started yet.</div>`);
+  attachHover(el, f, shown, (i) => `<div style="font-weight:600;margin-bottom:4px;">${dayLabel(i)}</div>` +
+      DASH_SERIES.map(s => `<div class="row"><span><i style="background:${s.color}"></i> ${s.name}</span><b>${d[s.key][i]}</b></div>`).join(""),
+    (i) => {
+      const cross = el.querySelector("#dashCross"), dots = el.querySelector("#dashDots");
+      if (i < 0) { cross.style.display = "none"; dots.innerHTML = ""; return; }
+      cross.setAttribute("x1", f.x(i)); cross.setAttribute("x2", f.x(i)); cross.style.display = "";
+      dots.innerHTML = DASH_SERIES.map(s => `<circle r="5" cx="${f.x(i)}" cy="${f.y(d[s.key][i])}" style="fill:${s.color};stroke:var(--surface);stroke-width:2"/>`).join("");
+    });
+
+  const k = d.incident_kinds || {};
+  document.getElementById("dashIncidentNote").textContent =
+    `PC incidents this month: ${k.crashed || 0} crashed · ${k.keyboard_lost || 0} keyboard lost · ${k.mouse_lost || 0} mouse lost · ${k.part_missing || 0} part missing · ${k.disk_low || 0} disk almost full. ` +
+    `Incidents are recorded from this update onward.`;
+
+  // Spending: one series of bars (pesos get their own chart — never a second y-axis)
+  const se = document.getElementById("dashSpendChart");
+  const sMax = niceMax(Math.max(1, ...d.spending.slice(0, shown)));
+  const sf = chartFrame(se, d.days, sMax, pesoShort, 200);
+  const bw = Math.max(2, Math.min(18, sf.step - 4));
+  let bars = "";
+  d.spending.slice(0, shown).forEach((v, i) => {
+    if (v <= 0) return;
+    const x0 = sf.x(i) - bw / 2, y0 = sf.y(v), h = sf.y(0) - y0, r = Math.min(4, bw / 2, h);
+    bars += `<path data-i="${i}" style="fill:var(--s1)" d="M${x0},${sf.y(0)} V${y0 + r} Q${x0},${y0} ${x0 + r},${y0} H${x0 + bw - r} Q${x0 + bw},${y0} ${x0 + bw},${y0 + r} V${sf.y(0)} Z"/>`;
+  });
+  se.innerHTML = `<svg viewBox="0 0 ${sf.W} ${sf.H}" height="${sf.H}" role="img" aria-label="Money spent on stock per day, ${MONTHS[dashMonth.m]} ${dashMonth.y}">${sf.grid}${bars}</svg>`;
+  attachHover(se, sf, shown, (i) => `<div style="font-weight:600;margin-bottom:4px;">${dayLabel(i)}</div><div class="row"><span>Spent on stock</span><b>${peso(d.spending[i])}</b></div>`,
+    (i) => se.querySelectorAll("path[data-i]").forEach(p => p.style.opacity = i < 0 || +p.dataset.i === i ? "1" : "0.45"));
+  document.getElementById("dashSpentText").innerHTML = `${MONTHS[dashMonth.m]}: <b style="color:var(--text);">${peso(d.spent_month)}</b> · All time: <b style="color:var(--text);">${peso(d.spent_all_time)}</b>`;
+  document.getElementById("tileSpent").textContent = peso(d.spent_all_time);
+
+  // Table view (the same numbers, for reading exact values / low-contrast colours)
+  document.getElementById("dashTable").innerHTML = `<table class="dash-table">
+    <thead><tr><th>Day</th>${DASH_SERIES.map(s => `<th class="num">${s.name}</th>`).join("")}<th class="num">Spent on stock</th></tr></thead>
+    <tbody>${Array.from({ length: shown }, (_, i) => shown - 1 - i).map(i => `<tr><td>${dayLabel(i)}</td>${DASH_SERIES.map(s => `<td class="num">${d[s.key][i]}</td>`).join("")}<td class="num">${peso(d.spending[i])}</td></tr>`).join("")}
+      <tr style="font-weight:700;"><td>Total</td>${DASH_SERIES.map(s => `<td class="num">${total(s.key)}</td>`).join("")}<td class="num">${peso(d.spent_month)}</td></tr></tbody></table>`;
+  document.getElementById("dashTable").style.display = dashTable ? "" : "none";
+
+  // Recent purchases (all time, newest first)
+  const pr = d.recent_purchases || [];
+  document.getElementById("dashPurchases").innerHTML = pr.length ? `<table class="dash-table">
+    <thead><tr><th>Date</th><th>Item</th><th class="num">Qty</th><th class="num">Price each</th><th class="num">Cost</th><th>By</th></tr></thead>
+    <tbody>${pr.map(p => `<tr><td style="white-space:nowrap;color:var(--faint);">${new Date(p.timestamp * 1000).toLocaleDateString()}</td><td><b>${escapeHtml(p.item_name)}</b></td>
+      <td class="num">${p.quantity}</td><td class="num">${p.unit_price == null ? "—" : peso(p.unit_price)}</td><td class="num"><b>${p.cost == null ? "—" : peso(p.cost)}</b></td><td>${escapeHtml(p.by)}</td></tr>`).join("")}</tbody></table>`
+    : `<div class="no-issues">No stock has been added yet.</div>`;
+}
+
+document.getElementById("dashPrev").addEventListener("click", () => {
+  dashMonth = dashMonth.m === 0 ? { y: dashMonth.y - 1, m: 11 } : { y: dashMonth.y, m: dashMonth.m - 1 };
+  document.getElementById("dashMonth").textContent = `${MONTHS[dashMonth.m]} ${dashMonth.y}`;
+  loadDashMonth();
+});
+document.getElementById("dashNext").addEventListener("click", () => {
+  dashMonth = dashMonth.m === 11 ? { y: dashMonth.y + 1, m: 0 } : { y: dashMonth.y, m: dashMonth.m + 1 };
+  document.getElementById("dashMonth").textContent = `${MONTHS[dashMonth.m]} ${dashMonth.y}`;
+  loadDashMonth();
+});
+document.getElementById("dashTableBtn").addEventListener("click", (e) => {
+  dashTable = !dashTable;
+  e.currentTarget.setAttribute("aria-pressed", dashTable);
+  e.currentTarget.textContent = dashTable ? "▦ Hide table" : "▦ Table";
+  document.getElementById("dashTable").style.display = dashTable ? "" : "none";
+});
+let dashResizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(dashResizeTimer);
+  dashResizeTimer = setTimeout(() => { if (dashboardVisible() && dashData) renderDashMonth(); }, 150);
+});
+// keep tiles and notifications current while the page is open (status changes, timeouts)
+setInterval(() => { if (authToken && dashboardVisible()) renderDashLive(); }, 5000);
+
+// ----------------- Rooms (filter buttons) -----------------
+let roomEditingId = null;
+let roomsApiMissing = false;   // true when the server is older than this page (no /api/rooms yet)
+const ROOMS_OLD_SERVER = "The server is running an older version without Rooms. Copy the new server.py into the server folder, restart the server, then refresh this page.";
+function setRooms(rooms) {
+  FILTER_GROUPS = rooms.map(r => ({ id: r.id, label: r.label, room: r.room }));
+  if (activeFilter && !FILTER_GROUPS.some(g => g.room === activeFilter)) activeFilter = "";
+  renderFilterBar();
+  applyFilter();
+  if (document.getElementById("roomsOverlay").classList.contains("open")) renderRoomsList();
+}
+async function loadRooms() {
+  try {
+    const resp = await apiFetch("/api/rooms");
+    roomsApiMissing = resp.status === 404;
+    if (resp.ok) setRooms(await resp.json());
+    else renderFilterBar();   // still show the admin's Manage rooms button
+    if (roomsApiMissing && document.getElementById("roomsOverlay").classList.contains("open")) invShowError("roomError", ROOMS_OLD_SERVER);
+  } catch (e) { renderFilterBar(); }
+}
+function pcsInRoom(room) {
+  return Object.values(lastPayload).filter(p => roomMatches(p.room || "", room))
+    .sort((a, b) => naturalCompare(a.hostname || "", b.hostname || ""));
+}
+function renderRoomsList() {
+  const el = document.getElementById("roomsList");
+  el.innerHTML = FILTER_GROUPS.length ? FILTER_GROUPS.map(g => {
+    const n = pcsInRoom(g.room).length;
+    return `<div class="room-row">
+      <div class="grow"><b>${escapeHtml(g.label)}</b><small>looks for ROOM “${escapeHtml(g.room)}” · ${n} ${n === 1 ? "PC" : "PCs"} now</small></div>
+      <button class="ticket-mark-btn" data-room-edit="${g.id}">Edit…</button>
+      <button class="ticket-mark-btn ticket-del-btn" data-room-del="${g.id}">Remove</button>
+    </div>`;
+  }).join("") : `<div class="no-issues">No rooms yet — every PC shows under “All”.</div>`;
+}
+function resetRoomForm() {
+  roomEditingId = null;
+  document.getElementById("roomFormTitle").textContent = "➕ Add a room";
+  document.getElementById("roomSubmit").textContent = "Add room";
+  document.getElementById("roomCancelEdit").style.display = "none";
+  document.getElementById("roomLabel").value = "";
+  document.getElementById("roomValue").value = "";
+  invHideError("roomError");
+  renderRoomPreview();
+}
+function renderRoomPreview() {
+  const v = document.getElementById("roomValue").value.trim();
+  const el = document.getElementById("roomPreview");
+  if (!v) { el.textContent = ""; return; }
+  const pcs = pcsInRoom(v);
+  el.innerHTML = pcs.length
+    ? `✅ Matches <b>${pcs.length}</b> ${pcs.length === 1 ? "PC" : "PCs"} now: ${pcs.slice(0, 8).map(p => escapeHtml(p.hostname)).join(", ")}${pcs.length > 8 ? ` and ${pcs.length - 8} more` : ""}`
+    : `<span style="color:var(--faint);">No PCs in this room yet — that's fine, you can add it now. PCs show up under it once their config.toml has <code>ROOM = "${escapeHtml(v)}"</code>.</span>`;
+}
+function openRoomsForm() {
+  if (authRole !== "admin") return;
+  renderRoomsList();
+  resetRoomForm();
+  document.getElementById("roomsOverlay").classList.add("open");
+  document.getElementById("roomLabel").focus();
+  loadRooms();
+}
+function closeRoomsForm() { document.getElementById("roomsOverlay").classList.remove("open"); }
+async function submitRoomForm() {
+  const label = document.getElementById("roomLabel").value.trim();
+  const room = document.getElementById("roomValue").value.trim();
+  if (!label) { invShowError("roomError", "Give the room a name."); document.getElementById("roomLabel").focus(); return; }
+  if (!room) { invShowError("roomError", "Say which room it looks for (the ROOM in config.toml)."); document.getElementById("roomValue").focus(); return; }
+  const btn = document.getElementById("roomSubmit"); btn.disabled = true;
+  try {
+    const editing = roomEditingId;
+    const resp = await apiFetch(editing ? `/api/rooms/${editing}/edit` : "/api/rooms",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label, room }) });
+    if (resp.ok) {
+      setRooms(await resp.json());
+      showToast(editing ? "✏️ Room updated" : "🏫 Room added", `${escapeHtml(label)} — looks for ROOM “${escapeHtml(room)}”`, "connected");
+      resetRoomForm();
+      document.getElementById("roomLabel").focus();
+    } else if (resp.status === 404 && !editing) invShowError("roomError", ROOMS_OLD_SERVER);
+    else invShowError("roomError", await invErrorText(resp, "Could not save the room."));
+  } catch (e) { invShowError("roomError", "Could not reach the server."); }
+  finally { btn.disabled = false; }
+}
+document.getElementById("roomsList").addEventListener("click", async (e) => {
+  const ed = e.target.closest("[data-room-edit]"), del = e.target.closest("[data-room-del]");
+  if (ed) {
+    const g = FILTER_GROUPS.find(x => x.id === parseInt(ed.dataset.roomEdit, 10));
+    if (!g) return;
+    roomEditingId = g.id;
+    document.getElementById("roomFormTitle").textContent = `✏️ Edit “${g.label}”`;
+    document.getElementById("roomSubmit").textContent = "Save";
+    document.getElementById("roomCancelEdit").style.display = "";
+    document.getElementById("roomLabel").value = g.label;
+    document.getElementById("roomValue").value = g.room;
+    invHideError("roomError");
+    renderRoomPreview();
+    document.getElementById("roomLabel").focus();
+  } else if (del) {
+    const g = FILTER_GROUPS.find(x => x.id === parseInt(del.dataset.roomDel, 10));
+    if (!g || !confirm(`Remove the “${g.label}” button?\n\nThe PCs aren't affected — they still show under “All”.`)) return;
+    const resp = await apiFetch(`/api/rooms/${g.id}`, { method: "DELETE" });
+    if (resp.ok) { setRooms(await resp.json()); showToast("🗑️ Room removed", escapeHtml(g.label), "connected"); if (roomEditingId === g.id) resetRoomForm(); }
+    else showToast("Could not remove", escapeHtml(await invErrorText(resp, "Something went wrong.")), "alert");
+  }
+});
+document.getElementById("roomValue").addEventListener("input", () => { invHideError("roomError"); renderRoomPreview(); });
+document.getElementById("roomLabel").addEventListener("input", () => invHideError("roomError"));
+["roomLabel", "roomValue"].forEach(id => document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") submitRoomForm(); }));
+document.getElementById("roomSubmit").addEventListener("click", submitRoomForm);
+document.getElementById("manageRoomsBtn").addEventListener("click", openRoomsForm);
+document.getElementById("roomCancelEdit").addEventListener("click", resetRoomForm);
+document.getElementById("roomsClose").addEventListener("click", closeRoomsForm);
+document.getElementById("roomsOverlay").addEventListener("click", (e) => { if (e.target.id === "roomsOverlay") closeRoomsForm(); });
+
 // ----------------- Top-level nav: Monitoring System / Repair Tracking -----------------
 function switchView(view) {
   document.querySelectorAll(".nav-tab").forEach(t => t.classList.toggle("active", t.dataset.view === view));
+  document.getElementById("dashboardView").style.display = view === "dashboard" ? "" : "none";
   document.getElementById("monitoringView").style.display = view === "monitoring" ? "" : "none";
   document.getElementById("repairView").style.display = view === "repair" ? "" : "none";
   document.getElementById("usersView").style.display = view === "users" ? "" : "none";
+  document.getElementById("inventoryView").style.display = view === "inventory" ? "" : "none";
 }
 
 document.querySelectorAll(".nav-tab").forEach(tab => {
@@ -2227,6 +3768,8 @@ document.querySelectorAll(".nav-tab").forEach(tab => {
       loadRepairTickets();
     }
     if (tab.dataset.view === "users") loadUsers();
+    if (tab.dataset.view === "inventory") setInvPane(invPane);
+    if (tab.dataset.view === "dashboard") loadDashboard();
   });
 });
 

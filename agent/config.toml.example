@@ -7,11 +7,23 @@ PORT = 8000
 API_KEY = "changeme-shared-secret"  # must match API_KEY in server.py
 
 DISPLAY_NAME = "Jhon's Desktop"     # shown on the dashboard
-ROOM = "Room 204"                   # this PC's room — prefills the "Report a Problem" form
+ROOM = "201"                        # this PC's room. The dashboard's filter buttons use it: 201 = Computer Center 1, 202 = Computer Center 2. Also prefills "Report a Problem"
 SYSTEM_UNIT = "Unit 5"              # this PC's unit/asset label
 
 REPORT_INTERVAL = 5                 # seconds between full reports
 DEVICE_WATCH_INTERVAL = 2           # how often to check for keyboard/mouse/device plug-unplug (fast, lightweight)
 
-KEYBOARD_ID = "VID_0C45&PID_8006&MI_00"
-MOUSE_ID = ["VID_1D57&PID_FA60&MI_01", "VID_1D57&PID_FA60&MI_01"]
+# Keyboard/Mouse missing-alerts. By default the agent LEARNS them: the first time an
+# external keyboard or mouse is seen, it is remembered (in learned_devices.json next to
+# agent_windows.py). If a remembered one is later unplugged, the dashboard shows
+# "No keyboard/mouse detected". Until one has been seen, nothing is raised.
+# After replacing a keyboard/mouse, right-click the tray icon -> "Forget remembered
+# keyboard/mouse" so the new one is learned.
+AUTO_LEARN_INPUT_DEVICES = true
+
+# Optional manual override. Pin the check to specific devices' VID/PID instead of
+# using what was learned (useful if a dongle or macro-key mouse is learned wrongly).
+# Separate several devices with commas. Anything set here wins over learned values for
+# that kind. Find a VID/PID by running diagnose_devices.py (Device ID field).
+KEYBOARD_ID = ""   # e.g. "VID_0C45&PID_8006"
+MOUSE_ID = ""       # e.g. "VID_1038&PID_182E, VID_1D57&PID_FA60"
