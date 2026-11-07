@@ -128,12 +128,54 @@
   #useOverlay, #roomsOverlay { z-index: 300; }
   .search-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
   .search-row .search-input { margin-top: 0; flex: 1 1 240px; }
-  .search-row #manageRoomsBtn { margin: 0 0 0 auto; }
+  .search-row #intervalsBtn { margin: 0 0 0 auto; }
+  .search-row #manageRoomsBtn { margin: 0; }
+  .search-row #intervalsBtn[style*="none"] + #manageRoomsBtn { margin-left: auto; }
+  #intervalsOverlay { z-index: 300; }
+  .iv-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .iv-row input { width: 110px; margin-bottom: 0; }
+  .iv-hint { font-size: 13px; color: var(--faint); margin-bottom: 14px; }
+  .iv-group { border: 1px solid var(--border, rgba(255,255,255,0.1)); border-left: 4px solid var(--iv-c); border-radius: 8px; padding: 12px 14px 2px; margin-bottom: 14px; }
+  .iv-group h3 { margin: 0 0 2px; font-size: 16px; color: var(--iv-c); }
+  .iv-group .iv-for { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .iv-group .iv-missing { font-size: 13px; color: var(--warn); margin-bottom: 12px; }
   .room-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .room-row:last-child { border-bottom: none; }
   .room-row .grow { flex: 1; min-width: 0; }
   .room-row b { font-size: 15px; overflow-wrap: anywhere; }
   .room-row small { display: block; color: var(--faint); font-size: 13px; margin-top: 2px; overflow-wrap: anywhere; }
+  /* ---- Inventory: components on PCs ---- */
+  .comp-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .comp-tools .search-input { flex: 1 1 280px; margin-top: 0; }
+  .comp-group { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+  .comp-group.open { border-color: var(--accent); }
+  .comp-sum { display: grid; grid-template-columns: 22px 130px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; width: 100%;
+    padding: 11px 14px; background: none; border: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+  .comp-sum:hover, .comp-sum:focus-visible { background: var(--surface-2); outline: none; }
+  .comp-sum .caret { color: var(--muted); transition: transform 0.15s; }
+  .comp-group.open .caret { transform: rotate(90deg); }
+  .comp-sum .ctype { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .comp-sum .cname { font-weight: 600; overflow-wrap: anywhere; }
+  .comp-sum .cname small { display: block; font-weight: 400; font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .comp-sum .cpcs { font-size: 13px; color: var(--faint); white-space: nowrap; }
+  .comp-qty { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+  .comp-qty small { font-size: 12px; font-weight: 500; color: var(--faint); margin-left: 2px; }
+  .comp-detail { border-top: 1px solid var(--border); }
+  .comp-section { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin: 18px 0 8px 2px; }
+  @media (max-width: 600px) { .comp-sum { grid-template-columns: 18px minmax(0, 1fr) auto; } .comp-sum .ctype, .comp-sum .cpcs { display: none; } }
+  .comp-detail .log-wrap { border: none; border-radius: 0; margin: 0; }
+  .comp-host { background: none; border: none; padding: 0; font: inherit; font-size: 17px; font-weight: 700; color: var(--text); cursor: pointer; }
+  .comp-host:hover, .comp-host:focus-visible { color: var(--accent); text-decoration: underline; outline: none; }
+  .comp-host.small { font-size: 13px; font-weight: 600; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; margin: 2px 0; text-decoration: none; }
+  .comp-chip { font-size: 12px; font-weight: 700; border-radius: 10px; padding: 2px 8px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+  .comp-chip.ok { color: var(--good); } .comp-chip.warn { color: var(--warn); } .comp-chip.bad { color: var(--danger); }
+  .comp-table { min-width: 680px; }
+  .comp-table td:first-child { white-space: nowrap; }
+  .comp-table td:nth-child(2) { min-width: 200px; }
+  .comp-table code { white-space: nowrap; }
+  .comp-table code { font-size: 13px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
+  .comp-vendor { font-size: 13px; color: var(--muted); }
+  .comp-det { font-size: 13px; color: var(--text-2); }
   .reason-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
   .reason-chips .filter-btn { font-size: 14px; padding: 4px 12px; }
   .spec-chip { font-size: 12px; font-weight: 700; border-radius: 10px; padding: 2px 8px; margin-left: 6px; white-space: nowrap; background: var(--surface-2); border: 1px solid var(--border-2); color: var(--text-2); }
@@ -222,7 +264,13 @@
   .ticket-status { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; }
   .ticket-status.pending { background: rgba(255,210,61,0.15); color: var(--warn); }
   .ticket-status.in-progress { background: rgba(79,140,255,0.15); color: var(--accent); }
-  .ticket-status.completed { background: rgba(61,220,132,0.15); color: var(--good); }
+  .ticket-status.completed, .ticket-status.repaired { background: rgba(61,220,132,0.15); color: var(--good); }
+  .ticket-status.beyond-repair { background: rgba(255,92,92,0.15); color: var(--danger); }
+  .beyond-badge { display: inline-block; background: rgba(255,92,92,0.15); color: var(--danger); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+  .outcome-pick { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .outcome-pick label { flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 12px; white-space: nowrap; border: 1px solid var(--border-2); border-radius: 8px; cursor: pointer; font-weight: 600; }
+  .outcome-pick label:has(input:checked) { border-color: var(--accent); background: rgba(79,140,255,0.1); }
+  .outcome-pick label.beyond:has(input:checked) { border-color: var(--danger); background: rgba(255,92,92,0.1); }
   .ticket-field { font-size: 15px; margin-bottom: 6px; }
   .ticket-field b { color: var(--muted); font-weight: 700; }
   .ticket-part-change { font-size: 15px; background: var(--surface-2); border-radius: 6px; padding: 8px 10px; margin: 6px 0; }
@@ -249,13 +297,18 @@
   .status-dot.status-online { background: var(--good); box-shadow: 0 0 6px rgba(61,220,132,0.6); }
   .status-dot.status-offline { background: var(--offline); box-shadow: 0 0 6px rgba(138,143,152,0.5); }
   .status-dot.status-unresponsive { background: var(--warn); box-shadow: 0 0 6px rgba(255,210,61,0.6); }
-  .status-dot.status-crashed { background: var(--danger); box-shadow: 0 0 6px rgba(255,92,92,0.6); }
+  .status-dot.status-no_signal { background: var(--danger); box-shadow: 0 0 6px rgba(255,92,92,0.6); }
   .status-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; }
   .status-label.status-online { background: rgba(61,220,132,0.15); color: var(--good); }
   .status-label.status-offline { background: rgba(138,143,152,0.15); color: var(--offline); }
   .status-label.status-unresponsive { background: rgba(255,210,61,0.15); color: var(--warn); }
-  .status-label.status-crashed { background: rgba(255,92,92,0.15); color: var(--danger); }
-  .card.status-offline, .card.status-unresponsive, .card.status-crashed { opacity: 0.75; }
+  .status-label.status-no_signal { background: rgba(255,92,92,0.15); color: var(--danger); }
+  .status-dot.status-maintenance { background: var(--orange); box-shadow: 0 0 6px rgba(255,165,61,0.6); }
+  .status-label.status-maintenance { background: rgba(255,165,61,0.15); color: var(--orange); }
+  .card.status-offline, .card.status-unresponsive, .card.status-no_signal { opacity: 0.75; }
+  .ping-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 14px; color: var(--text-2); }
+  .ping-row .history-btn { margin-top: 0; }
+  .ping-warn { margin-top: 8px; font-size: 13px; color: var(--warn); background: rgba(255,210,61,0.08); border: 1px solid rgba(255,210,61,0.3); border-radius: 6px; padding: 6px 10px; }
   .card.has-missing { border-color: rgba(255,92,92,0.5); }
 
   .timestamp { font-size: 13px; color: var(--faint); margin-top: 8px; }
@@ -355,8 +408,8 @@
     <h2>⚠️ Notifications <span class="section-count" id="notifSidebarCount">(0)</span></h2>
     <div class="notif-sidebar-list">
       <div id="techNotifSection" style="display:none;margin-bottom:18px;">
-        <div class="notif-section-title">My Assigned Tasks</div>
-        <div id="myTasksList"><div class="no-issues">No tasks assigned to you.</div></div>
+        <div class="notif-section-title">My Pickups</div>
+        <div id="myTasksList"><div class="no-issues">No pickups assigned to you.</div></div>
       </div>
 
       <div id="problemsSection">
@@ -378,9 +431,8 @@
     <div class="dash-tiles">
       <button class="dash-tile" data-go="monitoring"><div class="lbl">🖥️ PCs online</div><div class="val" id="tileOnline">–</div></button>
       <button class="dash-tile" data-go="notifs"><div class="lbl">🔔 Needs attention</div><div class="val" id="tileAttention">–</div></button>
-      <button class="dash-tile" data-go="tasks"><div class="lbl" id="tileTasksLbl">📋 Open tasks</div><div class="val" id="tileTasks">–</div></button>
-      <button class="dash-tile" data-go="low"><div class="lbl">⚠️ Low-stock items</div><div class="val" id="tileLow">–</div></button>
-      <button class="dash-tile" data-go="purchases"><div class="lbl">💸 Spent on stock (all time)</div><div class="val" id="tileSpent">–</div></button>
+      <button class="dash-tile" data-go="tasks"><div class="lbl" id="tileTasksLbl">📋 Open pickups</div><div class="val" id="tileTasks">–</div></button>
+      <button class="dash-tile" data-go="inventory"><div class="lbl">🧩 Components tracked</div><div class="val" id="tileComps">–</div></button>
     </div>
 
     <div class="dash-grid">
@@ -389,7 +441,7 @@
         <div class="dash-list" id="dashNotifList"><div class="no-issues">Loading…</div></div>
       </section>
       <section class="dash-card" id="dashTaskCard">
-        <div class="dash-card-head"><h2 id="dashTaskTitle">📋 Assigned tasks <span class="section-count" id="dashTaskCount"></span></h2><span class="grow"></span>
+        <div class="dash-card-head"><h2 id="dashTaskTitle">📋 Pickups <span class="section-count" id="dashTaskCount"></span></h2><span class="grow"></span>
           <button class="dash-link" id="dashTasksAll">Repair Tracking →</button></div>
         <div class="dash-list" id="dashTaskList"><div class="no-issues">Loading…</div></div>
       </section>
@@ -411,16 +463,6 @@
       <div id="dashTable" style="display:none;overflow-x:auto;"></div>
     </section>
 
-    <section class="dash-card">
-      <div class="dash-card-head"><h2>💸 Spent on stock</h2><span class="grow"></span><span id="dashSpentText" style="font-size:14px;color:var(--muted);"></span></div>
-      <div class="chart-wrap" id="dashSpendChart"></div>
-      <div class="chart-note">Counts money only when stock is added (new items and restocks), at the price paid for that batch.</div>
-    </section>
-
-    <section class="dash-card" id="dashPurchCard">
-      <div class="dash-card-head"><h2>🧾 Recent purchases</h2><span class="grow"></span><button class="dash-link" id="dashPurchAll">All additions →</button></div>
-      <div id="dashPurchases" style="overflow-x:auto;"><div class="no-issues">Loading…</div></div>
-    </section>
   </div>
 
   <div id="monitoringView" class="nav-view" style="display:none;">
@@ -428,6 +470,7 @@
 
     <div class="search-row">
       <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search PCs by name…">
+      <button class="history-btn" id="intervalsBtn" style="display:none;" title="How long before a PC counts as Unresponsive, and how often the server pings">⏱️ Intervals</button>
       <button class="history-btn" id="manageRoomsBtn" style="display:none;" title="Add, rename or remove rooms">🏫 Manage rooms</button>
     </div>
 
@@ -440,9 +483,9 @@
 
   <div id="usersView" class="nav-view" style="display:none;">
     <h1>👥 Users</h1>
-    <div style="font-size:15px;color:var(--muted);margin-bottom:14px;">Technician accounts that can log in to this dashboard. Only the admin (you) can add or manage them.</div>
+    <div style="font-size:15px;color:var(--muted);margin-bottom:14px;">Assistant accounts that can log in to this dashboard. Only the Technician (you) can add or manage them.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="resolve-btn" id="addUserBtn" style="margin-top:0;padding:8px 14px;font-size:15px;background:var(--accent);color:white;border-color:var(--accent);">+ Add User</button>
+      <button class="resolve-btn" id="addUserBtn" style="margin-top:0;padding:8px 14px;font-size:15px;background:var(--accent);color:white;border-color:var(--accent);">+ Add Assistant</button>
       <button class="resolve-btn" id="changeMyPwBtn" style="margin-top:0;padding:8px 14px;font-size:15px;">🔑 Change my password</button>
     </div>
     <div id="usersError" style="display:none;color:var(--danger);font-size:14px;margin-top:12px;"></div>
@@ -452,18 +495,20 @@
   <div id="repairView" class="nav-view" style="display:none;">
     <h1>🛠️ Repair Tracking</h1>
 
-    <input type="text" id="repairSearchInput" class="search-input" placeholder="🔍 Search by PC, problem, part, or technician…">
+    <input type="text" id="repairSearchInput" class="search-input" placeholder="🔍 Search by PC, reason, part, or assistant…">
 
     <div class="repair-controls">
       <select id="repairDeviceFilter" class="repair-select"><option value="">All PCs</option></select>
       <select id="repairStatusFilter" class="repair-select">
         <option value="">All Statuses</option>
-        <option value="Pending">Pending</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Completed">Completed</option>
+        <option value="Pending">Awaiting pickup</option>
+        <option value="In Progress">Picked up</option>
+        <option value="Completed">Done (all results)</option>
+        <option value="Completed|Repaired">Repaired</option>
+        <option value="Completed|Beyond repair">Beyond repair</option>
       </select>
-      <button class="history-btn" id="myTasksBtn" aria-pressed="false">👤 My tasks</button>
-      <button class="history-btn" id="newTicketBtn" style="display:none;">+ Assign Task</button>
+      <button class="history-btn" id="myTasksBtn" aria-pressed="false">👤 My pickups</button>
+      <button class="history-btn" id="newTicketBtn" style="display:none;">+ Assign Pickup</button>
       <button class="history-btn" id="generateReportBtn">📄 Generate Report (CSV)</button>
     </div>
 
@@ -472,46 +517,16 @@
 
   <div id="inventoryView" class="nav-view" style="display:none;">
     <h1>📦 Inventory</h1>
-    <div class="filter-bar" style="margin-top:0;">
-      <button class="filter-btn active" data-invpane="stock">Stock</button>
-      <button class="filter-btn" data-invpane="deductions">➖ Deductions</button>
-      <button class="filter-btn" data-invpane="additions">➕ Additions</button>
+    <div class="dash-sub">Every part and peripheral across the PCs that report, with how many there are. Click one to see which PCs have it and their IDs. Vendor IDs come from Windows (USB VID, PCI vendor, monitor maker code, or the maker the part reports).</div>
+    <div class="comp-tools">
+      <input type="text" id="compSearch" class="search-input" placeholder="🔍 Search PC, part, vendor or ID… (e.g. 046D, Logitech, DDR4, CC1-UNIT-3)">
+      <select id="compRoom" class="repair-select" aria-label="Room"><option value="">All rooms</option></select>
+      <select id="compType" class="repair-select" aria-label="Component type"><option value="">All types</option></select>
+      <button class="history-btn" id="compExpandAll" style="margin-top:0;" aria-pressed="false">⊞ Expand all</button>
+      <button class="history-btn" id="compExportBtn" style="margin-top:0;">⬇️ Export CSV</button>
     </div>
-
-    <div id="invStockPane">
-      <input type="text" id="invSearch" class="search-input" placeholder="🔍 Search by item, category or note…">
-      <div class="repair-controls">
-        <select id="invCategoryFilter" class="repair-select"><option value="">All categories</option></select>
-        <button class="filter-btn warn" id="invLowBtn" aria-pressed="false" style="display:none;">⚠️ Low stock</button>
-        <button class="history-btn" id="invAddBtn" style="margin-top:0;">+ Add Item</button>
-        <button class="history-btn" id="invExportBtn" style="margin-top:0;">⬇️ Export CSV</button>
-        <div class="use-bar" id="useBar" style="display:none;">
-          <span id="useBarText"></span>
-          <button class="resolve-btn" id="useBarClear" style="margin-top:0;">Clear</button>
-          <button class="resolve-btn" id="useBarGo" style="margin-top:0;background:var(--accent);color:white;border-color:var(--accent);">🧰 Use on a PC…</button>
-        </div>
-      </div>
-      <div style="font-size:14px;color:var(--faint);margin:10px 0 10px 0;">Tick items and set how many, then “Use on a PC…” to take them out of stock.</div>
-      <div id="invList" class="repair-tickets-list"><div class="no-issues">Loading…</div></div>
-    </div>
-
-    <div id="invLogPane" style="display:none;">
-      <div id="logIntro" style="font-size:15px;color:var(--muted);margin-top:14px;"></div>
-      <div class="log-tools">
-        <input type="text" id="logSearch" class="search-input" placeholder="🔍 Search by item, PC, task, person or reason…">
-        <select id="logPeriod" class="repair-select" aria-label="Period">
-          <option value="all">All time</option>
-          <option value="today">Today</option>
-          <option value="7">Last 7 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="month">This month</option>
-          <option value="lastmonth">Last month</option>
-          <option value="year">This year</option>
-        </select>
-        <button class="history-btn" id="logExportBtn" style="margin-top:0;">⬇️ Export CSV</button>
-      </div>
-      <div id="logList" style="margin-top:14px;"><div class="no-issues">Loading…</div></div>
-    </div>
+    <div id="compSummary" style="font-size:14px;color:var(--muted);margin:12px 0 10px 0;"></div>
+    <div id="compList"><div class="no-issues">Waiting for PC reports…</div></div>
   </div>
 
   <div class="overlay" id="overlay">
@@ -521,14 +536,22 @@
   <div class="overlay" id="completeOverlay">
     <div class="modal" style="width:min(460px, 90vw); max-height:85vh; overflow-y:auto;">
       <button class="modal-close" id="completeClose">✕</button>
-      <h2 style="margin:0 0 4px 0; font-size:20px;">✅ Complete Task</h2>
+      <h2 style="margin:0 0 4px 0; font-size:20px;">📝 Report Result</h2>
       <div id="completeSummary" style="font-size:15px;color:var(--muted);margin:0 0 14px 0;"></div>
 
       <div id="completeError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
-      <label class="ticket-form-label">What did you do? <span style="color:var(--danger);">*</span></label>
+      <label class="ticket-form-label">Result <span style="color:var(--danger);">*</span></label>
+      <div class="outcome-pick" role="radiogroup">
+        <label><input type="radio" name="completeOutcome" value="Repaired" checked> ✅ Repaired</label>
+        <label class="beyond"><input type="radio" name="completeOutcome" value="Beyond repair"> ⛔ Beyond repair</label>
+      </div>
+      <div id="completeBeyondNote" style="display:none;font-size:13px;color:var(--danger-soft);margin:-6px 0 12px 0;">The PC stays pulled out (Maintenance) with a "Beyond repair" tag until someone marks it back in service.</div>
+
+      <label class="ticket-form-label" id="completeActionsLabel">What was done? <span style="color:var(--danger);">*</span></label>
       <textarea id="completeActionsInput" rows="3" placeholder="e.g. Replaced keyboard, reseated RAM…" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
 
+      <div id="completeRepairedOnly">
       <label style="font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer;font-weight:600;">
         <input type="checkbox" id="completePartReplaced">
         <span>🔧 A part was replaced</span>
@@ -556,22 +579,13 @@
         <span>Also save the current internal components as the new expected baseline (ticked automatically when a part is replaced — untick to skip)</span>
       </label>
       </div>
-
-      <label style="font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer;font-weight:600;">
-        <input type="checkbox" id="completeUsedInv">
-        <span>📦 Parts were used from the inventory</span>
-      </label>
-      <div id="completeInvSection" style="display:none;">
-        <input type="text" id="completeInvSearch" class="ticket-form-input" placeholder="🔍 Search the inventory…" autocomplete="off" style="margin-bottom:8px;">
-        <div class="prop-pick" id="completeInvPick"></div>
-        <div id="completeInvSummary" style="font-size:14px;color:var(--text-2);margin-bottom:14px;min-height:20px;"></div>
       </div>
 
-      <div class="logged-as">Completed by <b class="logged-as-name"></b></div>
+      <div class="logged-as">Reported by <b class="logged-as-name"></b></div>
 
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="resolve-btn" id="completeCancel">Cancel</button>
-        <button class="resolve-btn" id="completeSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Mark Completed</button>
+        <button class="resolve-btn" id="completeSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Save Result</button>
       </div>
     </div>
   </div>
@@ -579,7 +593,7 @@
   <div class="overlay" id="reassignOverlay">
     <div class="modal" style="width:min(420px, 90vw);">
       <button class="modal-close" id="reassignClose">✕</button>
-      <h2 style="margin:0 0 4px 0; font-size:20px;">🔁 Reassign Task</h2>
+      <h2 style="margin:0 0 4px 0; font-size:20px;">🔁 Reassign Pickup</h2>
       <div id="reassignSummary" style="font-size:15px;color:var(--muted);margin:0 0 14px 0;"></div>
       <div id="reassignError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
       <label class="ticket-form-label">Hand over to <span style="color:var(--danger);">*</span></label>
@@ -610,7 +624,7 @@
         <label class="switch"><input type="checkbox" id="settingSound"><span></span></label>
       </div>
       <div class="setting-row">
-        <div>Pop-up alerts<small>Show the corner pop-ups for connects, disconnects, crashes and missing parts. Confirmations of your own actions still show.</small></div>
+        <div>Pop-up alerts<small>Show the corner pop-ups for connects, disconnects, unresponsive or no-signal PCs, and missing parts. Confirmations of your own actions still show.</small></div>
         <label class="switch"><input type="checkbox" id="settingToasts"><span></span></label>
       </div>
 
@@ -637,7 +651,7 @@
   <div class="overlay" id="addUserOverlay">
     <div class="modal" style="width:min(380px, 90vw);">
       <button class="modal-close" id="addUserClose">✕</button>
-      <h2 style="margin:0 0 14px 0; font-size:20px;">👤 Add User</h2>
+      <h2 style="margin:0 0 14px 0; font-size:20px;">👤 Add Assistant</h2>
       <div id="addUserError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
       <label class="ticket-form-label">Username <span style="color:var(--danger);">*</span></label>
@@ -674,25 +688,35 @@
   </div>
 
   <div class="overlay" id="maintOverlay">
-    <div class="modal" style="width:min(400px, 90vw);">
+    <div class="modal" style="width:min(460px, 92vw);">
       <button class="modal-close" id="maintClose">✕</button>
-      <h2 style="margin:0 0 4px 0; font-size:20px;" id="maintTitle">🔧 Mark Under Maintenance</h2>
+      <h2 style="margin:0 0 4px 0; font-size:20px;" id="maintTitle">📤 Pull-Out</h2>
       <div style="font-size:14px;color:var(--muted);margin-bottom:12px;" id="maintDeviceLabel"></div>
 
       <div id="maintError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
       <div id="maintOnFields">
-        <label class="ticket-form-label">Reason for maintenance <span style="color:var(--danger);">*</span></label>
-        <textarea id="maintReasonInput" rows="3" placeholder="e.g. Won't boot, keyboard not responding..." class="ticket-form-input" style="margin-bottom:6px;resize:vertical;"></textarea>
-        <div style="font-size:13px;color:var(--faint);margin-bottom:14px;">A Pending repair ticket is created automatically from this.</div>
+        <label class="ticket-form-label">Purpose <span style="color:var(--danger);">*</span></label>
+        <div class="outcome-pick" role="radiogroup" id="maintPurpose">
+          <label><input type="radio" name="maintPurpose" value="PMS" checked> 🧰 PMS</label>
+          <label><input type="radio" name="maintPurpose" value="Repair"> 🔧 Repair</label>
+          <label><input type="radio" name="maintPurpose" value="Other"> ✏️ Other</label>
+        </div>
+        <div id="maintWhoRow">
+          <label class="ticket-form-label" for="maintAssigneeSelect">Who picks it up <span style="color:var(--danger);">*</span></label>
+          <select id="maintAssigneeSelect" class="repair-select" style="width:100%;margin-bottom:14px;"></select>
+        </div>
+        <label class="ticket-form-label" for="maintReasonInput" id="maintReasonLabel">Notes (optional)</label>
+        <textarea id="maintReasonInput" rows="3" placeholder="e.g. Quarterly cleaning and repaste" class="ticket-form-input" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div style="font-size:13px;color:var(--faint);margin-bottom:14px;" id="maintOnHint"></div>
       </div>
 
       <div id="maintOffFields" style="display:none;">
         <label class="ticket-form-label">Final note (optional)</label>
         <textarea id="maintNoteInput" rows="3" placeholder="e.g. Replaced PSU, tested OK..." class="ticket-form-input" style="margin-bottom:14px;resize:vertical;"></textarea>
-        <label style="font-size:15px;color:var(--text-2);display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
+        <label id="maintCompleteRow" style="font-size:15px;color:var(--text-2);display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
           <input type="checkbox" id="maintCompleteTickets" checked style="margin-top:3px;">
-          <span>Mark this PC's open repair tickets as Completed</span>
+          <span>Close this PC's open pickups as ✅ Repaired</span>
         </label>
       </div>
 
@@ -705,119 +729,17 @@
     </div>
   </div>
 
-  <div class="overlay" id="itemOverlay">
-    <div class="modal" style="width:min(460px, 90vw); max-height:85vh; overflow-y:auto;">
-      <button class="modal-close" id="itemClose">✕</button>
-      <h2 id="itemTitle" style="margin:0 0 16px 0; font-size:20px;">📦 Add Item</h2>
-      <div id="itemError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
-      <label class="ticket-form-label">Name <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="itemName" maxlength="120" placeholder="e.g. Kingston 8GB DDR4" class="ticket-form-input" style="margin-bottom:14px;">
-      <label class="ticket-form-label">Category</label>
-      <input type="text" id="itemCategory" list="itemCategoryList" maxlength="60" autocomplete="off" placeholder="e.g. RAM, Cables, Consumables" class="ticket-form-input" style="margin-bottom:14px;">
-      <datalist id="itemCategoryList"></datalist>
-      <div id="itemBoardWrap" class="stock-reveal" style="display:none;">
-        <label class="ticket-form-label">🧩 Board type <span style="color:var(--danger);">*</span></label>
-        <div class="reason-chips" id="itemPlatformChips" role="group" aria-label="Board type">
-          <button type="button" class="filter-btn" data-val="Intel">Intel</button>
-          <button type="button" class="filter-btn" data-val="AMD">AMD</button>
-        </div>
-        <label class="ticket-form-label" style="margin-top:6px;">🧠 Compatible RAM <span style="color:var(--danger);">*</span></label>
-        <div class="reason-chips" id="itemRamChips" role="group" aria-label="Compatible RAM type" style="margin-bottom:14px;">
-          <button type="button" class="filter-btn" data-val="DDR2">DDR2</button>
-          <button type="button" class="filter-btn" data-val="DDR3">DDR3</button>
-          <button type="button" class="filter-btn" data-val="DDR4">DDR4</button>
-          <button type="button" class="filter-btn" data-val="DDR5">DDR5</button>
-        </div>
-      </div>
-      <div style="display:flex; gap:10px; margin-bottom:14px;">
-        <div style="flex:1;" id="itemQtyWrap">
-          <label class="ticket-form-label">Starting quantity</label>
-          <input type="number" id="itemQty" min="0" step="1" value="0" class="ticket-form-input">
-        </div>
-        <div style="flex:1;">
-          <label class="ticket-form-label">Price each (₱)</label>
-          <input type="text" id="itemPrice" inputmode="decimal" placeholder="0.00" class="ticket-form-input">
-        </div>
-      </div>
-      <div style="display:flex; gap:10px; margin-bottom:4px;">
-        <div style="flex:1;">
-          <label class="ticket-form-label">Low-stock warning at</label>
-          <input type="number" id="itemMin" min="0" step="1" placeholder="0 = off" class="ticket-form-input">
-        </div>
-        <div style="flex:1;"></div>
-      </div>
-      <div style="font-size:13px;color:var(--faint);margin-bottom:14px;">Flagged when stock drops to this number or below.</div>
-      <label class="ticket-form-label">Notes</label>
-      <input type="text" id="itemNotes" maxlength="300" placeholder="Optional" class="ticket-form-input" style="margin-bottom:16px;">
-      <div class="logged-as">By <b class="logged-as-name"></b></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button class="resolve-btn" id="itemCancel">Cancel</button>
-        <button class="resolve-btn" id="itemSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="overlay" id="stockOverlay">
-    <div class="modal" style="width:min(420px, 90vw); max-height:85vh; overflow-y:auto;">
-      <button class="modal-close" id="stockClose">✕</button>
-      <h2 style="margin:0 0 4px 0; font-size:20px;">📦 Adjust stock</h2>
-      <div id="stockSummary" style="font-size:15px;color:var(--muted);margin:0 0 14px 0;"></div>
-      <div id="stockError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
-      <label class="ticket-form-label">New total in stock</label>
-      <div style="display:flex; gap:8px; margin-bottom:14px; align-items:center;">
-        <button class="resolve-btn" id="stockMinus" style="margin-top:0;font-size:18px;padding:4px 14px;">−</button>
-        <input type="number" id="stockNew" min="0" step="1" class="ticket-form-input" style="text-align:center;">
-        <button class="resolve-btn" id="stockPlus" style="margin-top:0;font-size:18px;padding:4px 14px;">+</button>
-      </div>
-      <div id="stockChangeNote" style="font-size:14px;color:var(--faint);margin:-4px 0 14px 0;">Change the total to add or remove stock.</div>
-      <div id="stockPriceWrap" class="stock-reveal" style="display:none;">
-        <label class="ticket-form-label">➕ How much per unit for this batch? (₱) <span style="color:var(--danger);">*</span></label>
-        <input type="text" id="stockPrice" inputmode="decimal" placeholder="0.00" class="ticket-form-input" style="margin-bottom:4px;">
-        <div id="stockPriceHint" style="font-size:13px;color:var(--faint);margin-bottom:14px;"></div>
-      </div>
-      <div id="stockReasonWrap" class="stock-reveal" style="display:none;">
-        <label class="ticket-form-label">➖ Why is stock going down? <span style="color:var(--danger);">*</span></label>
-        <div class="reason-chips" id="stockReasonChips">
-          <button type="button" class="filter-btn" data-reason="Damaged / defective">Damaged / defective</button>
-          <button type="button" class="filter-btn" data-reason="Lost / missing">Lost / missing</button>
-          <button type="button" class="filter-btn" data-reason="Count correction">Count correction</button>
-          <button type="button" class="filter-btn" data-reason="Returned to supplier">Returned to supplier</button>
-          <button type="button" class="filter-btn" data-reason="Lent out">Lent out</button>
-        </div>
-        <input type="text" id="stockReason" maxlength="200" placeholder="Pick one above or type the reason" class="ticket-form-input" style="margin-bottom:4px;">
-        <div style="font-size:13px;color:var(--faint);margin-bottom:14px;">Used on a PC? Use the tick boxes and “Use on a PC…” instead, so it's linked to the PC and its cost.</div>
-      </div>
-      <div class="logged-as">By <b class="logged-as-name"></b></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button class="resolve-btn" id="stockCancel">Cancel</button>
-        <button class="resolve-btn" id="stockSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="overlay" id="useOverlay">
-    <div class="modal" style="width:min(520px, 92vw); max-height:88vh; overflow-y:auto;">
-      <button class="modal-close" id="useClose">✕</button>
-      <h2 style="margin:0 0 4px 0; font-size:20px;">🧰 Use on a PC</h2>
-      <div style="font-size:15px;color:var(--muted);margin:0 0 14px 0;">These are taken out of stock right away and recorded in the Deductions log with their cost.</div>
-      <div id="useError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
-
-      <label class="ticket-form-label">PC <span style="color:var(--danger);">*</span></label>
-      <select id="useDevice" class="repair-select" style="width:100%;margin-bottom:14px;"></select>
-
-      <label class="ticket-form-label">Task (optional)</label>
-      <select id="useTask" class="repair-select" style="width:100%;margin-bottom:14px;"><option value="">No task</option></select>
-
-      <label class="ticket-form-label">Parts</label>
-      <table class="use-lines" id="useLines"></table>
-
-      <label class="ticket-form-label">Note (optional)</label>
-      <input type="text" id="useNote" maxlength="200" placeholder="e.g. Replaced faulty stick, spare cable" class="ticket-form-input" style="margin-bottom:14px;">
-
-      <div class="logged-as">By <b class="logged-as-name"></b></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button class="resolve-btn" id="useCancel">Cancel</button>
-        <button class="resolve-btn" id="useSubmit" style="background:var(--accent);color:white;border-color:var(--accent);">Take out of stock</button>
+  <div class="overlay" id="intervalsOverlay">
+    <div class="modal" style="width:min(460px, 92vw); max-height:88vh; overflow-y:auto;">
+      <button class="modal-close" id="intervalsClose">✕</button>
+      <h2 style="margin:0 0 4px 0; font-size:20px;">⏱️ Intervals</h2>
+      <div style="font-size:15px;color:var(--muted);margin:0 0 14px 0;">Each box says what its settings are for. Changes apply straight away, with no restart.</div>
+      <div id="intervalsError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
+      <div id="intervalsFields"><div class="no-issues">Loading…</div></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        <button class="resolve-btn" id="intervalsDefaults" style="margin-right:auto;">Reset to defaults</button>
+        <button class="resolve-btn" id="intervalsCancel">Cancel</button>
+        <button class="resolve-btn" id="intervalsSave" style="background:var(--accent);color:white;border-color:var(--accent);">Save</button>
       </div>
     </div>
   </div>
@@ -848,18 +770,18 @@
   <div class="overlay" id="newTicketOverlay">
     <div class="modal" style="width:min(460px, 90vw); max-height:85vh; overflow-y:auto;">
       <button class="modal-close" id="newTicketClose">✕</button>
-      <h2 style="margin:0 0 16px 0; font-size:20px;">📋 Assign Task</h2>
+      <h2 style="margin:0 0 16px 0; font-size:20px;">📋 Assign Pickup</h2>
 
       <div id="newTicketError" style="display:none;color:var(--danger);font-size:14px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.3);border-radius:6px;padding:8px 10px;margin-bottom:14px;"></div>
 
       <label class="ticket-form-label">PC <span style="color:var(--danger);">*</span></label>
       <select id="ticketDeviceSelect" class="repair-select" style="width:100%;margin-bottom:14px;"></select>
 
-      <label class="ticket-form-label">Assign to <span style="color:var(--danger);">*</span></label>
+      <label class="ticket-form-label">Who picks it up <span style="color:var(--danger);">*</span></label>
       <select id="ticketAssigneeSelect" class="repair-select" style="width:100%;margin-bottom:14px;"></select>
 
-      <label class="ticket-form-label">Task <span style="color:var(--danger);">*</span></label>
-      <textarea id="ticketProblemInput" rows="3" placeholder="What needs to be done? e.g. Keyboard keys not working, replace it" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
+      <label class="ticket-form-label">Reason for pickup <span style="color:var(--danger);">*</span></label>
+      <textarea id="ticketProblemInput" rows="3" placeholder="What's wrong with it? e.g. Won't boot, keyboard keys not working" class="ticket-form-input" style="margin-bottom:14px;"></textarea>
 
       <div class="logged-as">Assigned by <b class="logged-as-name"></b></div>
 
@@ -879,8 +801,6 @@ const toastContainer = document.getElementById("toastContainer");
 const issuesListEl = document.getElementById("issuesList");
 const cards = {};       // device_id -> card element
 const lastPayload = {}; // device_id -> last full payload
-let invItems = [], invLog = [], invPane = "stock", invLogKind = "deduction";
-let editingItemId = null, stockItemId = null;
 const lastMissingCount = {}; // device_id -> number of missing components on the previous update
 let openDeviceId = null; // which device's modal is currently open, if any
 let soundEnabled = true;
@@ -963,6 +883,11 @@ function showLogin(message) {
   document.getElementById("loginUser").focus();
 }
 
+// Role names on screen. Stored roles stay "admin" / "user", so existing accounts keep working:
+//   admin -> Technician (runs the system, assigns pickups, records results)
+//   user  -> Assistant  (picks PCs up, can pull out / report problems)
+function roleName(role) { return role === "admin" ? "Technician" : "Assistant"; }
+
 function startSession(token, username, role, defaultPassword) {
   authToken = token;
   authUser = username;
@@ -971,7 +896,6 @@ function startSession(token, username, role, defaultPassword) {
   document.getElementById("usersTab").style.display = authRole === "admin" ? "" : "none";
   document.getElementById("newTicketBtn").style.display = authRole === "admin" ? "" : "none";
   applyRoleNotifUI();
-  applyInventoryRoleUI();
   if (authRole !== "admin") loadMyTasks();
   document.getElementById("defaultPwBanner").style.display = defaultPassword ? "block" : "none";
   storeSet(TOKEN_KEY, token);
@@ -1038,8 +962,23 @@ const STATUS_TEXT = {
   online: "Online",
   offline: "Offline",
   unresponsive: "Unresponsive",
-  crashed: "Crashed",
+  no_signal: "No signal",
+  maintenance: "Maintenance",
 };
+
+// What a PC's card shows. A pulled-out PC stays "Maintenance" until it's marked back in service,
+// whatever its connection does meanwhile (it's normal for it to be off or unplugged).
+function shownStatus(p) { return p.under_maintenance ? "maintenance" : (p.status || "online"); }
+
+// ✓/✕ Keyboard, Mouse and Display. The display flag comes from the server; for a report from an
+// older server, it's worked out from the monitors the agent lists.
+function peripheralChipsHtml(p) {
+  const pf = p.peripheral_flags || {};
+  const on = (p.status || "online") !== "offline";
+  const hasDisplay = "has_display" in pf ? pf.has_display : (p.devices || []).some(d => d.type === "Monitor");
+  const chip = (ok, label) => `<span class="peripheral-chip ${ok && on ? "present" : "absent"}">${ok && on ? "✓" : "✕"} ${label}</span>`;
+  return `<div class="peripheral-row">${chip(pf.has_keyboard, "Keyboard")}${chip(pf.has_mouse, "Mouse")}${chip(hasDisplay, "Display")}</div>`;
+}
 
 // ----------------- Notifications drawer: open/close -----------------
 const notifSidebarEl = document.getElementById("notifSidebar");
@@ -1112,12 +1051,12 @@ function renderMyTasks() {
   const listEl = document.getElementById("myTasksList");
   const tasks = [...myOpenTasks.values()].sort((a, b) => a.timestamp - b.timestamp);
   if (!tasks.length) {
-    listEl.innerHTML = `<div class="no-issues">No tasks assigned to you.</div>`;
+    listEl.innerHTML = `<div class="no-issues">No pickups assigned to you.</div>`;
   } else {
     listEl.innerHTML = tasks.map(t => `
       <div class="task-notif-card" data-ticket-id="${t.id}">
         <span class="notif-alert-host">${escapeHtml(t.hostname)}</span>
-        <span class="ticket-status ${statusClass(t.repair_status)}" style="float:right;">${escapeHtml(t.repair_status)}</span>
+        <span class="ticket-status ${ticketStatusClass(t)}" style="float:right;">${escapeHtml(ticketStatusText(t))}</span>
         <div class="notif-alert-desc">${escapeHtml(t.reported_problem)}</div>
         <div class="notif-alert-time">Assigned by ${escapeHtml(t.assigned_by || "admin")} — ${new Date(t.timestamp*1000).toLocaleString()}</div>
       </div>`).join("");
@@ -1212,7 +1151,7 @@ function markTaskSeen(id) {
 function announceTask(t) {
   markTaskSeen(t.id);
   const by = t.assigned_by && t.assigned_by !== authUser ? ` from ${escapeHtml(t.assigned_by)}` : "";
-  showToast(`📋 New task for you, ${escapeHtml(authUser)}${by}`,
+  showToast(`📦 New pickup for you, ${escapeHtml(authUser)}${by}`,
             `<b>${escapeHtml(t.hostname)}</b>: ${escapeHtml(t.reported_problem)}`,
             "alert", { duration: 15000, onClick: () => { switchView("repair"); loadRepairTickets(); } });
   playAlertSound();
@@ -1241,9 +1180,9 @@ function naturalCompare(a, b) {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
 }
 
-// One grid, ordered Online, Unresponsive, Crashed, then Offline. Within each
+// One grid, ordered Online, Unresponsive, No signal, Maintenance, then Offline. Within each
 // status, PCs are in natural name order ("PC 2" before "PC 10").
-const STATUS_ORDER = ["online", "unresponsive", "crashed", "offline"];
+const STATUS_ORDER = ["online", "unresponsive", "no_signal", "maintenance", "offline"];
 function relayoutGrid() {
   const cardEls = Array.from(deviceGrid.children);
   const rank = (el) => { const r = STATUS_ORDER.indexOf(el.dataset.status); return r === -1 ? STATUS_ORDER.length : r; };
@@ -1257,7 +1196,7 @@ function relayoutGrid() {
 // list is only shown until that loads. "room" is matched against the ROOM value in each PC's
 // agent config.toml, as a whole number/word: "201" matches ROOM = "201" and ROOM = "Room 201",
 // but not "2012". A PC whose ROOM matches none of these only shows up under "All".
-// (Under Maintenance is in the status row below, not here.)
+// (Maintenance is in the status row below, not here.)
 let FILTER_GROUPS = [
   { label: "Computer Center 1", room: "201" },
   { label: "Computer Center 2", room: "202" },
@@ -1268,12 +1207,12 @@ const STATUS_FILTERS = [
   { label: "Online", value: "online" },
   { label: "Offline", value: "offline" },
   { label: "Unresponsive", value: "unresponsive" },
-  { label: "Crashed", value: "crashed" },
-  { label: "🔧 Under Maintenance", value: "__MAINTENANCE__" },
+  { label: "No signal", value: "no_signal" },
+  { label: "Maintenance", value: "maintenance" },
 ];
 
 let activeFilter = "";       // "" = all groups, or a room value from FILTER_GROUPS
-let activeStatusFilter = ""; // "" = all, a status, or "__MAINTENANCE__" (a flag, not a status)
+let activeStatusFilter = ""; // "" = all, or a shown status (incl. "maintenance" for pulled-out PCs)
 let searchQuery = "";        // free-text hostname search — combines with both filters above
 
 function renderFilterBar() {
@@ -1283,6 +1222,7 @@ function renderFilterBar() {
     <button class="filter-btn${g.room === activeFilter ? " active" : ""}" data-room="${escapeHtml(g.room)}">${escapeHtml(g.label)}</button>
   `).join("");
   document.getElementById("manageRoomsBtn").style.display = authRole === "admin" ? "" : "none";
+  document.getElementById("intervalsBtn").style.display = authRole === "admin" ? "" : "none";
   bar.querySelectorAll(".filter-btn[data-room]").forEach(btn => {
     btn.addEventListener("click", () => {
       activeFilter = btn.dataset.room;
@@ -1331,7 +1271,6 @@ function applyFilter() {
 
     let statusMatches;
     if (!activeStatusFilter) statusMatches = true;
-    else if (activeStatusFilter === "__MAINTENANCE__") statusMatches = card.dataset.maintenance === "true";
     else statusMatches = card.dataset.status === activeStatusFilter;
     const searchMatches = !searchQuery || hostname.includes(searchQuery.toUpperCase());
 
@@ -1345,7 +1284,7 @@ function applyFilter() {
 function renderCard(payload) {
   const id = payload.device_id;
   lastPayload[id] = payload;
-  const status = payload.status || "online";
+  const status = shownStatus(payload);
 
   if (!cards[id]) {
     const card = document.createElement("div");
@@ -1360,13 +1299,12 @@ function renderCard(payload) {
   cards[id].dataset.maintenance = payload.under_maintenance ? "true" : "false";
   const hw = payload.hardware || {};
   const missing = payload.missing_components || [];
-  const pf = payload.peripheral_flags || {};
 
   // Notify if the number of missing components just went UP since the last update
   // (covers RAM/CPU/GPU/drives — peripheral connect/disconnect gets its own
   // dedicated event from the server, handled separately below)
   const prevMissingCount = lastMissingCount[id] ?? 0;
-  if (missing.length > prevMissingCount) {
+  if (missing.length > prevMissingCount && !payload.under_maintenance) {
     const newlyMissing = missing.slice(0, missing.length - prevMissingCount);
     notify(
       `⚠️ ${payload.hostname}`,
@@ -1379,7 +1317,7 @@ function renderCard(payload) {
   cards[id].className = `card status-${status}${missing.length ? " has-missing" : ""}`;
   cards[id].innerHTML = `
     <div class="header-row">
-      <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance ? `<span class="maintenance-badge">🔧 Maintenance</span>` : ""}</h2>
+      <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance && payload.beyond_repair ? `<span class="beyond-badge">⛔ Beyond repair</span>` : ""}</h2>
       <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
     </div>
     <div style="font-size:14px;color:var(--muted);">${payload.os || ""}</div>
@@ -1393,10 +1331,7 @@ function renderCard(payload) {
     <div class="stat"><span>Disk</span><span>${payload.disk_low ? "💾 " : ""}${hw.disk_percent ?? "-"}% used</span></div>
     <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%${payload.disk_low ? ";background:var(--warn)" : ""}"></div></div>
 
-    <div class="peripheral-row">
-      <span class="peripheral-chip ${pf.has_keyboard && status !== "offline" ? "present" : "absent"}">${pf.has_keyboard && status !== "offline" ? "✓" : "✕"} Keyboard</span>
-      <span class="peripheral-chip ${pf.has_mouse && status !== "offline" ? "present" : "absent"}">${pf.has_mouse && status !== "offline" ? "✓" : "✕"} Mouse</span>
-    </div>
+    ${peripheralChipsHtml(payload)}
 
     ${missing.length ? `<div class="missing-pill">⚠️ ${missing.length} component${missing.length > 1 ? "s" : ""} missing</div>` : ""}
     <div class="timestamp">Last update: ${new Date(payload.timestamp*1000).toLocaleTimeString()} — click for full details</div>
@@ -1442,8 +1377,33 @@ function renderNotificationSidebar() {
   updateSidebarAutoState();
 }
 
+// Last result of the server pinging this PC's agent (every 10 min, or "Ping now").
+function pingRowHtml(payload) {
+  const p = payload.ping;
+  const when = p && p.at ? new Date(p.at * 1000).toLocaleTimeString() : "";
+  const text = !p ? "Not pinged yet (the server pings on a schedule, and when the PC goes quiet)"
+    : p.ok ? `✅ ${escapeHtml(p.detail)} · ${when}` : `❌ ${escapeHtml(p.detail)} · ${when}`;
+  const warn = p && !p.ok && (payload.status || "online") === "online"
+    ? `<div class="ping-warn">Reports are arriving, but the server can't ping this PC's agent. Update the agent and run install_startup.bat again (it opens port 8770 in Windows Firewall), and check the PC is on the same network as the server.</div>` : "";
+  const ai = payload.agent_intervals;
+  const timing = ai ? `<div class="ping-row" style="margin-top:4px;">⏱️ This agent sends a full report every ${escapeHtml(ai.report_interval)} s and checks peripherals (keyboard, mouse, display) every ${escapeHtml(ai.device_watch_interval)} s</div>`
+    : `<div class="ping-row" style="margin-top:4px;color:var(--faint);">⏱️ Older agent: it uses the intervals in its own config.toml (update it to follow the dashboard's Intervals)</div>`;
+  return `<div class="ping-row"><span>📡 Last ping: <span id="pingResult">${text}</span></span>
+    <button class="history-btn" id="pingNowBtn" data-ping="${escapeHtml(payload.device_id)}">Ping now</button></div>${warn}${timing}`;
+}
+modal.addEventListener("click", async (e) => {
+  const b = e.target.closest("#pingNowBtn");
+  if (!b) return;
+  b.disabled = true; b.textContent = "Pinging…";
+  try {
+    const resp = await apiFetch(`/api/devices/${encodeURIComponent(b.dataset.ping)}/ping`, { method: "POST" });
+    if (!resp.ok) { showToast("Could not ping", escapeHtml(await invErrorText(resp, "Something went wrong.")), "alert"); b.disabled = false; b.textContent = "Ping now"; }
+    // the result arrives as a live "ping" message and redraws this window
+  } catch (err) { b.disabled = false; b.textContent = "Ping now"; }
+});
+
 function renderModalContent(payload) {
-  const status = payload.status || "online";
+  const status = shownStatus(payload);
   const hw = payload.hardware || {};
   const missing = payload.missing_components || [];
   const devices = payload.devices || [];
@@ -1460,14 +1420,16 @@ function renderModalContent(payload) {
   modal.innerHTML = `
     <button class="modal-close" id="modalClose">✕</button>
     <div class="header-row">
-      <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance ? `<span class="maintenance-badge">🔧 Maintenance</span>` : ""}</h2>
+      <h2><span class="status-dot status-${status}"></span>${payload.hostname}${payload.under_maintenance && payload.beyond_repair ? `<span class="beyond-badge">⛔ Beyond repair</span>` : ""}</h2>
       <span class="status-label status-${status}">${STATUS_TEXT[status] || status}</span>
     </div>
     <div style="font-size:15px;color:var(--muted);">${payload.os || ""} — ${payload.device_id}</div>
+    ${payload.under_maintenance ? `<div class="ping-row"><span>${payload.beyond_repair ? "⛔ Reported beyond repair — " : "🛠️ Pulled out — "}stays in Maintenance until marked back in service. Connection right now: <b>${escapeHtml(STATUS_TEXT[payload.status || "online"] || payload.status)}</b></span></div>` : ""}
+    ${pingRowHtml(payload)}
 
-    <button class="history-btn" id="maintenanceHistoryBtn" style="margin-top:10px; margin-right:8px;">📋 Maintenance History</button>
+    <button class="history-btn" id="maintenanceHistoryBtn" style="margin-top:10px; margin-right:8px;">📋 Pull-Out History</button>
     <button class="history-btn" id="toggleMaintenanceBtn" style="margin-top:10px; ${payload.under_maintenance ? "border-color: rgba(61,220,132,0.4); color: var(--good);" : "border-color: rgba(255,165,61,0.4); color: var(--orange);"}">
-      ${payload.under_maintenance ? "✅ Mark Back In Service" : "🔧 Mark Under Maintenance"}
+      ${payload.under_maintenance ? "✅ Mark Back In Service" : "📤 Pull-Out"}
     </button>
 
     <div class="section-title">Hardware</div>
@@ -1479,10 +1441,7 @@ function renderModalContent(payload) {
     <div class="bar-bg"><div class="bar-fill" style="width:${hw.disk_percent||0}%${payload.disk_low ? ";background:var(--warn)" : ""}"></div></div>
     ${hw.battery_percent != null ? `<div class="stat"><span>Battery</span><span>${hw.battery_percent}%</span></div>` : ""}
 
-    <div class="peripheral-row">
-      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_keyboard && status !== "offline" ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_keyboard && status !== "offline" ? "✓" : "✕"} Keyboard</span>
-      <span class="peripheral-chip ${(payload.peripheral_flags||{}).has_mouse && status !== "offline" ? "present" : "absent"}">${(payload.peripheral_flags||{}).has_mouse && status !== "offline" ? "✓" : "✕"} Mouse</span>
-    </div>
+    ${peripheralChipsHtml(payload)}
 
     ${missingHtml}
 
@@ -1529,15 +1488,51 @@ function toggleMaintenance(deviceId, currentlyUnderMaintenance) {
   const turningOn = !currentlyUnderMaintenance;
   maintTarget = { deviceId, turningOn };
   const dev = lastPayload[deviceId];
-  document.getElementById("maintTitle").textContent = turningOn ? "🔧 Mark Under Maintenance" : "✅ Back In Service";
+  document.getElementById("maintTitle").textContent = turningOn ? "📤 Pull-Out" : "✅ Back In Service";
   document.getElementById("maintDeviceLabel").textContent = dev ? dev.hostname : deviceId;
   document.getElementById("maintOnFields").style.display = turningOn ? "block" : "none";
   document.getElementById("maintOffFields").style.display = turningOn ? "none" : "block";
   document.getElementById("maintReasonInput").value = "";
   document.getElementById("maintNoteInput").value = "";
-  document.getElementById("maintCompleteTickets").checked = true;
+  document.querySelector('input[name="maintPurpose"][value="PMS"]').checked = true;
+  syncMaintPurpose();
+  const admin = authRole === "admin";
+  document.getElementById("maintWhoRow").style.display = admin ? "" : "none";
+  document.getElementById("maintOnHint").textContent = admin
+    ? "A pickup is created for that person (Awaiting pickup) and they get a pop-up. It's logged with this PC, who picks it up and when."
+    : "A pickup is created for you, already marked Picked up. The Technician records the result later.";
+  if (turningOn && admin) loadMaintAssignees();
+  document.getElementById("maintCompleteTickets").checked = authRole === "admin";
+  document.getElementById("maintCompleteRow").style.display = authRole === "admin" ? "" : "none";
   hideMaintError();
   document.getElementById("maintOverlay").classList.add("open");
+}
+
+function maintPurpose() {
+  return (document.querySelector('input[name="maintPurpose"]:checked') || {}).value || "PMS";
+}
+function syncMaintPurpose() {
+  const p = maintPurpose();
+  const required = p !== "PMS";
+  document.getElementById("maintReasonLabel").innerHTML = (p === "PMS" ? "Notes" : p === "Repair" ? "What's wrong" : "Reason")
+    + (required ? ' <span style="color:var(--danger);">*</span>' : " (optional)");
+  document.getElementById("maintReasonInput").placeholder = p === "PMS" ? "e.g. Quarterly cleaning and repaste"
+    : p === "Repair" ? "e.g. Won't boot, keyboard not responding…" : "e.g. Moving to room 202";
+}
+document.querySelectorAll('input[name="maintPurpose"]').forEach(r => r.addEventListener("change", syncMaintPurpose));
+
+async function loadMaintAssignees() {
+  const who = document.getElementById("maintAssigneeSelect");
+  who.innerHTML = `<option value="">Loading…</option>`;
+  try {
+    const resp = await apiFetch("/api/users");
+    const users = resp.ok ? await resp.json() : [];
+    who.innerHTML = users.length
+      ? `<option value="">— choose an assistant —</option>` + users.map(u => `<option value="${escapeHtml(u.username)}">${escapeHtml(u.username)}</option>`).join("")
+      : `<option value="">No assistant accounts yet — add one in Users</option>`;
+  } catch (e) {
+    who.innerHTML = `<option value="">Could not load assistants</option>`;
+  }
 }
 
 function closeMaintForm() {
@@ -1558,15 +1553,20 @@ function hideMaintError() {
 async function submitMaintForm() {
   if (!maintTarget) return;
   const { deviceId, turningOn } = maintTarget;
-  const reason = document.getElementById("maintReasonInput").value.trim();
+  const purpose = maintPurpose();
+  const notes = document.getElementById("maintReasonInput").value.trim();
+  // Stored as the pickup's reason, e.g. "PMS", "PMS — repaste", "Repair — won't boot", or just the text for Other.
+  const reason = purpose === "Other" ? notes : purpose + (notes ? " — " + notes : "");
   const note = document.getElementById("maintNoteInput").value.trim();
-  const complete_tickets = document.getElementById("maintCompleteTickets").checked;
+  const complete_tickets = authRole === "admin" && document.getElementById("maintCompleteTickets").checked;
+  const assigned_to = document.getElementById("maintAssigneeSelect").value;
 
-  if (turningOn && !reason) { showMaintError("Please enter the reason for maintenance."); return; }
+  if (turningOn && purpose !== "PMS" && !notes) { showMaintError(purpose === "Repair" ? "Please say what's wrong." : "Please enter the reason for the pull-out."); return; }
+  if (turningOn && authRole === "admin" && !assigned_to) { showMaintError("Please choose who picks it up."); return; }
   hideMaintError();
 
   const body = { under_maintenance: turningOn };
-  if (turningOn) body.reason = reason;
+  if (turningOn) { body.reason = reason; if (authRole === "admin") body.assigned_to = assigned_to; }
   else { body.note = note; body.complete_tickets = complete_tickets; }
 
   try {
@@ -1576,6 +1576,7 @@ async function submitMaintForm() {
       body: JSON.stringify(body),
     });
     if (resp.ok) {
+      if (turningOn && authRole === "admin") showToast("📦 Pickup assigned", `${escapeHtml(lastPayload[deviceId]?.hostname || deviceId)} → ${escapeHtml(assigned_to)} (${escapeHtml(purpose)})`, "connected");
       closeMaintForm(); // card badge + toast come from the "maintenance" WebSocket message
     } else if (resp.status === 401) {
       showMaintError("Not logged in — please log in again.");
@@ -1583,7 +1584,7 @@ async function submitMaintForm() {
       const err = await resp.json().catch(() => ({}));
       showMaintError(err.detail || "Missing required field.");
     } else {
-      showMaintError("Could not update maintenance status — check the server connection.");
+      showMaintError("Could not update the pull-out — check the server connection.");
     }
   } catch (e) {
     showMaintError("Could not reach the server.");
@@ -1741,8 +1742,8 @@ async function openReassignForm(ticketId) {
     const resp = await apiFetch("/api/technicians");
     const names = (resp.ok ? await resp.json() : []).filter(n => n !== (t.assigned_to || t.technician));
     sel.innerHTML = names.length ? names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("")
-                                 : `<option value="">No other technicians available</option>`;
-  } catch (e) { sel.innerHTML = `<option value="">Could not load technicians</option>`; }
+                                 : `<option value="">No other assistants available</option>`;
+  } catch (e) { sel.innerHTML = `<option value="">Could not load assistants</option>`; }
 }
 
 function closeReassignForm() {
@@ -1755,14 +1756,14 @@ async function submitReassignForm() {
   const t = reassigningTicket;
   const to = document.getElementById("reassignSelect").value;
   const err = document.getElementById("reassignError");
-  if (!to) { err.textContent = "Choose a technician."; err.style.display = "block"; return; }
+  if (!to) { err.textContent = "Choose an assistant."; err.style.display = "block"; return; }
   try {
     const resp = await apiFetch(`/api/repair-tickets/${t.id}/reassign`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ assigned_to: to }),
     });
     if (resp.ok) {
-      showToast("🔁 Task Reassigned", `${escapeHtml(t.hostname)} → ${escapeHtml(to)}`, "connected");
+      showToast("🔁 Pickup Reassigned", `${escapeHtml(t.hostname)} → ${escapeHtml(to)}`, "connected");
       closeReassignForm(); loadRepairTickets();
     } else {
       const body = await resp.json().catch(() => ({}));
@@ -1776,7 +1777,7 @@ document.getElementById("reassignCancel").addEventListener("click", closeReassig
 document.getElementById("reassignSubmit").addEventListener("click", submitReassignForm);
 document.getElementById("reassignOverlay").addEventListener("click", (e) => { if (e.target.id === "reassignOverlay") closeReassignForm(); });
 
-// ----------------- Complete Task form (technician) -----------------
+// ----------------- Report Result form (admin only: Repaired / Beyond repair) -----------------
 let completingTicket = null;
 
 // Parts the PC reported in its last report, used to fill "Model Before" automatically.
@@ -1854,87 +1855,25 @@ function syncBaselineTick() {
 document.getElementById("completePartInput").addEventListener("input", () => { autoFillModelBefore(); syncBaselineTick(); });
 document.getElementById("completeBeforeInput").addEventListener("input", () => { beforeAutoFilled = false; });
 
-// Parts taken from the inventory while completing the task: ticked here, deducted by the
-// server together with the completion (if any is short, nothing is saved).
-const completeInvSel = new Map(); // item_id -> quantity
-function completeInvOn() { return document.getElementById("completeUsedInv").checked; }
-document.getElementById("completeUsedInv").addEventListener("change", () => {
-  const on = completeInvOn();
-  document.getElementById("completeInvSection").style.display = on ? "" : "none";
-  if (on) {
-    document.getElementById("completeInvPick").innerHTML = `<div class="no-issues" style="padding:10px;">Loading…</div>`;
-    loadInventory(); // re-renders the pick list when it arrives
-    document.getElementById("completeInvSearch").focus();
-  }
-});
-function renderCompleteInvPick() {
-  for (const [id, qty] of completeInvSel) {
-    const it = invItems.find(x => x.id === id);
-    if (!it || it.quantity === 0) completeInvSel.delete(id);
-    else if (qty > it.quantity) completeInvSel.set(id, it.quantity);
-  }
-  const q = document.getElementById("completeInvSearch").value;
-  const rows = invItems.filter(i => invMatch(q, [i.name, i.category, i.notes]));
-  const el = document.getElementById("completeInvPick");
-  if (!invItems.length) el.innerHTML = `<div class="no-issues" style="padding:10px;">The inventory is empty.</div>`;
-  else if (!rows.length) el.innerHTML = `<div class="no-issues" style="padding:10px;">No items match.</div>`;
-  else el.innerHTML = rows.map(i => {
-    const out = i.quantity === 0;
-    const on = completeInvSel.has(i.id) && !out;
-    return `
-    <div class="prop-pick-row ${out ? "disabled" : ""}">
-      <label><input type="checkbox" data-id="${i.id}" ${on ? "checked" : ""} ${out ? "disabled" : ""}>
-        <span>${escapeHtml(i.name)}${i.unit_price ? ` <span style="color:var(--faint);font-size:13px;">${peso(i.unit_price)}</span>` : ""}</span></label>
-      <span class="prop-pick-stock">${out ? "out of stock" : i.quantity + " in stock"}</span>
-      <input type="number" data-qty="${i.id}" min="1" max="${i.quantity}" step="1" value="${on ? completeInvSel.get(i.id) : 1}" ${on ? "" : "disabled"} aria-label="Quantity of ${escapeHtml(i.name)}">
-    </div>`;
-  }).join("");
-  renderCompleteInvSummary();
+
+function completeOutcome() {
+  return (document.querySelector('input[name="completeOutcome"]:checked') || {}).value || "Repaired";
 }
-function renderCompleteInvSummary() {
-  const parts = [];
-  let total = 0;
-  for (const [id, qty] of completeInvSel) {
-    const it = invItems.find(x => x.id === id);
-    if (it) { parts.push(`${qty} × ${escapeHtml(it.name)}`); total += qty * it.unit_price; }
-  }
-  document.getElementById("completeInvSummary").innerHTML = parts.length
-    ? `<b>Will be taken out of stock:</b> ${parts.join(", ")} — <b>${peso(total)}</b>` : `<span style="color:var(--faint);">Nothing ticked yet.</span>`;
+function syncOutcome() {
+  const beyond = completeOutcome() === "Beyond repair";
+  document.getElementById("completeRepairedOnly").style.display = beyond ? "none" : "";
+  document.getElementById("completeBeyondNote").style.display = beyond ? "" : "none";
+  document.getElementById("completeActionsLabel").firstChild.textContent = beyond ? "Why can't it be repaired? " : "What was done? ";
+  document.getElementById("completeActionsInput").placeholder = beyond ? "e.g. Motherboard dead, no replacement available" : "e.g. Replaced keyboard, reseated RAM…";
 }
-function clampCompleteInvQty(qe) {
-  const id = parseInt(qe.dataset.qty, 10);
-  const it = invItems.find(x => x.id === id);
-  let n = parseInt(qe.value, 10);
-  if (isNaN(n) || n < 1) n = 1;
-  if (it && n > it.quantity) n = it.quantity;
-  qe.value = n;
-  if (completeInvSel.has(id)) completeInvSel.set(id, n);
-  renderCompleteInvSummary();
-}
-document.getElementById("completeInvPick").addEventListener("change", (e) => {
-  const cb = e.target.closest("input[type=checkbox]");
-  if (cb) {
-    const id = parseInt(cb.dataset.id, 10);
-    const qtyEl = document.querySelector(`#completeInvPick input[data-qty="${id}"]`);
-    if (cb.checked) { completeInvSel.set(id, 1); qtyEl.value = 1; qtyEl.disabled = false; qtyEl.focus(); qtyEl.select(); }
-    else { completeInvSel.delete(id); qtyEl.disabled = true; }
-    renderCompleteInvSummary();
-    return;
-  }
-  const qe = e.target.closest("input[data-qty]");
-  if (qe) clampCompleteInvQty(qe);
-});
-document.getElementById("completeInvPick").addEventListener("input", (e) => {
-  const qe = e.target.closest("input[data-qty]");
-  if (qe && qe.value.trim() !== "") clampCompleteInvQty(qe);
-});
-document.getElementById("completeInvSearch").addEventListener("input", renderCompleteInvPick);
-document.getElementById("completeInvSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
+document.querySelectorAll('input[name="completeOutcome"]').forEach(r => r.addEventListener("change", syncOutcome));
 
 function openCompleteForm(ticketId) {
   const t = lastLoadedTickets.find(x => x.id === ticketId);
   if (!t) return;
   completingTicket = t;
+  document.querySelector('input[name="completeOutcome"][value="Repaired"]').checked = true;
+  syncOutcome();
   document.getElementById("completeSummary").textContent = `${t.hostname} — ${t.reported_problem}`;
   document.getElementById("completeActionsInput").value = t.actions_taken || "";
   document.getElementById("completePartInput").value = t.part_type || "";
@@ -1947,10 +1886,6 @@ function openCompleteForm(ticketId) {
   syncPartSection();
   beforeAutoFilled = false;
   document.getElementById("completePartHint").textContent = "";
-  completeInvSel.clear();
-  document.getElementById("completeUsedInv").checked = false;
-  document.getElementById("completeInvSection").style.display = "none";
-  document.getElementById("completeInvSearch").value = "";
   hideCompleteError();
   document.getElementById("completeOverlay").classList.add("open");
   document.getElementById("completeActionsInput").focus();
@@ -1975,9 +1910,9 @@ async function submitCompleteForm() {
   if (!completingTicket) return;
   const t = completingTicket;
   const actions_taken = document.getElementById("completeActionsInput").value.trim();
-  if (!actions_taken) { showCompleteError("Please describe what you did."); return; }
-  const useInv = completeInvOn();
-  if (useInv && !completeInvSel.size) { showCompleteError("Tick the inventory parts you used, or untick “Parts were used from the inventory”."); return; }
+  const outcome = completeOutcome();
+  const parts = outcome === "Repaired" && partReplaced();
+  if (!actions_taken) { showCompleteError(outcome === "Beyond repair" ? "Please say why it can't be repaired." : "Please describe what was done."); return; }
   hideCompleteError();
 
   const btn = document.getElementById("completeSubmit");
@@ -1989,38 +1924,35 @@ async function submitCompleteForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         repair_status: "Completed",
+        outcome,
         actions_taken,
-        part_type: partReplaced() ? document.getElementById("completePartInput").value.trim() : "",
-        model_before: partReplaced() ? document.getElementById("completeBeforeInput").value.trim() : "",
-        model_after: partReplaced() ? document.getElementById("completeAfterInput").value.trim() : "",
-        update_baseline: partReplaced() && document.getElementById("completeUpdateBaseline").checked,
-        inventory_items: useInv ? [...completeInvSel].map(([item_id, quantity]) => ({ item_id, quantity })) : [],
+        part_type: parts ? document.getElementById("completePartInput").value.trim() : "",
+        model_before: parts ? document.getElementById("completeBeforeInput").value.trim() : "",
+        model_after: parts ? document.getElementById("completeAfterInput").value.trim() : "",
+        update_baseline: parts && document.getElementById("completeUpdateBaseline").checked,
       }),
     });
     if (resp.ok) {
-      const r = await resp.json().catch(() => ({}));
-      const inv = r.inventory;
-      showToast("✅ Task Completed", `${escapeHtml(t.hostname)}: ${escapeHtml(actions_taken)}` +
-        (inv ? `<br>📦 Taken out of stock: ${inv.items.map(l => `${l.quantity} × ${escapeHtml(l.name)}`).join(", ")} — ${peso(inv.total_cost)}` : ""), "connected");
+      showToast(outcome === "Beyond repair" ? "⛔ Beyond repair" : "✅ Repaired", `${escapeHtml(t.hostname)}: ${escapeHtml(actions_taken)}`, outcome === "Beyond repair" ? "alert" : "connected");
       repairGraceUntil[t.device_id] = Date.now() + REPAIR_GRACE_MS;
       renderNotificationSidebar();
       if (openDeviceId === t.device_id) loadRepairLog(t.device_id);
       closeCompleteForm();
       loadRepairTickets();
     } else if (resp.status === 403) {
-      showCompleteError("This task is assigned to someone else.");
+      const body = await resp.json().catch(() => ({}));
+      showCompleteError(body.detail || "Only the Technician can record the result.");
     } else if (resp.status === 401) {
       showCompleteError("Not logged in — please log in again.");
     } else {
       const body = await resp.json().catch(() => ({}));
       showCompleteError(body.detail || "Could not save — check the server connection.");
-      if (useInv) loadInventory(); // show the real stock if someone else just took some
     }
   } catch (e) {
     showCompleteError("Could not reach the server.");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Mark Completed";
+    btn.textContent = "Save Result";
   }
 }
 
@@ -2124,7 +2056,7 @@ overlay.addEventListener("click", (e) => {
   if (e.target === overlay) closeModal(); // click outside modal closes it
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { closeModal(); closeCompleteForm(); closeReassignForm(); closeNewTicketForm(); closeMaintForm(); closeAddUserForm(); closeResetPwForm(); closeSettings(); closeItemForm(); closeStockForm(); closeUseForm(); closeRoomsForm(); }
+  if (e.key === "Escape") { closeModal(); closeCompleteForm(); closeReassignForm(); closeNewTicketForm(); closeMaintForm(); closeAddUserForm(); closeResetPwForm(); closeSettings(); closeRoomsForm(); closeIntervalsForm(); }
 });
 
 document.getElementById("completeClose").addEventListener("click", closeCompleteForm);
@@ -2141,8 +2073,12 @@ function applyStatusUpdate(deviceId, status) {
     const wasStatus = prev.status;
     prev.status = status;
     renderCard(prev);
-    if (status === "crashed" && wasStatus !== "crashed") {
-      notify(`🔴 ${prev.hostname}`, "No longer responding — likely crashed.", "alert");
+    if (prev.under_maintenance) {
+      // pulled out: it's expected to go quiet, so no alert
+    } else if (status === "unresponsive" && wasStatus === "online") {
+      notify(`🟠 ${escapeHtml(prev.hostname)}`, "Unresponsive — stopped reporting without shutting down.", "alert");
+    } else if (status === "no_signal" && wasStatus !== "no_signal") {
+      notify(`📡 ${escapeHtml(prev.hostname)}`, "No signal — the server can't reach this PC (off, unplugged, off the network, or the agent isn't running).", "alert");
     }
   }
 }
@@ -2182,6 +2118,17 @@ function connect() {
       renderCard(msg.data);
     } else if (msg.type === "status") {
       applyStatusUpdate(msg.data.device_id, msg.data.status);
+    } else if (msg.type === "intervals_changed") {
+      if (authRole === "admin" && msg.data.by !== authUser) {
+        const v = msg.data.values;
+        showToast("⏱️ Intervals changed", `by ${escapeHtml(msg.data.by)}: unresponsive after ${v.unresponsive_after_seconds} s · ping every ${v.ping_every_minutes} min`, "connected");
+      }
+    } else if (msg.type === "ping") {
+      const pc = lastPayload[msg.data.device_id];
+      if (pc) {
+        pc.ping = { ok: msg.data.ok, at: msg.data.at, detail: msg.data.detail };
+        if (openDeviceId === msg.data.device_id) renderModalContent(pc);
+      }
     } else if (msg.type === "rooms_changed") {
       setRooms(msg.data);
     } else if (msg.type === "disk_alert") {
@@ -2207,12 +2154,12 @@ function connect() {
       const gone = msg.data;
       if (authRole !== "admin" && myOpenTasks.has(gone.id)) {
         myOpenTasks.delete(gone.id); renderMyTasks();
-        notify("📋 Task withdrawn", `<b>${escapeHtml(gone.hostname)}</b>: ${escapeHtml(gone.reported_problem)}`, "alert");
+        notify("📋 Pickup withdrawn", `<b>${escapeHtml(gone.hostname)}</b>: ${escapeHtml(gone.reported_problem)}`, "alert");
       }
       if (document.getElementById("repairView").style.display !== "none") loadRepairTickets();
     } else if (msg.type === "repair_ticket") {
       if (msg.edited && msg.data.assigned_to === authUser && msg.data.repair_status !== "Completed") {
-        showToast("✏️ Task updated", `<b>${escapeHtml(msg.data.hostname)}</b>: ${escapeHtml(msg.data.reported_problem)}`, "alert");
+        showToast("✏️ Pickup updated", `<b>${escapeHtml(msg.data.hostname)}</b>: ${escapeHtml(msg.data.reported_problem)}`, "alert");
       }
       if (authRole !== "admin") trackTask(msg.data);
       if (!msg.edited && msg.data.repair_status === "Pending" && msg.data.assigned_to === authUser && msg.data.assigned_by && msg.data.assigned_by !== authUser) {
@@ -2222,15 +2169,17 @@ function connect() {
         loadRepairTickets();
       }
     } else if (msg.type === "inventory_changed") {
-      handleInventoryMessage(msg);
+      // (old spare-parts stock — no longer shown)
     } else if (msg.type === "maintenance") {
       const prev = lastPayload[msg.data.device_id];
       if (prev) {
         prev.under_maintenance = msg.data.under_maintenance;
+        prev.beyond_repair = !!msg.data.beyond_repair;
         renderCard(prev);
       }
       notify(
-        msg.data.under_maintenance ? `🔧 ${msg.data.hostname} marked Under Maintenance` : `✅ ${msg.data.hostname} back in service`,
+        msg.data.beyond_repair ? `⛔ ${msg.data.hostname} beyond repair — stays in Maintenance`
+          : msg.data.under_maintenance ? `🛠️ ${msg.data.hostname} pulled out — Maintenance` : `✅ ${msg.data.hostname} back in service`,
         `by ${msg.data.set_by}`,
         "connected"
       );
@@ -2258,6 +2207,16 @@ function escapeHtml(value) {
 function statusClass(status) {
   return (status || "").toLowerCase().replace(/\s+/g, "-");
 }
+// Stored statuses are unchanged (Pending / In Progress / Completed); on screen a task is a pickup.
+function ticketStatusText(t) {
+  if (t.repair_status === "Pending") return "Awaiting pickup";
+  if (t.repair_status === "In Progress") return "Picked up";
+  if (t.repair_status === "Completed") return t.outcome || "Repaired";
+  return t.repair_status || "";
+}
+function ticketStatusClass(t) {
+  return t.repair_status === "Completed" ? statusClass(t.outcome || "Repaired") : statusClass(t.repair_status);
+}
 
 function populateRepairDeviceFilter() {
   const sel = document.getElementById("repairDeviceFilter");
@@ -2279,8 +2238,9 @@ async function loadRepairTickets() {
   const seq = ++ticketLoadSeq;
   listEl.innerHTML = `<div class="no-issues">Loading…</div>`;
 
+  const [statusOnly, outcomeOnly] = status.split("|");
   let url = deviceId ? `/api/repair-tickets/${encodeURIComponent(deviceId)}` : `/api/repair-tickets`;
-  if (status) url += `?status=${encodeURIComponent(status)}`;
+  if (statusOnly) url += `?status=${encodeURIComponent(statusOnly)}`;
 
   try {
     const resp = await apiFetch(url);
@@ -2290,6 +2250,7 @@ async function loadRepairTickets() {
     // Search is applied client-side across every text field a technician
     // might search by — PC name, the problem itself, what was done, the
     // part swapped, and who worked on it.
+    if (outcomeOnly) tickets = tickets.filter(t => (t.outcome || "Repaired") === outcomeOnly);
     if (myTasksOnly) tickets = tickets.filter(t => t.assigned_to === authUser);
     if (search) {
       tickets = tickets.filter(t => [
@@ -2301,7 +2262,7 @@ async function loadRepairTickets() {
     lastLoadedTickets = tickets;
 
     if (!tickets.length) {
-      listEl.innerHTML = `<div class="no-issues">No repair tickets match this filter.</div>`;
+      listEl.innerHTML = `<div class="no-issues">No pickups match this filter.</div>`;
       return;
     }
 
@@ -2334,7 +2295,6 @@ async function loadRepairTickets() {
 
 function renderTicketCard(t) {
   const mine = t.assigned_to && t.assigned_to === authUser;
-  const canAct = mine || authRole === "admin";
   const partChange = (t.part_type || t.model_before || t.model_after) ? `
     <div class="ticket-part-change">🔧 <b>${escapeHtml(t.part_type || "Part")}</b>: ${escapeHtml(t.model_before || "—")} → ${escapeHtml(t.model_after || "—")}</div>
   ` : "";
@@ -2345,30 +2305,34 @@ function renderTicketCard(t) {
     ? `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="edit">Edit…</button>` : "")
     + (authRole === "admin"
     ? `<button class="ticket-mark-btn ticket-del-btn" data-ticket-id="${t.id}" data-act="delete">Delete</button>` : "");
-  if (canAct && t.repair_status === "Pending") {
-    buttons = `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="start">Start</button>
-               <button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="complete">Complete…</button>`;
-  } else if (canAct && t.repair_status === "In Progress") {
-    buttons = `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="complete">Complete…</button>`;
+  // Only the person it's assigned to marks it picked up; only the Technician (admin) reports the result.
+  if (mine && t.repair_status === "Pending") {
+    buttons = `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="start">📦 Mark picked up</button>`;
+  }
+  if (authRole === "admin" && t.repair_status !== "Completed") {
+    buttons += `<button class="ticket-mark-btn" data-ticket-id="${t.id}" data-act="complete">📝 Report result…</button>`;
   }
   const who = t.assigned_by && t.assigned_by !== t.assigned_to
-    ? `Assigned to <b>${escapeHtml(t.assigned_to || t.technician)}</b> by ${escapeHtml(t.assigned_by)}`
-    : `Technician: ${escapeHtml(t.technician)}`;
+    ? `${t.repair_status === "Pending" ? "To be picked up by" : "Picked up by"} <b>${escapeHtml(t.assigned_to || t.technician)}</b> · assigned by ${escapeHtml(t.assigned_by)}`
+    : `Pulled out by <b>${escapeHtml(t.assigned_to || t.technician)}</b>`;
+  const picked = t.picked_up_at
+    ? `<div class="ticket-date">Picked up ${new Date(t.picked_up_at*1000).toLocaleString()} by ${escapeHtml(t.assigned_to || t.technician)}</div>` : "";
   const moved = t.reassigned_from ? ` <span style="color:var(--muted);">(reassigned from ${escapeHtml(t.reassigned_from)})</span>` : "";
   const done = t.completed_at
-    ? `<div class="ticket-date">Completed ${new Date(t.completed_at*1000).toLocaleString()}${t.completed_by ? " by " + escapeHtml(t.completed_by) : ""}</div>` : "";
+    ? `<div class="ticket-date">Result reported ${new Date(t.completed_at*1000).toLocaleString()}${t.completed_by ? " by " + escapeHtml(t.completed_by) : ""}</div>` : "";
   return `
     <div class="ticket-card" data-device-id="${escapeHtml(t.device_id)}">
       <div class="ticket-header">
         <div>
           <div class="ticket-host">${escapeHtml(t.hostname)}</div>
           <div class="ticket-date">Assigned ${new Date(t.timestamp*1000).toLocaleString()}</div>
+          ${picked}
           ${done}
         </div>
-        <span class="ticket-status ${statusClass(t.repair_status)}">${escapeHtml(t.repair_status)}</span>
+        <span class="ticket-status ${ticketStatusClass(t)}">${escapeHtml(ticketStatusText(t))}</span>
       </div>
-      <div class="ticket-field"><b>Task:</b> ${escapeHtml(t.reported_problem)}</div>
-      ${t.actions_taken ? `<div class="ticket-field"><b>Work Done:</b> ${escapeHtml(t.actions_taken)}</div>` : ""}
+      <div class="ticket-field"><b>Reason:</b> ${escapeHtml(t.reported_problem)}</div>
+      ${t.actions_taken ? `<div class="ticket-field"><b>${t.outcome === "Beyond repair" ? "Why beyond repair" : "Work done"}:</b> ${escapeHtml(t.actions_taken)}</div>` : ""}
       ${partChange}
       <div class="ticket-footer">
         <span>${who}${moved}</span>
@@ -2386,7 +2350,7 @@ async function updateTicketStatus(ticketId, newStatus) {
       body: JSON.stringify({ repair_status: newStatus }),
     });
     if (resp.ok) {
-      showToast("🛠️ Ticket Updated", `Marked as ${newStatus}`, "connected");
+      showToast("📦 Pickup updated", `Marked as ${newStatus === "In Progress" ? "Picked up" : newStatus === "Pending" ? "Awaiting pickup" : newStatus}`, "connected");
       loadRepairTickets();
     } else {
       alert("Could not update ticket status — check the server connection.");
@@ -2398,26 +2362,58 @@ async function updateTicketStatus(ticketId, newStatus) {
 
 function generateTicketReport() {
   if (!lastLoadedTickets.length) {
-    alert("No tickets to export for the current filter — adjust the filters above first.");
+    alert("No pickups to export for the current filter — adjust the filters above first.");
     return;
   }
-  const headers = ["Assigned", "PC", "Task", "Work Done", "Part Type", "Model Before", "Model After", "Status", "Assigned To", "Assigned By", "Completed"];
+  const headers = ["Assigned", "PC", "Reason", "Work Done / Why Beyond Repair", "Part Type", "Model Before", "Model After", "Status", "Picked Up By", "Assigned By", "Picked Up At", "Result Reported"];
   const rows = lastLoadedTickets.map(t => [
     new Date(t.timestamp * 1000).toLocaleString(),
     t.hostname, t.reported_problem, t.actions_taken || "",
     t.part_type || "", t.model_before || "", t.model_after || "",
-    t.repair_status, t.assigned_to || t.technician, t.assigned_by || "",
+    ticketStatusText(t), t.assigned_to || t.technician, t.assigned_by || "",
+    t.picked_up_at ? new Date(t.picked_up_at * 1000).toLocaleString() : "",
     t.completed_at ? new Date(t.completed_at * 1000).toLocaleString() : "",
   ]);
   const csvEscape = (v) => `"${String(v).replace(/"/g, '""')}"`;
-  const csv = [headers, ...rows].map(row => row.map(csvEscape).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
+  const csv = [headers, ...rows].map(row => row.map(csvEscape).join(",")).join("\r\n");
+  saveCsvExport("repair-tracking", "RepairTracking", csv);
+}
+
+// Export CSV: the server saves it in its "CSV Files" folder (Repair Tracking / Inventory subfolder,
+// named like Inventory_Nov07.csv), and this browser downloads the same file too.
+function exportFileStem(prefix) {
+  const d = new Date();
+  return `${prefix}_${d.toLocaleString("en-US", { month: "short" })}${String(d.getDate()).padStart(2, "0")}`;
+}
+function downloadCsv(name, text) {
+  const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
-  a.download = `repair-report-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function saveCsvExport(kind, prefix, text) {
+  let name = exportFileStem(prefix) + ".csv";
+  try {
+    const resp = await apiFetch(`/api/exports/${kind}`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ csv: text }),
+    });
+    if (resp.ok) {
+      const r = await resp.json();
+      name = r.file || name;
+      showToast("💾 CSV saved", `On the server in <b>${escapeHtml(r.saved)}</b>, and downloaded here.`, "connected");
+    } else if (resp.status === 404 || resp.status === 405) {
+      showToast("⚠️ Downloaded only", "The server is an older server.py, so it didn't keep a copy in its CSV Files folder. Update server.py and restart it.", "alert");
+    } else {
+      const b = await resp.json().catch(() => ({}));
+      showToast("⚠️ Downloaded only", escapeHtml(b.detail || "The server couldn't save a copy."), "alert");
+    }
+  } catch (e) {
+    if (e.message === "unauthorized") return;
+    showToast("⚠️ Downloaded only", "Couldn't reach the server to save a copy.", "alert");
+  }
+  downloadCsv(name, text);
 }
 
 document.getElementById("repairDeviceFilter").addEventListener("change", loadRepairTickets);
@@ -2437,7 +2433,7 @@ let editingTicket = null; // set while the Assign form is being used to edit an 
 
 async function openNewTicketForm(preselectDeviceId, ticket) {
   editingTicket = ticket || null;
-  document.querySelector("#newTicketOverlay h2").textContent = editingTicket ? "✏️ Edit Task" : "📋 Assign Task";
+  document.querySelector("#newTicketOverlay h2").textContent = editingTicket ? "✏️ Edit Pickup" : "📋 Assign Pickup";
   document.getElementById("newTicketSubmit").textContent = editingTicket ? "Save" : "Assign";
   const sel = document.getElementById("ticketDeviceSelect");
   const devices = Object.values(lastPayload).sort((a, b) => naturalCompare(a.hostname || "", b.hostname || ""));
@@ -2463,10 +2459,10 @@ async function openNewTicketForm(preselectDeviceId, ticket) {
     const users = resp.ok ? await resp.json() : [];
     who.innerHTML = users.length
       ? users.map(u => `<option value="${escapeHtml(u.username)}">${escapeHtml(u.username)}</option>`).join("")
-      : `<option value="">No technician accounts yet — add one in Users</option>`;
+      : `<option value="">No assistant accounts yet — add one in Users</option>`;
     if (editingTicket) who.value = editingTicket.assigned_to || editingTicket.technician;
   } catch (e) {
-    who.innerHTML = `<option value="">Could not load technicians</option>`;
+    who.innerHTML = `<option value="">Could not load assistants</option>`;
   }
 }
 
@@ -2491,8 +2487,8 @@ async function submitNewTicketForm() {
   const reported_problem = document.getElementById("ticketProblemInput").value.trim();
 
   if (!deviceId) { showNewTicketError("Please select a PC."); return; }
-  if (!assigned_to) { showNewTicketError("Please choose a technician."); return; }
-  if (!reported_problem) { showNewTicketError("Please describe the task."); return; }
+  if (!assigned_to) { showNewTicketError("Please choose an assistant."); return; }
+  if (!reported_problem) { showNewTicketError("Please give the reason for the pickup."); return; }
   hideNewTicketError();
 
   try {
@@ -2506,7 +2502,7 @@ async function submitNewTicketForm() {
           body: JSON.stringify({ reported_problem, assigned_to }),
         });
     if (resp.ok) {
-      showToast(editingTicket ? "✏️ Task Updated" : "📋 Task Assigned", `${escapeHtml(assigned_to)}: ${escapeHtml(reported_problem)}`, "connected");
+      showToast(editingTicket ? "✏️ Pickup Updated" : "📋 Pickup Assigned", `${escapeHtml(assigned_to)}: ${escapeHtml(reported_problem)}`, "connected");
       closeNewTicketForm();
       loadRepairTickets();
     } else if (resp.status === 401) {
@@ -2525,11 +2521,11 @@ async function submitNewTicketForm() {
 async function deleteTicket(id) {
   const t = lastLoadedTickets.find(x => x.id === id);
   if (!t) return;
-  if (!confirm(`Delete this task?\n\n${t.hostname}: ${t.reported_problem}\nAssigned to ${t.assigned_to || t.technician}\n\nThis can't be undone.`)) return;
+  if (!confirm(`Delete this pickup?\n\n${t.hostname}: ${t.reported_problem}\nAssigned to ${t.assigned_to || t.technician}\n\nThis can't be undone.`)) return;
   try {
     const resp = await apiFetch(`/api/repair-tickets/${id}`, { method: "DELETE" });
-    if (resp.ok) { showToast("🗑️ Task Deleted", `${escapeHtml(t.hostname)}: ${escapeHtml(t.reported_problem)}`, "connected"); loadRepairTickets(); }
-    else alert("Could not delete the task.");
+    if (resp.ok) { showToast("🗑️ Pickup Deleted", `${escapeHtml(t.hostname)}: ${escapeHtml(t.reported_problem)}`, "connected"); loadRepairTickets(); }
+    else alert("Could not delete the pickup.");
   } catch (e) { alert("Could not reach the server."); }
 }
 
@@ -2553,7 +2549,7 @@ async function loadUsers() {
   try {
     const resp = await apiFetch("/api/users");
     if (resp.status === 403) {
-      showUsersError("Your account is no longer an admin.");
+      showUsersError("Your account is no longer the Technician account.");
       document.getElementById("usersTab").style.display = "none";
       authRole = "user";
       document.getElementById("userList").innerHTML = "";
@@ -2567,7 +2563,7 @@ async function loadUsers() {
 
 function renderUsers(users) {
   if (!users.length) {
-    document.getElementById("userList").innerHTML = '<div class="user-meta">No technician accounts yet — click “+ Add User”.</div>';
+    document.getElementById("userList").innerHTML = '<div class="user-meta">No assistant accounts yet — click “+ Add Assistant”.</div>';
     return;
   }
   document.getElementById("userList").innerHTML = users.map(u => {
@@ -2703,7 +2699,7 @@ function setLightMode(on) {
 }
 
 function openSettings() {
-  document.getElementById("settingsUser").textContent = authUser;
+  document.getElementById("settingsUser").textContent = `${authUser} (${roleName(authRole)})`;
   document.getElementById("settingsPwSection").style.display = authRole === "admin" ? "" : "none"; // password changes are admin-only
   document.getElementById("settingSound").checked = soundEnabled;
   document.getElementById("settingToasts").checked = toastsEnabled;
@@ -2756,8 +2752,9 @@ document.getElementById("settingsPwSubmit").addEventListener("click", submitSett
   document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") submitSettingsPassword(); }));
 document.getElementById("settingsLogout").addEventListener("click", logout);
 
-// ----------------- Inventory: stock and stock log -----------------
-// Everyone logged in can add items, adjust stock, and take parts out for a PC ("Use on a PC").
+// ----------------- Inventory: components on every PC -----------------
+// Built from the PCs' latest reports that the page already has (lastPayload), so it updates
+// live as reports arrive. "Active units" = every PC that reports, online or not.
 function invMatch(search, fields) {
   const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   if (!words.length) return true;
@@ -2772,566 +2769,210 @@ async function invErrorText(resp, fallback) {
   const body = await resp.json().catch(() => ({}));
   return (typeof body.detail === "string" && body.detail) || fallback;
 }
-
-function setInvPane(name) {
-  invPane = name;
-  document.querySelectorAll("[data-invpane]").forEach(b => b.classList.toggle("active", b.dataset.invpane === name));
-  document.getElementById("invStockPane").style.display = name === "stock" ? "" : "none";
-  document.getElementById("invLogPane").style.display = (name === "deductions" || name === "additions") ? "" : "none";
-  if (name === "stock") loadInventory();
-  else {
-    invLogKind = name === "additions" ? "addition" : "deduction";
-    document.getElementById("logSearch").value = "";
-    document.getElementById("logIntro").textContent = invLogKind === "deduction"
-      ? "Every time stock was taken out — which PC and task it went to, how many, and who took it."
-      : "Every time stock was put in — new items and restocks — with what it was worth and who added it.";
-    loadInvLog();
-  }
-}
-document.querySelectorAll("[data-invpane]").forEach(b => b.addEventListener("click", () => setInvPane(b.dataset.invpane)));
-
-function applyInventoryRoleUI() {}   // nothing role-specific left on the Inventory tab (only admin sees Delete, set per row)
 function inventoryViewVisible() { return document.getElementById("inventoryView").style.display !== "none"; }
 
-// ---- Stock list ----
-async function loadInventory() {
-  try {
-    const resp = await apiFetch("/api/inventory");
-    if (!resp.ok) throw new Error();
-    invItems = await resp.json();
-  } catch (e) {
-    document.getElementById("invList").innerHTML = `<div style="color:var(--danger);">Could not load the inventory.</div>`;
-    return;
-  }
-  const sel = document.getElementById("invCategoryFilter");
-  const keep = sel.value;
-  const cats = [...new Set(invItems.map(i => i.category).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  sel.innerHTML = `<option value="">All categories</option>` + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
-  sel.value = cats.includes(keep) ? keep : "";
-  document.getElementById("itemCategoryList").innerHTML = cats.map(c => `<option value="${escapeHtml(c)}"></option>`).join("");
-  renderInventory();
-  if (document.getElementById("useOverlay").classList.contains("open")) renderUseLines();
-  if (document.getElementById("completeOverlay").classList.contains("open") && completeInvOn()) renderCompleteInvPick();
+// Well-known vendor codes, so "046D" also reads "Logitech". Unknown codes just show the code.
+const VENDOR_NAMES = {
+  // USB / PCI vendor IDs
+  "8086": "Intel", "8087": "Intel", "1022": "AMD", "1002": "AMD (ATI)", "10DE": "NVIDIA", "10EC": "Realtek", "0BDA": "Realtek",
+  "14E4": "Broadcom", "168C": "Qualcomm Atheros", "17CB": "Qualcomm", "0E8D": "MediaTek", "14C3": "MediaTek",
+  "046D": "Logitech", "045E": "Microsoft", "413C": "Dell", "03F0": "HP", "17EF": "Lenovo", "0B05": "ASUS", "1043": "ASUS",
+  "1462": "MSI", "1458": "Gigabyte", "04F2": "Chicony", "0C45": "Microdia", "093A": "PixArt", "258A": "SINO WEALTH",
+  "1A2C": "China Resource Semico", "04D9": "Holtek", "1532": "Razer", "1038": "SteelSeries", "1B1C": "Corsair", "046A": "Cherry",
+  "1D57": "Xenta", "24AE": "Shenzhen Rapoo", "0461": "Primax", "062A": "MosArt", "0781": "SanDisk", "0951": "Kingston",
+  "090C": "Silicon Motion", "13FE": "Phison", "1987": "Phison", "144D": "Samsung", "04E8": "Samsung", "15B7": "Western Digital",
+  "1C5C": "SK hynix", "1E0F": "KIOXIA", "126F": "Silicon Motion", "1CC1": "ADATA", "05E3": "Genesys Logic", "2109": "VIA Labs",
+  "1A86": "QinHeng (CH340)", "0D8C": "C-Media", "0A12": "Cambridge Silicon Radio", "05AC": "Apple", "0489": "Foxconn",
+  "13D3": "IMC Networks (AzureWave)", "8564": "Transcend", "0930": "Toshiba",
+  // RAM makers (JEDEC codes as Windows reports them)
+  "80CE": "Samsung", "CE00": "Samsung", "80AD": "SK hynix", "AD00": "SK hynix", "802C": "Micron", "2C00": "Micron",
+  "859B": "Crucial", "0198": "Kingston", "9801": "Kingston", "04CB": "ADATA", "04CD": "G.Skill", "029E": "Corsair",
+  // Monitor maker codes (EDID)
+  "SAM": "Samsung", "DEL": "Dell", "ACR": "Acer", "AOC": "AOC", "GSM": "LG", "LGD": "LG Display", "HWP": "HP", "LEN": "Lenovo",
+  "PHL": "Philips", "VSC": "ViewSonic", "BNQ": "BenQ", "AUS": "ASUS", "HKC": "HKC", "SNY": "Sony", "CMN": "Innolux",
+  "BOE": "BOE", "AUO": "AU Optronics", "MSI": "MSI", "GBT": "Gigabyte", "SHP": "Sharp",
+  // CPU vendor strings
+  "GENUINEINTEL": "Intel", "AUTHENTICAMD": "AMD",
+};
+
+// Vendor / product IDs for one component, from its Windows device ID or what the part reports.
+function vendorInfo(c) {
+  const id = String(c.device_id || c.pnp_id || "").toUpperCase();
+  let m, vid = "", pid = "", via = "";
+  if ((m = /VID_([0-9A-F]{4})/.exec(id))) { vid = m[1]; via = "USB"; const p = /PID_([0-9A-F]{4})/.exec(id); if (p) pid = p[1]; }
+  else if ((m = /VID&0[0-9A-F]([0-9A-F]{4})_PID&([0-9A-F]{4})/.exec(id))) { vid = m[1]; pid = m[2]; via = "Bluetooth"; }
+  else if ((m = /VEN_([0-9A-F]{4})&DEV_([0-9A-F]{4})/.exec(id))) { vid = m[1]; pid = m[2]; via = "PCI"; }
+  else if ((m = /^DISPLAY\\([A-Z]{3})([0-9A-F]{4})/.exec(id))) { vid = m[1]; pid = m[2]; via = "Monitor"; }
+  else if ((m = /VEN_([^&\\]+)/.exec(id))) { vid = m[1].replace(/_+$/, ""); via = "Drive"; const p = /PROD_([^&\\]+)/.exec(id); if (p) pid = p[1].replace(/_+/g, " ").trim(); }
+  else if (c.vendor) { vid = String(c.vendor).trim(); via = "Reported"; }
+  const name = VENDOR_NAMES[vid.toUpperCase().replace(/\s+/g, "")] || "";
+  return { vid, pid, via, name: name && name.toUpperCase() !== vid.toUpperCase() ? name : "" };
 }
 
-const pesoFmt = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
-function peso(n) { return pesoFmt.format(n || 0); }
-function unitText(i) { return i.unit ? " " + escapeHtml(i.unit) : ""; }
+const INTERNAL_ORDER = ["CPU", "Motherboard", "RAM Stick", "GPU", "Internal Drive", "External Drive"];
+const PERIPHERAL_ORDER = ["Keyboard", "Mouse", "Monitor", "USB Device", "Audio Device", "Camera/Scanner", "Network Adapter", "Storage Drive"];
+function typeRank(kind, type) {
+  const list = kind === "Internal" ? INTERNAL_ORDER : PERIPHERAL_ORDER;
+  const i = list.indexOf(type);
+  return (kind === "Internal" ? 0 : 100) + (i < 0 ? 50 : i);
+}
+function compDetails(c) {
+  const d = [];
+  if (c.slot) d.push(`Slot ${c.slot}`);
+  if (c.part_number) d.push(`Part ${c.part_number}`);
+  if (c.size_gb != null) d.push(`${c.size_gb} GB`);
+  return d.join(" · ");
+}
 
-// Tick boxes on the stock list: item_id -> quantity. Kept while searching/filtering, so you can
-// search for one part, tick it, search for the next, and so on.
-const useSel = new Map();
-let invLowOnly = false;
-
-function renderInventory() {
-  // drop ticks for items that were deleted or ran out, and cap quantities at what's in stock
-  for (const [id, qty] of useSel) {
-    const it = invItems.find(x => x.id === id);
-    if (!it || it.quantity === 0) useSel.delete(id);
-    else if (qty > it.quantity) useSel.set(id, it.quantity);
+// Every component of every PC as flat rows.
+function componentRows() {
+  const rows = [];
+  for (const p of Object.values(lastPayload)) {
+    const add = (c, kind) => {
+      const v = vendorInfo(c);
+      rows.push({ device_id: p.device_id, hostname: p.hostname || p.device_id, room: p.room || "", status: p.status || "online",
+        maint: !!p.under_maintenance, ts: p.timestamp, kind, type: c.type || "", name: c.name || "",
+        vid: v.vid, pid: v.pid, via: v.via, vendor: v.name, details: compDetails(c), rank: typeRank(kind, c.type) });
+    };
+    (p.internal || []).forEach(c => add(c, "Internal"));
+    (p.devices || []).forEach(c => add(c, "Peripheral"));
   }
-  const lowCount = invItems.filter(i => i.low).length;
-  const lowBtn = document.getElementById("invLowBtn");
-  lowBtn.style.display = lowCount || invLowOnly ? "" : "none";
-  lowBtn.textContent = `⚠️ Low stock (${lowCount})`;
-  lowBtn.classList.toggle("active", invLowOnly);
-  lowBtn.setAttribute("aria-pressed", invLowOnly);
+  return rows;
+}
 
-  const q = document.getElementById("invSearch").value;
-  const cat = document.getElementById("invCategoryFilter").value;
-  const rows = invItems.filter(i => (!cat || i.category === cat) && (!invLowOnly || i.low) && invMatch(q, [i.name, i.category, i.notes, i.board_platform, i.ram_type]));
-  const el = document.getElementById("invList");
-  renderUseBar();
-  if (!invItems.length) { el.innerHTML = `<div class="no-issues">The inventory is empty. Use “+ Add Item” to start.</div>`; return; }
-  if (!rows.length) { el.innerHTML = `<div class="no-issues">${invLowOnly ? "Nothing is low on stock." : "No items match your search."}</div>`; return; }
-  const admin = authRole === "admin";
-  el.innerHTML = rows.map(i => {
-    const out = i.quantity === 0;
-    const on = useSel.has(i.id);
-    const chip = i.low ? `<span class="inv-low-chip ${out ? "out" : ""}">${out ? "Out" : "Low"}</span>` : "";
-    return `
-    <div class="inv-row ${on ? "picked" : ""}" data-id="${i.id}">
-      <div class="inv-pick">
-        <input type="checkbox" data-pick="${i.id}" ${on ? "checked" : ""} ${out ? "disabled" : ""} aria-label="Use ${escapeHtml(i.name)}" title="${out ? "Out of stock" : "Tick to use on a PC"}">
-      </div>
-      <div class="inv-main">
-        <div><span class="inv-name">${escapeHtml(i.name)}</span>${i.category ? `<span class="inv-cat">${escapeHtml(i.category)}</span>` : ""}${i.board_platform ? `<span class="spec-chip">${escapeHtml(i.board_platform)}</span>` : ""}${i.ram_type ? `<span class="spec-chip">${escapeHtml(i.ram_type)}</span>` : ""}${chip}</div>
-        <div class="inv-price">${i.unit_price ? `${peso(i.unit_price)} each` : "No price set"}${i.min_qty ? ` · warn at ${i.min_qty}` : ""}</div>
-        ${i.notes ? `<div class="inv-notes">${escapeHtml(i.notes)}</div>` : ""}
-      </div>
-      <div class="inv-qty ${out ? "out" : (i.low ? "low" : "")}">${out ? "Out of stock" : i.quantity + " in stock"}</div>
-      <div class="inv-pick">
-        <input type="number" data-useqty="${i.id}" min="1" max="${i.quantity}" step="1" value="${on ? useSel.get(i.id) : 1}" ${on ? "" : "disabled"} aria-label="How many ${escapeHtml(i.name)} to use">
-      </div>
-      <div class="inv-actions">
-        <button class="ticket-mark-btn" data-act="stock" data-id="${i.id}">Adjust stock…</button>
-        <button class="ticket-mark-btn" data-act="edit" data-id="${i.id}">Edit…</button>
-        ${admin ? `<button class="ticket-mark-btn ticket-del-btn" data-act="delete" data-id="${i.id}">Delete</button>` : ""}
-      </div>
-    </div>`;
+const compOpen = new Set();   // components whose PC list is open (kept while the list refreshes)
+let compAllOpen = false;
+function compKey(r) { return `${r.kind}|${r.type}|${r.name}`; }
+function compFilters() {
+  return { q: document.getElementById("compSearch").value, room: document.getElementById("compRoom").value,
+           type: document.getElementById("compType").value };
+}
+function filteredComponentRows() {
+  const f = compFilters();
+  return componentRows().filter(r => (!f.room || roomMatches(r.room, f.room)) && (!f.type || r.type === f.type)
+    && invMatch(f.q, [r.hostname, r.room, r.type, r.name, r.vid, r.pid, r.vendor, r.details, r.kind]));
+}
+function fillCompFilters(all) {
+  const roomSel = document.getElementById("compRoom"), typeSel = document.getElementById("compType");
+  const curR = roomSel.value, curT = typeSel.value;
+  roomSel.innerHTML = `<option value="">All rooms</option>` + FILTER_GROUPS.map(g => `<option value="${escapeHtml(g.room)}">${escapeHtml(g.label)}</option>`).join("");
+  roomSel.value = FILTER_GROUPS.some(g => g.room === curR) ? curR : "";
+  const types = [...new Set(all.map(r => r.type))].sort((a, b) => typeRank(INTERNAL_ORDER.includes(a) ? "Internal" : "Peripheral", a) - typeRank(INTERNAL_ORDER.includes(b) ? "Internal" : "Peripheral", b) || a.localeCompare(b));
+  typeSel.innerHTML = `<option value="">All types</option>` + types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+  typeSel.value = types.includes(curT) ? curT : "";
+}
+function vidCell(r) {
+  if (!r.vid) return `<span style="color:var(--faint);">—</span>`;
+  return `<code>${escapeHtml(r.vid)}</code>${r.vendor ? ` <span class="comp-vendor">${escapeHtml(r.vendor)}</span>` : ""}`;
+}
+function statusChip(r) {
+  if (r.maint) return `<span class="comp-chip warn">🛠️ Maintenance</span>`;
+  return r.status === "online" ? `<span class="comp-chip ok">● Online</span>`
+    : r.status === "no_signal" ? `<span class="comp-chip bad">📡 No signal</span>`
+    : r.status === "unresponsive" ? `<span class="comp-chip warn">Unresponsive</span>`
+    : `<span class="comp-chip">Offline</span>`;
+}
+
+function renderComponents() {
+  if (!inventoryViewVisible()) return;
+  const all = componentRows();
+  fillCompFilters(all);
+  const rows = filteredComponentRows();
+  const el = document.getElementById("compList");
+  // one entry per kind of component (same type + name), across all PCs
+  const groups = new Map();
+  rows.forEach(r => {
+    const k = compKey(r);
+    if (!groups.has(k)) groups.set(k, { key: k, r, items: [] });
+    groups.get(k).items.push(r);
+  });
+  const list = [...groups.values()].sort((a, b) => a.r.rank - b.r.rank || b.items.length - a.items.length || naturalCompare(a.r.name, b.r.name));
+  const units = rows.length;
+  document.getElementById("compSummary").textContent = all.length
+    ? `${list.length} ${list.length === 1 ? "component" : "components"} · ${units} ${units === 1 ? "unit" : "units"} in total across ${new Set(rows.map(r => r.device_id)).size} PCs`
+      + (rows.length < all.length ? ` (filtered from ${all.length} units)` : "")
+    : "";
+  if (!Object.keys(lastPayload).length) { el.innerHTML = `<div class="no-issues">No PCs have reported yet.</div>`; return; }
+  if (!list.length) { el.innerHTML = `<div class="no-issues">Nothing matches.</div>`; return; }
+  const searching = !!compFilters().q.trim();
+  let lastKind = "";
+  el.innerHTML = list.map(g => {
+    const head = g.r.kind !== lastKind ? `<div class="comp-section">${g.r.kind === "Internal" ? "🧩 Internal parts" : "🔌 Peripherals"}</div>` : "";
+    lastKind = g.r.kind;
+    const pcs = new Set(g.items.map(i => i.device_id)).size;
+    const makers = [...new Set(g.items.map(i => i.vendor || i.vid).filter(Boolean))];
+    const open = compAllOpen || compOpen.has(g.key) || (searching && list.length <= 3);
+    const id = "cg_" + btoa(unescape(encodeURIComponent(g.key))).replace(/[^A-Za-z0-9]/g, "");
+    const detail = open ? `<div class="comp-detail" id="${id}"><div class="log-wrap"><table class="log-table comp-table">
+        <thead><tr><th>PC</th><th>Room</th><th>Status</th><th>Vendor ID</th><th>Product ID</th><th>Details</th></tr></thead>
+        <tbody>${g.items.slice().sort((a, b) => naturalCompare(a.hostname, b.hostname) || naturalCompare(a.details, b.details)).map(r => `
+          <tr><td><button class="comp-host small" data-open="${escapeHtml(r.device_id)}">${escapeHtml(r.hostname)}</button></td>
+            <td>${escapeHtml(r.room)}</td><td>${statusChip(r)}</td><td>${vidCell(r)}</td>
+            <td>${r.pid ? `<code>${escapeHtml(r.pid)}</code>` : `<span style="color:var(--faint);">—</span>`}</td>
+            <td class="comp-det">${escapeHtml(r.details)}</td></tr>`).join("")}</tbody></table></div></div>` : "";
+    return head + `<div class="comp-group${open ? " open" : ""}">
+      <button class="comp-sum" data-comp="${escapeHtml(g.key)}" aria-expanded="${open}"${open ? ` aria-controls="${id}"` : ""}>
+        <span class="caret">▶</span>
+        <span class="ctype">${escapeHtml(g.r.type)}</span>
+        <span class="cname">${escapeHtml(g.r.name)}${makers.length ? `<small>${escapeHtml(makers.slice(0, 4).join(", "))}${makers.length > 4 ? ` +${makers.length - 4} more` : ""}</small>` : ""}</span>
+        <span class="cpcs">on ${pcs} ${pcs === 1 ? "PC" : "PCs"}</span>
+        <span class="comp-qty">${g.items.length}<small>×</small></span>
+      </button>${detail}</div>`;
   }).join("");
 }
 
-function renderUseBar() {
-  const bar = document.getElementById("useBar");
-  if (!useSel.size) { bar.style.display = "none"; return; }
-  let units = 0, cost = 0;
-  for (const [id, qty] of useSel) {
-    const it = invItems.find(x => x.id === id);
-    if (it) { units += qty; cost += qty * it.unit_price; }
-  }
-  document.getElementById("useBarText").innerHTML =
-    `<b>${useSel.size}</b> ${useSel.size === 1 ? "item" : "items"} ticked (${units} ${units === 1 ? "unit" : "units"}) — <b>${peso(cost)}</b>`;
-  bar.style.display = "";
+function exportComponentsCsv() {
+  const rows = filteredComponentRows().sort((a, b) => naturalCompare(a.hostname, b.hostname) || a.rank - b.rank || naturalCompare(a.name, b.name));
+  const head = ["PC", "Room", "Status", "Kind", "Type", "Name", "Vendor ID", "Vendor", "Product ID", "ID source", "Details", "Last report"];
+  const esc = (v) => { const t = String(v ?? ""); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  const lines = [head.join(",")].concat(rows.map(r => [r.hostname, r.room, r.maint ? "Maintenance" : r.status, r.kind, r.type, r.name,
+    r.vid, r.vendor, r.pid, r.via, r.details, r.ts ? new Date(r.ts * 1000).toLocaleString() : ""].map(esc).join(",")));
+  saveCsvExport("inventory", "Inventory", lines.join("\r\n"));
 }
 
-function clampUseQty(qe) {
-  const id = parseInt(qe.dataset.useqty, 10);
-  const it = invItems.find(x => x.id === id);
-  let n = parseInt(qe.value, 10);
-  if (isNaN(n) || n < 1) n = 1;
-  if (it && n > it.quantity) n = it.quantity;
-  qe.value = n;
-  if (useSel.has(id)) useSel.set(id, n);
-  renderUseBar();
-}
-
-document.getElementById("invSearch").addEventListener("input", renderInventory);
-document.getElementById("invCategoryFilter").addEventListener("change", renderInventory);
-document.getElementById("invLowBtn").addEventListener("click", () => { invLowOnly = !invLowOnly; renderInventory(); });
-document.getElementById("invList").addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-act]");
-  if (!btn) return;
-  const id = parseInt(btn.dataset.id, 10);
-  if (btn.dataset.act === "stock") openStockForm(id);
-  else if (btn.dataset.act === "edit") openItemForm(id);
-  else if (btn.dataset.act === "delete") deleteItem(id);
+["compSearch"].forEach(id => document.getElementById(id).addEventListener("input", renderComponents));
+["compRoom", "compType"].forEach(id => document.getElementById(id).addEventListener("change", renderComponents));
+document.getElementById("compExpandAll").addEventListener("click", (e) => {
+  compAllOpen = !compAllOpen;
+  if (!compAllOpen) compOpen.clear();
+  e.currentTarget.textContent = compAllOpen ? "⊟ Collapse all" : "⊞ Expand all";
+  e.currentTarget.setAttribute("aria-pressed", compAllOpen);
+  renderComponents();
 });
-document.getElementById("invList").addEventListener("change", (e) => {
-  const cb = e.target.closest("input[data-pick]");
-  if (cb) {
-    const id = parseInt(cb.dataset.pick, 10);
-    const qtyEl = document.querySelector(`#invList input[data-useqty="${id}"]`);
-    if (cb.checked) { useSel.set(id, 1); qtyEl.value = 1; qtyEl.disabled = false; qtyEl.focus(); qtyEl.select(); }
-    else { useSel.delete(id); qtyEl.disabled = true; }
-    cb.closest(".inv-row").classList.toggle("picked", cb.checked);
-    renderUseBar();
-    return;
-  }
-  const qe = e.target.closest("input[data-useqty]");
-  if (qe) clampUseQty(qe);
+document.getElementById("compExportBtn").addEventListener("click", exportComponentsCsv);
+document.getElementById("compList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-open]");
+  if (b) { openModal(b.dataset.open); return; }
+  const sum = e.target.closest("[data-comp]");
+  if (!sum) return;
+  const k = sum.dataset.comp;
+  const isOpen = sum.getAttribute("aria-expanded") === "true";
+  if (isOpen) { compOpen.delete(k); if (compAllOpen) { compAllOpen = false; const x = document.getElementById("compExpandAll"); x.textContent = "⊞ Expand all"; x.setAttribute("aria-pressed", false); document.querySelectorAll("#compList [data-comp][aria-expanded=true]").forEach(o => { if (o.dataset.comp !== k) compOpen.add(o.dataset.comp); }); } }
+  else compOpen.add(k);
+  renderComponents();
+  const again = [...document.querySelectorAll("#compList [data-comp]")].find(x => x.dataset.comp === k);
+  if (again) again.focus();
 });
-document.getElementById("invList").addEventListener("input", (e) => {
-  const qe = e.target.closest("input[data-useqty]");
-  if (qe && qe.value.trim() !== "") clampUseQty(qe);
-});
-document.getElementById("invList").addEventListener("keydown", (e) => {
-  // Enter in a quantity box goes straight to "Use on a PC…"
-  if (e.key === "Enter" && e.target.matches("input[data-useqty]")) { e.preventDefault(); clampUseQty(e.target); openUseForm(); }
-});
-document.getElementById("useBarClear").addEventListener("click", () => { useSel.clear(); renderInventory(); });
-document.getElementById("useBarGo").addEventListener("click", openUseForm);
-
-// ---- Use ticked items on a PC ----
-let useTickets = [];
-async function openUseForm() {
-  if (!useSel.size) return;
-  invHideError("useError");
-  document.getElementById("useNote").value = "";
-  const sel = document.getElementById("useDevice");
-  const devices = Object.values(lastPayload).sort((a, b) => naturalCompare(a.hostname || "", b.hostname || ""));
-  sel.innerHTML = `<option value="">— pick a PC —</option>` +
-    devices.map(d => `<option value="${escapeHtml(d.device_id)}">${escapeHtml(d.hostname)}</option>`).join("");
-  sel.value = "";
-  makeSearchable(sel).refresh();
-  renderUseLines();
-  document.getElementById("useTask").innerHTML = `<option value="">No task</option>`;
-  document.getElementById("useOverlay").classList.add("open");
-  sel._combo.focus();
-  try {
-    const resp = await apiFetch("/api/repair-tickets");
-    useTickets = resp.ok ? (await resp.json()).filter(t => t.repair_status !== "Completed") : [];
-  } catch (e) { useTickets = []; }
-  fillUseTasks();
-}
-function fillUseTasks() {
-  const dev = document.getElementById("useDevice").value;
-  const mine = useTickets.filter(t => t.device_id === dev);
-  const taskSel = document.getElementById("useTask");
-  taskSel.innerHTML = `<option value="">No task</option>` +
-    mine.map(t => `<option value="${t.id}">${escapeHtml(t.reported_problem)} (${escapeHtml(t.assigned_to || t.technician || "")}, ${escapeHtml(t.repair_status)})</option>`).join("");
-  // one open task for this PC -> it's almost certainly the one
-  if (mine.length === 1) taskSel.value = String(mine[0].id);
-}
-function renderUseLines() {
-  let total = 0;
-  const lines = [];
-  for (const [id, qty] of useSel) {
-    const it = invItems.find(x => x.id === id);
-    if (!it) continue;
-    const cost = qty * it.unit_price;
-    total += cost;
-    lines.push(`<tr><td>${qty} × ${escapeHtml(it.name)}<br><small style="color:var(--faint);">${it.unit_price ? peso(it.unit_price) + " each" : "no price set"} · ${it.quantity - qty} left after</small></td><td class="num">${peso(cost)}</td></tr>`);
-  }
-  document.getElementById("useLines").innerHTML = lines.join("") + `<tr class="total"><td>Total</td><td class="num">${peso(total)}</td></tr>`;
-}
-function closeUseForm() { document.getElementById("useOverlay").classList.remove("open"); }
-async function submitUseForm() {
-  const device_id = document.getElementById("useDevice").value;
-  if (!device_id) { invShowError("useError", "Pick the PC the parts are for."); return; }
-  if (!useSel.size) { invShowError("useError", "Nothing is ticked."); return; }
-  invHideError("useError");
-  const task = document.getElementById("useTask").value;
-  const btn = document.getElementById("useSubmit"); btn.disabled = true;
-  try {
-    const resp = await apiFetch("/api/inventory/use", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ device_id, ticket_id: task ? parseInt(task, 10) : null, note: document.getElementById("useNote").value.trim(),
-        items: [...useSel].map(([item_id, quantity]) => ({ item_id, quantity })) }) });
-    if (resp.ok) {
-      const r = await resp.json();
-      closeUseForm();
-      useSel.clear();
-      showToast("🧰 Taken out of stock", `${r.items.map(l => `${l.quantity} × ${escapeHtml(l.name)}`).join(", ")} on <b>${escapeHtml(r.hostname)}</b> — ${peso(r.total_cost)}`, "connected");
-      loadInventory();
-    } else { invShowError("useError", await invErrorText(resp, "Could not take the parts out of stock.")); loadInventory().then(renderUseLines); }
-  } catch (e) { invShowError("useError", "Could not reach the server."); }
-  finally { btn.disabled = false; }
-}
-document.getElementById("useDevice").addEventListener("change", fillUseTasks);
-document.getElementById("useClose").addEventListener("click", closeUseForm);
-document.getElementById("useCancel").addEventListener("click", closeUseForm);
-document.getElementById("useSubmit").addEventListener("click", submitUseForm);
-document.getElementById("useOverlay").addEventListener("click", (e) => { if (e.target.id === "useOverlay") closeUseForm(); });
-document.getElementById("useNote").addEventListener("keydown", (e) => { if (e.key === "Enter") submitUseForm(); });
-
-// ---- CSV export (fetched with the login token, then saved) ----
-async function downloadInventoryCsv(what, range) {
-  const params = new URLSearchParams({ what });
-  if (range && range.since) params.set("since", range.since);
-  if (range && range.until) params.set("until", range.until);
-  try {
-    const resp = await apiFetch(`/api/inventory/export?${params}`);
-    if (!resp.ok) { showToast("Could not export", escapeHtml(await invErrorText(resp, "Something went wrong.")), "alert"); return; }
-    const blob = await resp.blob();
-    const m = /filename="([^"]+)"/.exec(resp.headers.get("Content-Disposition") || "");
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = m ? m[1] : `inventory-${what}.csv`;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } catch (e) { if (e.message !== "unauthorized") showToast("Could not export", "Could not reach the server.", "alert"); }
-}
-document.getElementById("invExportBtn").addEventListener("click", () => downloadInventoryCsv("stock"));
-
-async function deleteItem(id) {
-  const it = invItems.find(x => x.id === id);
-  if (!it || !confirm(`Delete “${it.name}” from the inventory?\n\nThe stock log keeps its name.`)) return;
-  const resp = await apiFetch(`/api/inventory/${id}`, { method: "DELETE" });
-  if (resp.ok) { showToast("🗑️ Item deleted", escapeHtml(it.name), "connected"); loadInventory(); }
-  else showToast("Could not delete", escapeHtml(await invErrorText(resp, "Something went wrong.")), "alert");
-}
-
-// ---- Add / edit item ----
-// Motherboards get two extra choices: Intel/AMD and which RAM generation they take.
-function isMotherboard(cat) { return ["motherboard", "motherboards", "mobo", "mainboard"].includes((cat || "").trim().toLowerCase()); }
-function chipValue(groupId) { const b = document.querySelector(`#${groupId} .active`); return b ? b.dataset.val : ""; }
-function setChip(groupId, val) {
-  document.querySelectorAll(`#${groupId} [data-val]`).forEach(b => {
-    const on = b.dataset.val === val;
-    b.classList.toggle("active", on);
-    b.setAttribute("aria-pressed", on);
-  });
-}
-function syncBoardFields() {
-  const wrap = document.getElementById("itemBoardWrap");
-  const show = isMotherboard(document.getElementById("itemCategory").value);
-  if ((wrap.style.display !== "none") !== show) wrap.style.display = show ? "" : "none";
-}
-["itemPlatformChips", "itemRamChips"].forEach(g => document.getElementById(g).addEventListener("click", (e) => {
-  const b = e.target.closest("[data-val]");
-  if (!b) return;
-  setChip(g, b.dataset.val);
-  invHideError("itemError");
-}));
-document.getElementById("itemCategory").addEventListener("input", syncBoardFields);
-document.getElementById("itemCategory").addEventListener("change", syncBoardFields);
-
-function openItemForm(id) {
-  editingItemId = id || null;
-  const it = id ? invItems.find(x => x.id === id) : null;
-  document.getElementById("itemTitle").textContent = it ? "✏️ Edit Item" : "📦 Add Item";
-  document.getElementById("itemName").value = it ? it.name : "";
-  document.getElementById("itemCategory").value = it ? it.category : "";
-  document.getElementById("itemNotes").value = it ? it.notes : "";
-  document.getElementById("itemPrice").value = it && it.unit_price ? it.unit_price.toFixed(2) : "";
-  document.getElementById("itemMin").value = it && it.min_qty ? it.min_qty : "";
-  document.getElementById("itemQty").value = 0;
-  document.getElementById("itemQtyWrap").style.display = it ? "none" : "";
-  setChip("itemPlatformChips", it ? it.board_platform : "");
-  setChip("itemRamChips", it ? it.ram_type : "");
-  syncBoardFields();
-  invHideError("itemError");
-  document.getElementById("itemOverlay").classList.add("open");
-  document.getElementById("itemName").focus();
-}
-function closeItemForm() { document.getElementById("itemOverlay").classList.remove("open"); editingItemId = null; }
-async function submitItemForm() {
-  const name = document.getElementById("itemName").value.trim();
-  if (!name) { invShowError("itemError", "Please enter a name."); return; }
-  const price = document.getElementById("itemPrice").value.trim().replace(/[₱,\s]/g, "");
-  if (price !== "" && !/^\d+(\.\d{1,2})?$/.test(price)) { invShowError("itemError", "Price must be an amount like 450 or 450.50."); return; }
-  const min = document.getElementById("itemMin").value.trim();
-  if (min !== "" && !/^\d+$/.test(min)) { invShowError("itemError", "Low-stock warning must be a whole number, 0 or more."); return; }
-  const category = document.getElementById("itemCategory").value.trim();
-  const board = isMotherboard(category);
-  if (board && !chipValue("itemPlatformChips")) { invShowError("itemError", "Pick whether the motherboard is Intel or AMD."); return; }
-  if (board && !chipValue("itemRamChips")) { invShowError("itemError", "Pick which RAM type the motherboard takes."); return; }
-  const body = { name, category,
-                 board_platform: board ? chipValue("itemPlatformChips") : "", ram_type: board ? chipValue("itemRamChips") : "",
-                 notes: document.getElementById("itemNotes").value.trim(),
-                 unit_price: price === "" ? 0 : price, min_qty: min === "" ? 0 : parseInt(min, 10) };
-  let url = "/api/inventory";
-  if (editingItemId) url = `/api/inventory/${editingItemId}/edit`;
-  else {
-    const q = document.getElementById("itemQty").value.trim();
-    if (q !== "" && !/^\d+$/.test(q)) { invShowError("itemError", "Quantity must be a whole number, 0 or more."); return; }
-    body.quantity = q === "" ? 0 : parseInt(q, 10);
-  }
-  const btn = document.getElementById("itemSubmit"); btn.disabled = true;
-  try {
-    const resp = await apiFetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (resp.ok) { const wasEdit = !!editingItemId; closeItemForm(); showToast(wasEdit ? "✏️ Item updated" : "📦 Item added", escapeHtml(name), "connected"); loadInventory(); }
-    else invShowError("itemError", await invErrorText(resp, "Could not save the item."));
-  } catch (e) { invShowError("itemError", "Could not reach the server."); }
-  finally { btn.disabled = false; }
-}
-document.getElementById("invAddBtn").addEventListener("click", () => openItemForm(null));
-document.getElementById("itemClose").addEventListener("click", closeItemForm);
-document.getElementById("itemCancel").addEventListener("click", closeItemForm);
-document.getElementById("itemSubmit").addEventListener("click", submitItemForm);
-document.getElementById("itemOverlay").addEventListener("click", (e) => { if (e.target.id === "itemOverlay") closeItemForm(); });
-["itemName", "itemCategory", "itemQty", "itemPrice", "itemMin", "itemNotes"].forEach(id =>
-  document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") submitItemForm(); }));
-
-// ---- Adjust stock by hand ----
-function openStockForm(id) {
-  const it = invItems.find(x => x.id === id);
-  if (!it) return;
-  stockItemId = id;
-  document.getElementById("stockSummary").textContent = `${it.name} — now ${it.quantity}${it.unit ? " " + it.unit : ""}`;
-  document.getElementById("stockNew").value = it.quantity;
-  document.getElementById("stockReason").value = "";
-  document.getElementById("stockPrice").value = it.unit_price ? it.unit_price.toFixed(2) : "";
-  syncStockPrice();
-  invHideError("stockError");
-  document.getElementById("stockOverlay").classList.add("open");
-  const f = document.getElementById("stockNew"); f.focus(); f.select();
-}
-function closeStockForm() { document.getElementById("stockOverlay").classList.remove("open"); stockItemId = null; }
-function nudgeStock(d) {
-  const f = document.getElementById("stockNew");
-  const cur = /^\d+$/.test(f.value.trim()) ? parseInt(f.value, 10) : 0;
-  f.value = Math.max(0, cur + d);
-  invHideError("stockError");
-  syncStockPrice();
-}
-// Going up = a purchase: ask how much this batch cost per unit (it can differ from last time).
-// Going down = ask why. No change = ask nothing.
-function stockDelta() {
-  const it = invItems.find(x => x.id === stockItemId);
-  const raw = document.getElementById("stockNew").value.trim();
-  return it && /^\d+$/.test(raw) ? parseInt(raw, 10) - it.quantity : 0;
-}
-function syncStockPrice() {
-  const it = invItems.find(x => x.id === stockItemId);
-  const d = stockDelta();
-  const u = it && it.unit ? " " + it.unit : "";
-  const priceWrap = document.getElementById("stockPriceWrap"), reasonWrap = document.getElementById("stockReasonWrap");
-  const showPrice = d > 0, showReason = d < 0;
-  if ((priceWrap.style.display !== "none") !== showPrice) priceWrap.style.display = showPrice ? "" : "none";
-  if ((reasonWrap.style.display !== "none") !== showReason) reasonWrap.style.display = showReason ? "" : "none";
-  document.getElementById("stockChangeNote").textContent =
-    d > 0 ? `Adding ${d}${u}.` : d < 0 ? `Removing ${-d}${u}.` : "Change the total to add or remove stock.";
-  if (d > 0) {
-    const pr = parseFloat(document.getElementById("stockPrice").value.replace(/[₱,\s]/g, ""));
-    document.getElementById("stockPriceHint").textContent =
-      isNaN(pr) ? "Enter what you paid per unit." : `${d} × ${peso(pr)} = ${peso(d * pr)} spent. This becomes the item's price.`;
-  }
-  const r = document.getElementById("stockReason").value.trim();
-  document.querySelectorAll("#stockReasonChips [data-reason]").forEach(b => b.classList.toggle("active", b.dataset.reason === r));
-}
-document.getElementById("stockReasonChips").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-reason]");
-  if (!b) return;
-  document.getElementById("stockReason").value = b.dataset.reason;
-  invHideError("stockError");
-  syncStockPrice();
-  document.getElementById("stockSubmit").focus();
-});
-document.getElementById("stockReason").addEventListener("input", () => { invHideError("stockError"); syncStockPrice(); });
-document.getElementById("stockNew").addEventListener("input", () => { invHideError("stockError"); syncStockPrice(); });
-document.getElementById("stockPrice").addEventListener("input", () => { invHideError("stockError"); syncStockPrice(); });
-async function submitStockForm() {
-  const raw = document.getElementById("stockNew").value.trim();
-  if (!/^\d+$/.test(raw)) { invShowError("stockError", "Enter the new total as a whole number, 0 or more."); return; }
-  const d = stockDelta();
-  if (d === 0) { invShowError("stockError", "The total is the same as now — change it to add or remove stock."); return; }
-  const price = document.getElementById("stockPrice").value.trim().replace(/[₱,\s]/g, "");
-  const reason = document.getElementById("stockReason").value.trim();
-  const adding = d > 0;
-  if (adding && price === "") { invShowError("stockError", "Enter how much you paid per unit for this batch."); document.getElementById("stockPrice").focus(); return; }
-  if (adding && !/^\d+(\.\d{1,2})?$/.test(price)) { invShowError("stockError", "Price must be an amount like 450 or 450.50."); return; }
-  if (!adding && !reason) { invShowError("stockError", "Say why the stock is going down."); document.getElementById("stockReason").focus(); return; }
-  const btn = document.getElementById("stockSubmit"); btn.disabled = true;
-  try {
-    const resp = await apiFetch(`/api/inventory/${stockItemId}/stock`, { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ set: parseInt(raw, 10), reason: adding ? "Restock" : reason,
-        unit_price: adding ? price : null }) });
-    if (resp.ok) { closeStockForm(); showToast(adding ? "📈 Stock added" : "📉 Stock removed",
-      adding ? `${d} added — ${peso(d * parseFloat(price))} spent.` : `${-d} removed: ${escapeHtml(reason)}`, "connected"); loadInventory(); if (invPane === "deductions" || invPane === "additions") loadInvLog(); }
-    else invShowError("stockError", await invErrorText(resp, "Could not update the stock."));
-  } catch (e) { invShowError("stockError", "Could not reach the server."); }
-  finally { btn.disabled = false; }
-}
-document.getElementById("stockMinus").addEventListener("click", () => nudgeStock(-1));
-document.getElementById("stockPlus").addEventListener("click", () => nudgeStock(1));
-document.getElementById("stockClose").addEventListener("click", closeStockForm);
-document.getElementById("stockCancel").addEventListener("click", closeStockForm);
-document.getElementById("stockSubmit").addEventListener("click", submitStockForm);
-document.getElementById("stockOverlay").addEventListener("click", (e) => { if (e.target.id === "stockOverlay") closeStockForm(); });
-["stockNew", "stockPrice", "stockReason"].forEach(id =>
-  document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") submitStockForm(); }));
-
-// ---- Stock log ----
-const LOG_LIMIT = 2000;
-let pcTotalsOpen = false;
-
-// The period picker -> {since, until} in unix seconds (0 = no limit).
-function logRange() {
-  const v = document.getElementById("logPeriod").value;
-  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
-  const s = (d) => Math.floor(d.getTime() / 1000);
-  if (v === "today") return { since: s(new Date(y, m, now.getDate())), until: 0 };
-  if (v === "7" || v === "30") return { since: Math.floor(Date.now() / 1000) - parseInt(v, 10) * 86400, until: 0 };
-  if (v === "month") return { since: s(new Date(y, m, 1)), until: 0 };
-  if (v === "lastmonth") return { since: s(new Date(y, m - 1, 1)), until: s(new Date(y, m, 1)) };
-  if (v === "year") return { since: s(new Date(y, 0, 1)), until: 0 };
-  return { since: 0, until: 0 };
-}
-
-async function loadInvLog() {
-  const kind = invLogKind;
-  const r = logRange();
-  const params = new URLSearchParams({ kind, limit: LOG_LIMIT });
-  if (r.since) params.set("since", r.since);
-  if (r.until) params.set("until", r.until);
-  try {
-    const resp = await apiFetch(`/api/inventory/log?${params}`);
-    if (!resp.ok) throw new Error();
-    const rows = await resp.json();
-    if (kind !== invLogKind) return; // the tab changed while this was loading
-    invLog = rows;
-  } catch (e) { document.getElementById("logList").innerHTML = `<div style="color:var(--danger);">Could not load the log.</div>`; return; }
-  renderInvLog();
-}
-function renderInvLog() {
-  const q = document.getElementById("logSearch").value;
-  const out = invLogKind === "deduction";
-  const rows = invLog.filter(l => invMatch(q, [l.item_name, l.by, l.reason, l.hostname, l.task, invWhen(l.timestamp)]));
-  const el = document.getElementById("logList");
-  const periodText = document.getElementById("logPeriod").selectedOptions[0].textContent.toLowerCase();
-  if (!rows.length) {
-    el.innerHTML = `<div class="no-issues">${invLog.length ? "Nothing matches your search." : (out ? "No deductions" : "No additions") + (periodText === "all time" ? " yet." : ` for ${periodText}.`)}</div>`;
-    return;
-  }
-  const units = rows.reduce((n, l) => n + Math.abs(l.change), 0);
-  const cost = rows.reduce((n, l) => n + (l.cost || 0), 0);
-  const unpriced = rows.filter(l => l.cost == null).length;
-  const capped = invLog.length >= LOG_LIMIT
-    ? `<div style="font-size:13px;color:var(--warn);margin-bottom:8px;">Showing the newest ${LOG_LIMIT} only — totals cover those. Use Export CSV for everything in this period.</div>` : "";
-
-  // Where the parts went: units per PC (deductions only — no money here; spending is counted on Additions)
-  let byPc = "";
-  if (out) {
-    const g = new Map();
-    for (const l of rows) {
-      const k = l.hostname || "";
-      const t = g.get(k) || { units: 0, cost: 0, n: 0 };
-      t.units += Math.abs(l.change); t.cost += l.cost || 0; t.n += 1;
-      g.set(k, t);
-    }
-    const list = [...g].sort((a, b) => b[1].units - a[1].units || naturalCompare(a[0], b[0]));
-    byPc = `
-    <details class="pc-totals" id="pcTotals" ${pcTotalsOpen ? "open" : ""}>
-      <summary>🖥️ Totals by PC (${list.filter(([k]) => k).length} ${list.filter(([k]) => k).length === 1 ? "PC" : "PCs"})</summary>
-      <table>${list.map(([k, t]) => `
-        <tr><td>${k ? `<b>${escapeHtml(k)}</b>` : `<span style="color:var(--faint);">Not linked to a PC (manual adjustments)</span>`}</td>
-            <td class="num"><b>${t.units} ${t.units === 1 ? "unit" : "units"}</b></td></tr>`).join("")}
-      </table>
-    </details>`;
-  }
-
-  el.innerHTML = `
-    ${capped}
-    <div style="font-size:14px;color:var(--muted);margin-bottom:8px;">${rows.length} ${rows.length === 1 ? "entry" : "entries"} — ${units} ${units === 1 ? "unit" : "units"} ${out ? "taken out" : "put in"}${out ? "" : ` — <b style="color:var(--text);">${peso(cost)}</b>${unpriced ? ` (${unpriced} older ${unpriced === 1 ? "entry has" : "entries have"} no price)` : ""}`}${q.trim() ? " — matching your search" : ""}</div>
-    ${byPc}
-    <div class="log-wrap"><table class="log-table" style="min-width:${out ? 760 : 820}px;">
-      <thead><tr><th>Date &amp; time</th><th>Item</th><th class="num">${out ? "Used" : "Added"}</th><th class="num">Left</th>${out ? "" : `<th class="num">Price each</th><th class="num">Cost</th>`}${out ? "<th>Used on</th>" : ""}<th>By</th><th>Note</th></tr></thead>
-      <tbody>${rows.map(l => `
-        <tr>
-          <td class="when">${escapeHtml(invWhen(l.timestamp))}</td>
-          <td><b>${escapeHtml(l.item_name)}</b></td>
-          <td class="num"><span class="log-change ${out ? "minus" : "plus"}">${out ? "−" : "+"}${Math.abs(l.change)}</span></td>
-          <td class="num">${l.qty_after}</td>
-          ${out ? "" : `<td class="num">${l.unit_price == null ? "—" : peso(l.unit_price)}</td>
-          <td class="num">${l.cost == null ? "—" : `<b>${peso(l.cost)}</b>`}</td>`}
-          ${out ? `<td>${l.hostname ? `<b>${escapeHtml(l.hostname)}</b>${l.task ? `<br><small style="color:var(--faint);">${escapeHtml(l.task)}</small>` : ""}` : `<span style="color:var(--faint);">—</span>`}</td>` : ""}
-          <td>${escapeHtml(l.by)}</td>
-          <td>${escapeHtml(l.reason || "")}</td>
-        </tr>`).join("")}</tbody>
-    </table></div>`;
-  const det = document.getElementById("pcTotals");
-  if (det) det.addEventListener("toggle", () => { pcTotalsOpen = det.open; });
-}
-document.getElementById("logSearch").addEventListener("input", renderInvLog);
-document.getElementById("logPeriod").addEventListener("change", loadInvLog);
-document.getElementById("logExportBtn").addEventListener("click", () =>
-  downloadInventoryCsv(invLogKind === "addition" ? "additions" : "deductions", logRange()));
-
-// ---- Live updates (WebSocket) ----
-function handleInventoryMessage(msg) {
-  scheduleDashData();
-  if (msg.type === "inventory_changed") {
-    const formOpen = ["useOverlay", "completeOverlay"].some(id => document.getElementById(id).classList.contains("open"));
-    if ((inventoryViewVisible() && invPane === "stock") || formOpen) loadInventory();
-    if (inventoryViewVisible() && (invPane === "deductions" || invPane === "additions")) loadInvLog();
-    for (const it of msg.low_items || []) {
-      notify(it.quantity === 0 ? `⚠️ Out of stock: ${escapeHtml(it.name)}` : `⚠️ Low stock: ${escapeHtml(it.name)}`,
-        `${it.quantity}${it.unit ? " " + escapeHtml(it.unit) : ""} left (warning level ${it.min_qty}).`, "alert");
-    }
-  }
-}
 
 // ----------------- Dashboard (landing page) -----------------
 // Tiles, notifications and tasks come from what the page already knows (live PC reports,
 // open problem reports) plus a few API calls; the month graph comes from /api/dashboard/month.
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DASH_SERIES = [
-  { key: "assigned",  name: "Tasks assigned",    color: "var(--s1)" },
-  { key: "completed", name: "Tasks completed",   color: "var(--s2)" },
+  { key: "assigned",  name: "Pickups assigned",    color: "var(--s1)" },
+  { key: "completed", name: "Pickups closed",   color: "var(--s2)" },
   { key: "problems",  name: "Problems reported", color: "var(--s3)" },
   { key: "incidents", name: "PC incidents",      color: "var(--s4)" },
 ];
 let dashMonth = (() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; })();
-let dashData = null, dashTasks = [], dashInv = [], dashTable = false;
+let dashData = null, dashTasks = [], dashTable = false;
 function dashboardVisible() { return document.getElementById("dashboardView").style.display !== "none"; }
 
 // Live parts (PC alerts, problem reports): re-render soon after any change, at most ~3x a second.
 let dashLiveTimer = null;
 function scheduleDashLive() {
-  if (dashLiveTimer || !dashboardVisible()) return;
-  dashLiveTimer = setTimeout(() => { dashLiveTimer = null; renderDashLive(); }, 300);
+  if (dashLiveTimer || !(dashboardVisible() || inventoryViewVisible())) return;
+  dashLiveTimer = setTimeout(() => { dashLiveTimer = null; renderDashLive(); renderComponents(); }, 300);
 }
 // Server data (tasks, stock, graph): reload a second after a relevant change.
 let dashDataTimer = null;
@@ -3346,13 +2987,12 @@ async function loadDashboard() {
   document.getElementById("dashSub").textContent =
     `${h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"}, ${authUser}. ${new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`;
   const admin = authRole === "admin";
-  document.getElementById("dashTaskTitle").firstChild.textContent = admin ? "📋 Open tasks " : "📋 My assigned tasks ";
-  document.getElementById("tileTasksLbl").textContent = admin ? "📋 Open tasks" : "📋 My open tasks";
+  document.getElementById("dashTaskTitle").firstChild.textContent = admin ? "📋 Open pickups " : "📋 My pickups ";
+  document.getElementById("tileTasksLbl").textContent = admin ? "📋 Open pickups" : "📋 My open pickups";
   const jobs = [
     apiFetch("/api/repair-tickets").then(r => r.ok ? r.json() : []).then(all => {
       dashTasks = all.filter(t => t.repair_status !== "Completed" && (admin || t.assigned_to === authUser));
     }).catch(() => {}),
-    apiFetch("/api/inventory").then(r => r.ok ? r.json() : []).then(items => { dashInv = items; }).catch(() => {}),
     loadDashMonth(),
   ];
   await Promise.all(jobs);
@@ -3387,9 +3027,11 @@ function computeAlerts() {
   const now = Date.now();
   Object.values(lastPayload).forEach(p => {
     if (repairGraceUntil[p.device_id] && now < repairGraceUntil[p.device_id]) return; // just logged a repair — give it a moment
+    if (p.under_maintenance) return; // pulled out on purpose — parts and peripherals are expected to be missing
     const pf = p.peripheral_flags || {};
     if (pf.has_keyboard === false) alerts.push({ device_id: p.device_id, hostname: p.hostname, desc: "⌨️ No keyboard detected", timestamp: p.timestamp });
     if (pf.has_mouse === false) alerts.push({ device_id: p.device_id, hostname: p.hostname, desc: "🖱️ No mouse detected", timestamp: p.timestamp });
+    if (pf.has_display === false) alerts.push({ device_id: p.device_id, hostname: p.hostname, desc: "🖥️ No display detected", timestamp: p.timestamp });
     if (p.disk_low) {
       const hw = p.hardware || {};
       alerts.push({ device_id: p.device_id, hostname: p.hostname,
@@ -3406,26 +3048,22 @@ function computeAlerts() {
 function renderDashLive() {
   if (!dashboardVisible()) return;
   const pcs = Object.values(lastPayload);
-  const online = pcs.filter(p => (p.status || "online") === "online").length;
+  const online = pcs.filter(p => shownStatus(p) === "online").length;
   document.getElementById("tileOnline").innerHTML = `${online} <small>of ${pcs.length}</small>`;
 
   const items = [];
   openIssues.forEach(i => items.push({ cls: "bad", t: `🆘 ${escapeHtml(i.room)} / ${escapeHtml(i.system_unit)}`, d: escapeHtml(i.description),
     w: `Reported by ${escapeHtml(i.reported_by)} · ${new Date(i.timestamp * 1000).toLocaleString()}`, go: "issues", ts: i.timestamp }));
-  pcs.filter(p => p.status === "crashed" || p.status === "unresponsive").forEach(p => items.push({
-    cls: p.status === "crashed" ? "bad" : "warn", t: escapeHtml(p.hostname),
-    d: p.status === "crashed" ? "💥 Crashed — stopped reporting without shutting down" : "⏳ Not responding",
+  pcs.filter(p => !p.under_maintenance && (p.status === "no_signal" || p.status === "unresponsive")).forEach(p => items.push({
+    cls: p.status === "no_signal" ? "bad" : "warn", t: escapeHtml(p.hostname),
+    d: p.status === "no_signal" ? "📡 No signal — can't reach the PC or its agent" : "🟠 Unresponsive — stopped reporting without shutting down",
     w: p.timestamp ? `Last report ${new Date(p.timestamp * 1000).toLocaleString()}` : "", go: "pc:" + p.device_id, ts: p.timestamp || 0 }));
   computeAlerts().forEach(a => items.push({ cls: "warn", t: escapeHtml(a.hostname), d: escapeHtml(a.desc),
     w: a.timestamp ? new Date(a.timestamp * 1000).toLocaleString() : "", go: "pc:" + a.device_id, ts: a.timestamp || 0 }));
-  const low = dashInv.filter(i => i.low);
-  low.forEach(i => items.push({ cls: "warn", t: `📦 ${i.quantity === 0 ? "Out of stock" : "Low stock"}: ${escapeHtml(i.name)}`,
-    d: `${i.quantity}${i.unit ? " " + escapeHtml(i.unit) : ""} left · warning at ${i.min_qty}`, w: "", go: "low", ts: 0 }));
-  const pcIssues = items.filter(x => x.go !== "low").length;
+  const pcIssues = items.length;
   document.getElementById("tileAttention").textContent = pcIssues;
   document.getElementById("tileAttention").className = "val" + (pcIssues ? " bad" : "");
-  document.getElementById("tileLow").textContent = low.length;
-  document.getElementById("tileLow").className = "val" + (low.length ? " warn" : "");
+  document.getElementById("tileComps").textContent = pcs.reduce((n, p) => n + (p.internal || []).length + (p.devices || []).length, 0);
   document.getElementById("dashNotifCount").textContent = `(${items.length})`;
   document.getElementById("dashNotifList").innerHTML = items.length
     ? items.map(x => `<button class="dash-item ${x.cls}" data-go="${escapeHtml(x.go)}"><div class="t">${x.t}</div>${x.d ? `<div class="d">${x.d}</div>` : ""}${x.w ? `<div class="w">${x.w}</div>` : ""}</button>`).join("")
@@ -3440,20 +3078,19 @@ function renderDashTasks() {
   document.getElementById("dashTaskList").innerHTML = rows.length ? rows.map(t => `
     <button class="dash-item ${t.repair_status === "In Progress" ? "info" : "warn"}" data-go="pc-tasks:${escapeHtml(t.device_id)}">
       <div class="t" style="display:flex;justify-content:space-between;gap:8px;"><span>${escapeHtml(t.hostname)}</span>
-        <span class="dash-chip ${t.repair_status === "In Progress" ? "in-progress" : "pending"}">${escapeHtml(t.repair_status)}</span></div>
+        <span class="dash-chip ${t.repair_status === "In Progress" ? "in-progress" : "pending"}">${escapeHtml(ticketStatusText(t))}</span></div>
       <div class="d">${escapeHtml(t.reported_problem)}</div>
       <div class="w">${admin ? `Assigned to <b>${escapeHtml(t.assigned_to || t.technician || "")}</b> · ` : ""}${new Date(t.timestamp * 1000).toLocaleString()}</div>
     </button>`).join("")
-    : `<div class="no-issues">${admin ? "No open tasks." : "No tasks assigned to you right now."}</div>`;
+    : `<div class="no-issues">${admin ? "No open pickups." : "No pickups assigned to you right now."}</div>`;
 }
 
 function dashGo(go) {
   if (go === "monitoring") { switchView("monitoring"); }
   else if (go === "notifs") { document.getElementById("dashNotifCard").scrollIntoView({ behavior: "smooth", block: "start" }); }
   else if (go === "tasks") { document.getElementById("dashTaskCard").scrollIntoView({ behavior: "smooth", block: "start" }); }
-  else if (go === "purchases") { document.getElementById("dashPurchCard").scrollIntoView({ behavior: "smooth", block: "start" }); }
   else if (go === "issues") { sidebarManualOverride = true; setSidebarOpen(true); }
-  else if (go === "low") { switchView("inventory"); invLowOnly = true; setInvPane("stock"); }
+  else if (go === "inventory") { switchView("inventory"); renderComponents(); }
   else if (go.startsWith("pc-tasks:")) { showMaintenanceHistory(go.slice(9)); }
   else if (go.startsWith("pc:")) { openModal(go.slice(3)); }
 }
@@ -3462,7 +3099,6 @@ document.getElementById("dashboardView").addEventListener("click", (e) => {
   if (el) dashGo(el.dataset.go);
 });
 document.getElementById("dashTasksAll").addEventListener("click", () => { switchView("repair"); populateRepairDeviceFilter(); loadRepairTickets(); });
-document.getElementById("dashPurchAll").addEventListener("click", () => { switchView("inventory"); document.getElementById("logPeriod").value = "all"; setInvPane("additions"); });
 
 // ---- Month graph ----
 // A round top for the y-axis plus how many gridline steps keep every label round
@@ -3472,11 +3108,6 @@ function niceMax(v) {
   const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p;
   const top = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
   return { max: top * p, ticks: top === 1 || top === 2 ? 4 : 5 };
-}
-function pesoShort(v) {
-  if (v >= 1e6) return "₱" + (v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "") + "M";
-  if (v >= 1e3) return "₱" + (v / 1e3).toFixed(v >= 1e4 ? 0 : 1).replace(/\.0$/, "") + "k";
-  return "₱" + Math.round(v);
 }
 // How many days of the shown month have happened (later days aren't drawn as zero).
 function dashDaysSoFar(days) {
@@ -3576,40 +3207,16 @@ function renderDashMonth() {
 
   const k = d.incident_kinds || {};
   document.getElementById("dashIncidentNote").textContent =
-    `PC incidents this month: ${k.crashed || 0} crashed · ${k.keyboard_lost || 0} keyboard lost · ${k.mouse_lost || 0} mouse lost · ${k.part_missing || 0} part missing · ${k.disk_low || 0} disk almost full. ` +
+    `PC incidents this month: ${k.unresponsive || 0} unresponsive · ${k.keyboard_lost || 0} keyboard lost · ${k.mouse_lost || 0} mouse lost · ${k.display_lost || 0} display lost · ${k.part_missing || 0} part missing · ${k.disk_low || 0} disk almost full. ` +
     `Incidents are recorded from this update onward.`;
-
-  // Spending: one series of bars (pesos get their own chart — never a second y-axis)
-  const se = document.getElementById("dashSpendChart");
-  const sMax = niceMax(Math.max(1, ...d.spending.slice(0, shown)));
-  const sf = chartFrame(se, d.days, sMax, pesoShort, 200);
-  const bw = Math.max(2, Math.min(18, sf.step - 4));
-  let bars = "";
-  d.spending.slice(0, shown).forEach((v, i) => {
-    if (v <= 0) return;
-    const x0 = sf.x(i) - bw / 2, y0 = sf.y(v), h = sf.y(0) - y0, r = Math.min(4, bw / 2, h);
-    bars += `<path data-i="${i}" style="fill:var(--s1)" d="M${x0},${sf.y(0)} V${y0 + r} Q${x0},${y0} ${x0 + r},${y0} H${x0 + bw - r} Q${x0 + bw},${y0} ${x0 + bw},${y0 + r} V${sf.y(0)} Z"/>`;
-  });
-  se.innerHTML = `<svg viewBox="0 0 ${sf.W} ${sf.H}" height="${sf.H}" role="img" aria-label="Money spent on stock per day, ${MONTHS[dashMonth.m]} ${dashMonth.y}">${sf.grid}${bars}</svg>`;
-  attachHover(se, sf, shown, (i) => `<div style="font-weight:600;margin-bottom:4px;">${dayLabel(i)}</div><div class="row"><span>Spent on stock</span><b>${peso(d.spending[i])}</b></div>`,
-    (i) => se.querySelectorAll("path[data-i]").forEach(p => p.style.opacity = i < 0 || +p.dataset.i === i ? "1" : "0.45"));
-  document.getElementById("dashSpentText").innerHTML = `${MONTHS[dashMonth.m]}: <b style="color:var(--text);">${peso(d.spent_month)}</b> · All time: <b style="color:var(--text);">${peso(d.spent_all_time)}</b>`;
-  document.getElementById("tileSpent").textContent = peso(d.spent_all_time);
 
   // Table view (the same numbers, for reading exact values / low-contrast colours)
   document.getElementById("dashTable").innerHTML = `<table class="dash-table">
-    <thead><tr><th>Day</th>${DASH_SERIES.map(s => `<th class="num">${s.name}</th>`).join("")}<th class="num">Spent on stock</th></tr></thead>
-    <tbody>${Array.from({ length: shown }, (_, i) => shown - 1 - i).map(i => `<tr><td>${dayLabel(i)}</td>${DASH_SERIES.map(s => `<td class="num">${d[s.key][i]}</td>`).join("")}<td class="num">${peso(d.spending[i])}</td></tr>`).join("")}
-      <tr style="font-weight:700;"><td>Total</td>${DASH_SERIES.map(s => `<td class="num">${total(s.key)}</td>`).join("")}<td class="num">${peso(d.spent_month)}</td></tr></tbody></table>`;
+    <thead><tr><th>Day</th>${DASH_SERIES.map(s => `<th class="num">${s.name}</th>`).join("")}</tr></thead>
+    <tbody>${Array.from({ length: shown }, (_, i) => shown - 1 - i).map(i => `<tr><td>${dayLabel(i)}</td>${DASH_SERIES.map(s => `<td class="num">${d[s.key][i]}</td>`).join("")}</tr>`).join("")}
+      <tr style="font-weight:700;"><td>Total</td>${DASH_SERIES.map(s => `<td class="num">${total(s.key)}</td>`).join("")}</tr></tbody></table>`;
   document.getElementById("dashTable").style.display = dashTable ? "" : "none";
 
-  // Recent purchases (all time, newest first)
-  const pr = d.recent_purchases || [];
-  document.getElementById("dashPurchases").innerHTML = pr.length ? `<table class="dash-table">
-    <thead><tr><th>Date</th><th>Item</th><th class="num">Qty</th><th class="num">Price each</th><th class="num">Cost</th><th>By</th></tr></thead>
-    <tbody>${pr.map(p => `<tr><td style="white-space:nowrap;color:var(--faint);">${new Date(p.timestamp * 1000).toLocaleDateString()}</td><td><b>${escapeHtml(p.item_name)}</b></td>
-      <td class="num">${p.quantity}</td><td class="num">${p.unit_price == null ? "—" : peso(p.unit_price)}</td><td class="num"><b>${p.cost == null ? "—" : peso(p.cost)}</b></td><td>${escapeHtml(p.by)}</td></tr>`).join("")}</tbody></table>`
-    : `<div class="no-issues">No stock has been added yet.</div>`;
 }
 
 document.getElementById("dashPrev").addEventListener("click", () => {
@@ -3635,6 +3242,99 @@ window.addEventListener("resize", () => {
 });
 // keep tiles and notifications current while the page is open (status changes, timeouts)
 setInterval(() => { if (authToken && dashboardVisible()) renderDashLive(); }, 5000);
+
+// ----------------- Intervals (admin) -----------------
+const IV_HINTS = {
+  unresponsive_after_seconds: "A PC that sends no report for this long (without shutting down) turns Unresponsive and is pinged at once. Must be at least 3× the hardware report interval below.",
+  ping_every_minutes: "How often the server pings every PC that isn't Offline.",
+  ping_timeout_seconds: "How long a ping waits before it counts as no answer. Raise it on a slow network.",
+  agent_report_seconds: "How often each agent sends a full report. Longer = less network traffic, but slower updates. 'Unresponsive after' must be at least 3× this.",
+  agent_device_check_seconds: "How often each PC looks for a keyboard, mouse, display (monitor) or USB device being plugged in or out. A change is reported straight away, so a short check means faster ✓/✕ chips.",
+};
+// Which part of the system each interval is for. The labels come from the server, so the
+// group headings here make it clear on older servers too.
+const IV_GROUPS = [
+  { title: "📶 PC status", color: "var(--s1, #4f8ef7)",
+    what: "For: the Online / Unresponsive / No signal status of each PC. Done by the server.",
+    keys: ["unresponsive_after_seconds", "ping_every_minutes", "ping_timeout_seconds"] },
+  { title: "🔌 Peripherals", color: "var(--good)",
+    what: "For: the ✓/✕ Keyboard, Mouse and Display chips and their alerts. Done by the agent on every PC.",
+    keys: ["agent_device_check_seconds"] },
+  { title: "📊 Hardware reports", color: "var(--orange)",
+    what: "For: CPU, RAM, disk, battery and the parts list. Done by the agent on every PC.",
+    keys: ["agent_report_seconds"] },
+];
+// Labels set here so they read the same whatever server version sends the form.
+const IV_LABELS = {
+  unresponsive_after_seconds: "Mark Unresponsive after (seconds with no report)",
+  ping_every_minutes: "Ping every PC every (minutes)",
+  ping_timeout_seconds: "Wait for a ping answer (seconds)",
+  agent_device_check_seconds: "Check keyboard, mouse and display every (seconds)",
+  agent_report_seconds: "Send CPU / RAM / disk report every (seconds)",
+};
+const ivLabel = f => IV_LABELS[f.key] || f.label;
+let ivFields = [];
+async function openIntervalsForm() {
+  if (authRole !== "admin") return;
+  invHideError("intervalsError");
+  document.getElementById("intervalsOverlay").classList.add("open");
+  document.getElementById("intervalsFields").innerHTML = `<div class="no-issues">Loading…</div>`;
+  try {
+    const resp = await apiFetch("/api/settings/intervals");
+    if (resp.status === 404) { invShowError("intervalsError", "The server is running an older version without editable intervals. Copy the new server.py, restart the server, then refresh this page."); return; }
+    if (!resp.ok) throw new Error();
+    const d = await resp.json();
+    ivFields = d.fields;
+    const known = new Set(IV_GROUPS.flatMap(g => g.keys));
+    const groups = IV_GROUPS.map(g => ({ ...g, fields: g.keys.map(k => ivFields.find(f => f.key === k)).filter(Boolean) }))
+      .concat([{ title: "Other", color: "var(--muted)", what: "", keys: [], fields: ivFields.filter(f => !known.has(f.key)) }])
+      .filter(g => g.fields.length || g.keys.length);
+    ivFields = groups.flatMap(g => g.fields);   // keep the save order the same as the screen
+    const fieldHtml = f => `
+      <label class="ticket-form-label" for="iv_${f.key}">${escapeHtml(ivLabel(f))}</label>
+      <div class="iv-row"><input type="number" class="ticket-form-input" id="iv_${f.key}" min="${f.min}" max="${f.max}" step="1" value="${d.values[f.key]}">
+        <span style="font-size:13px;color:var(--faint);">default ${f.default} · ${f.min}–${f.max}</span></div>
+      <div class="iv-hint">${escapeHtml(IV_HINTS[f.key] || "")}</div>`;
+    document.getElementById("intervalsFields").innerHTML = groups.map(g => `
+      <div class="iv-group" style="--iv-c:${g.color}" data-group="${escapeHtml(g.title)}">
+        <h3>${g.title}</h3>
+        ${g.what ? `<div class="iv-for">${g.what}</div>` : ""}
+        ${g.fields.length ? g.fields.map(fieldHtml).join("")
+          : `<div class="iv-missing">⚠️ Not available: the server is running an older server.py. Copy the new server.py into the server folder, restart the server, then reopen this window.</div>`}
+      </div>`).join("");
+    document.getElementById("iv_" + ivFields[0].key).focus();
+  } catch (e) { if (e.message !== "unauthorized") invShowError("intervalsError", "Could not load the intervals."); }
+}
+function closeIntervalsForm() { document.getElementById("intervalsOverlay").classList.remove("open"); }
+async function saveIntervals() {
+  const body = {};
+  for (const f of ivFields) {
+    const raw = document.getElementById("iv_" + f.key).value.trim();
+    if (!/^\d+$/.test(raw) || +raw < f.min || +raw > f.max) { invShowError("intervalsError", `${ivLabel(f)}: enter a whole number from ${f.min} to ${f.max}.`); document.getElementById("iv_" + f.key).focus(); return; }
+    body[f.key] = parseInt(raw, 10);
+  }
+  const btn = document.getElementById("intervalsSave"); btn.disabled = true;
+  try {
+    const resp = await apiFetch("/api/settings/intervals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (resp.ok) {
+      const v = (await resp.json()).values;
+      closeIntervalsForm();
+      showToast("⏱️ Intervals saved", `Unresponsive after ${v.unresponsive_after_seconds} s · ping every ${v.ping_every_minutes} min · wait ${v.ping_timeout_seconds} s${v.agent_report_seconds != null ? `<br>Peripherals checked every ${v.agent_device_check_seconds} s · hardware reports every ${v.agent_report_seconds} s` : ""}`, "connected");
+    } else invShowError("intervalsError", await invErrorText(resp, "Could not save the intervals."));
+  } catch (e) { invShowError("intervalsError", "Could not reach the server."); }
+  finally { btn.disabled = false; }
+}
+document.getElementById("intervalsBtn").addEventListener("click", openIntervalsForm);
+document.getElementById("intervalsClose").addEventListener("click", closeIntervalsForm);
+document.getElementById("intervalsCancel").addEventListener("click", closeIntervalsForm);
+document.getElementById("intervalsSave").addEventListener("click", saveIntervals);
+document.getElementById("intervalsDefaults").addEventListener("click", () => {
+  ivFields.forEach(f => { document.getElementById("iv_" + f.key).value = f.default; });
+  invHideError("intervalsError");
+});
+document.getElementById("intervalsFields").addEventListener("keydown", (e) => { if (e.key === "Enter") saveIntervals(); });
+document.getElementById("intervalsFields").addEventListener("input", () => invHideError("intervalsError"));
+document.getElementById("intervalsOverlay").addEventListener("click", (e) => { if (e.target.id === "intervalsOverlay") closeIntervalsForm(); });
 
 // ----------------- Rooms (filter buttons) -----------------
 let roomEditingId = null;
@@ -3768,7 +3468,7 @@ document.querySelectorAll(".nav-tab").forEach(tab => {
       loadRepairTickets();
     }
     if (tab.dataset.view === "users") loadUsers();
-    if (tab.dataset.view === "inventory") setInvPane(invPane);
+    if (tab.dataset.view === "inventory") renderComponents();
     if (tab.dataset.view === "dashboard") loadDashboard();
   });
 });
@@ -3793,4 +3493,4 @@ renderStatusFilterBar();
 initAuth();
 </script>
 </body>
-</html>
+</html> 

@@ -30,6 +30,7 @@ import time
 import tkinter as tk
 import uuid
 import webbrowser
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from tkinter import messagebox
 
 import psutil
@@ -69,11 +70,18 @@ except FileNotFoundError:
     sys.exit(1)
 
 SERVER_BASE = f'http://{config["SERVER_ADDRESS"]}:{config["PORT"]}'
-API_KEY = config["API_KEY"]
-DISPLAY_NAME = config["DISPLAY_NAME"]
+API_KEY = config.get("API_KEY", "DETECS")                 # must match API_KEY in server.py
+DISPLAY_NAME = config.get("DISPLAY_NAME", "System Unit 1")  # default name; change it per PC in config.toml
+# Starting values only: the server sends the admin's values (dashboard -> Intervals) back with
+# each report, and those take over from then on. See apply_server_settings().
 REPORT_INTERVAL = config.get("REPORT_INTERVAL", 5)
 DEVICE_WATCH_INTERVAL = config.get("DEVICE_WATCH_INTERVAL", 2)  # how often to check for plug/unplug, in seconds
+SERVER_SETTING_LIMITS = {"report_interval": (2, 300), "device_watch_interval": (1, 60)}
 ROOM = config.get("ROOM", "Unassigned")
+# The server pings this port every 10 minutes (and right away when the PC goes quiet) to tell
+# "Unresponsive" (PC answers but stopped reporting) from "No signal" (can't be reached at all).
+# 0 turns the listener off. The startup installer opens this port in Windows Firewall.
+PING_PORT = int(config.get("PING_PORT", 8770) or 0)
 SYSTEM_UNIT = config.get("SYSTEM_UNIT", "Unassigned")
 # Pin the Keyboard/Mouse presence check to one or more specific devices'
 # VID/PID (e.g. "VID_0C45&PID_8006"), rather than "any device Windows
@@ -320,7 +328,18 @@ def get_connected_devices(wmi_conn=None):
     return devices
 
 
+def _clean_str(v) -> str:
+    return str(v).strip() if v else ""
+
+
 def get_internal_components(wmi_conn=None):
+    """Parts inside the PC. Besides type/name (used for missing-part checks), each entry carries
+    what Windows knows about who made it, for the dashboard's Inventory (Vendor ID column):
+      vendor    - CPU vendor string (GenuineIntel / AuthenticAMD), RAM manufacturer (often a JEDEC
+                  code like 80CE), motherboard manufacturer
+      pnp_id    - GPU / drive Plug-and-Play ID; the server reads VEN_xxxx (PCI vendor) or VID_xxxx from it
+      part_number - RAM part number
+    Older dashboards ignore these extra fields."""
     c = wmi_conn or wmi.WMI()
     components = []
     for mem in c.Win32_PhysicalMemory():
@@ -329,18 +348,22 @@ def get_internal_components(wmi_conn=None):
             "type": "RAM Stick",
             "name": f"{mem.Manufacturer or 'Unknown'} {cap_gb}GB",
             "slot": mem.DeviceLocator,
+            "vendor": _clean_str(mem.Manufacturer),
+            "part_number": _clean_str(getattr(mem, "PartNumber", "")),
         })
     for cpu in c.Win32_Processor():
-        components.append({"type": "CPU", "name": cpu.Name.strip()})
+        components.append({"type": "CPU", "name": cpu.Name.strip(), "vendor": _clean_str(cpu.Manufacturer)})
     for board in c.Win32_BaseBoard():
-        components.append({"type": "Motherboard", "name": f"{board.Manufacturer} {board.Product}"})
+        components.append({"type": "Motherboard", "name": f"{board.Manufacturer} {board.Product}",
+                           "vendor": _clean_str(board.Manufacturer)})
     for gpu in c.Win32_VideoController():
-        components.append({"type": "GPU", "name": gpu.Name})
+        components.append({"type": "GPU", "name": gpu.Name, "pnp_id": _clean_str(gpu.PNPDeviceID).upper()})
     for disk in c.Win32_DiskDrive():
         components.append({
             "type": "Internal Drive" if disk.InterfaceType in ("IDE", "SCSI") else "External Drive",
             "name": disk.Model,
             "size_gb": round(int(disk.Size) / (1024 ** 3), 2) if disk.Size else None,
+            "pnp_id": _clean_str(disk.PNPDeviceID).upper(),
         })
     return components
 
@@ -468,10 +491,67 @@ def build_payload(wmi_conn=None):
         "internal": get_internal_components(wmi_conn),
         "peripheral_flags": compute_peripheral_flags(devices),
         "custom": get_custom_data(),
+        "ping_port": PING_PORT or None,
+        # what this agent is using now, so the dashboard can show the server's values took effect
+        "agent_intervals": {"report_interval": REPORT_INTERVAL, "device_watch_interval": DEVICE_WATCH_INTERVAL},
     }
 
 
+# ----------------- PING LISTENER -----------------
+# Answers GET /ping with who this PC is, so the server can check the agent is alive and that
+# the address it has really is this PC (an address can be handed to another PC). Nothing else
+# is served and nothing can be changed through it.
+class _PingHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path.split("?")[0] != "/ping":
+            self.send_error(404)
+            return
+        body = json.dumps({"agent": "device-tracker", "device_id": DEVICE_ID, "hostname": DISPLAY_NAME,
+                           "time": time.time()}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, fmt, *args):   # keep the log quiet
+        pass
+
+
+def start_ping_listener():
+    if not PING_PORT:
+        print("[INFO] Ping listener off (PING_PORT = 0)")
+        return
+    try:
+        server = ThreadingHTTPServer(("0.0.0.0", PING_PORT), _PingHandler)
+    except OSError as e:
+        # Usually a second copy of the agent already has the port — that copy will answer.
+        print(f"[WARN] Ping listener could not use port {PING_PORT}: {e}")
+        return
+    server.daemon_threads = True
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    print(f"[INFO] Answering server pings on port {PING_PORT}")
+
+
 # ----------------- NETWORKING -----------------
+def apply_server_settings(settings):
+    """Take the report / peripheral (keyboard, mouse, display) check intervals the server sends back. Anything missing,
+    not a number, or out of range is ignored, so a bad reply can't stall the agent."""
+    global REPORT_INTERVAL, DEVICE_WATCH_INTERVAL
+    if not isinstance(settings, dict):
+        return
+    for key, (lo, hi) in SERVER_SETTING_LIMITS.items():
+        v = settings.get(key)
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not lo <= v <= hi:
+            continue
+        if key == "report_interval" and v != REPORT_INTERVAL:
+            print(f"[INFO] Server set the report interval to {v} s (was {REPORT_INTERVAL})")
+            REPORT_INTERVAL = v
+        elif key == "device_watch_interval" and v != DEVICE_WATCH_INTERVAL:
+            print(f"[INFO] Server set the peripheral (keyboard/mouse/display) check interval to {v} s (was {DEVICE_WATCH_INTERVAL})")
+            DEVICE_WATCH_INTERVAL = v
+
+
 def send_report(payload):
     try:
         resp = requests.post(
@@ -482,6 +562,11 @@ def send_report(payload):
         )
         if resp.status_code != 200:
             print(f"[WARN] Server responded {resp.status_code}: {resp.text}")
+            return
+        try:
+            apply_server_settings(resp.json().get("agent_settings"))
+        except ValueError:
+            pass   # an older server replies without settings
     except requests.RequestException as e:
         print(f"[ERROR] Could not reach server: {e}")
 
@@ -677,6 +762,7 @@ def main():
 
     # Reporting runs in the background; the tray icon owns the main thread.
     threading.Thread(target=reporting_loop, daemon=True).start()
+    start_ping_listener()
 
     menu = pystray.Menu(
         pystray.MenuItem(f"{DISPLAY_NAME} — {ROOM} / {SYSTEM_UNIT}", None, enabled=False),

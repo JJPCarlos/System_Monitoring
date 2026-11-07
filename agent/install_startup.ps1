@@ -53,6 +53,19 @@ try {
     $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
     Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Force | Out-Null
 
+    # --- let the server ping the agent (PING_PORT in config.toml, default 8770; 0 = off) ---
+    $pingPort = 8770
+    $m = Select-String -Path (Join-Path $here 'config.toml') -Pattern '^\s*PING_PORT\s*=\s*(\d+)' | Select-Object -First 1
+    if ($m) { $pingPort = [int]$m.Matches[0].Groups[1].Value }
+    $ruleName = 'Device Tracker agent ping'
+    Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+    if ($pingPort -gt 0) {
+        # Only computers on the same local network (the lab) may connect.
+        New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Protocol TCP -LocalPort $pingPort `
+            -RemoteAddress LocalSubnet -Action Allow -Profile Any | Out-Null
+        Write-Host "Firewall: allowed the server to ping the agent on port $pingPort (local network only)."
+    }
+
     Write-Host ""
     Write-Host "Done. The agent will start about 30 seconds after the PC boots, with or without anyone logged in." -ForegroundColor Green
     Write-Host "  Task name:  $taskName"
